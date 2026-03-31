@@ -2,27 +2,15 @@ import os
 import requests
 import pandas as pd
 
-# === KONFIGURATION ===
 API_KEY = os.environ.get("BITPANDA_API_KEY")
-BASE_URL = "https://api.bitpanda.com/v1"
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-# Welche Assets gehandelt werden sollen
-ASSETS = [
-    {"symbol": "BTC", "id": "1"},      # Bitcoin
-    {"symbol": "ETH", "id": "5"},      # Ethereum  
-    {"symbol": "AMZN", "id": "101"},   # Amazon Aktie
-]
-
-MIN_TRADE_EUR = 10  # Mindestbetrag pro Trade in Euro
-
-def get_headers():
-    return {"X-API-KEY": API_KEY}
-
-def get_ticker(asset_id):
-    url = f"https://api.bitpanda.com/v3/ticker"
-    r = requests.get(url)
-    data = r.json()
-    return data
+def send_telegram(message):
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    r = requests.post(url, data={"chat_id": TELEGRAM_CHAT_ID, "text": message, "parse_mode": "HTML"})
+    print(f"Telegram Status: {r.status_code}")
+    print(f"Telegram Antwort: {r.text}")
 
 def berechne_ema(preise, periode):
     s = pd.Series(preise)
@@ -36,42 +24,44 @@ def berechne_rsi(preise, periode=14):
     rs = gain / loss
     return (100 - (100 / (1 + rs))).iloc[-1]
 
-def get_wallet_balance():
-    r = requests.get(f"{BASE_URL}/wallets", headers=get_headers())
-    return r.json()
-
 def trade_signal(preise):
     if len(preise) < 50:
-        return "HALTEN"
+        return "⏳ WARTEN"
     ema20 = berechne_ema(preise, 20)
     ema50 = berechne_ema(preise, 50)
     rsi = berechne_rsi(preise)
-    
     if ema20 > ema50 and rsi < 70:
-        return "KAUFEN"
+        return "🟢 KAUFEN"
     elif ema20 < ema50 and rsi > 30:
-        return "VERKAUFEN"
-    return "HALTEN"
+        return "🔴 VERKAUFEN"
+    return "🟡 HALTEN"
 
 def run_bot():
     print("=== Trading Bot gestartet ===")
-    if not API_KEY:
-        print("FEHLER: Kein API Key gefunden!")
-        return
-    
-    # Kursdaten holen (Beispiel mit CoinGecko für BTC)
     r = requests.get(
         "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart",
         params={"vs_currency": "eur", "days": "60", "interval": "daily"}
     )
-    btc_data = r.json()
-    btc_preise = [p[1] for p in btc_data["prices"]]
-    
+    btc_preise = [p[1] for p in r.json()["prices"]]
     signal = trade_signal(btc_preise)
-    print(f"BTC Signal: {signal}")
-    print(f"EMA20: {berechne_ema(btc_preise, 20):.2f} EUR")
-    print(f"EMA50: {berechne_ema(btc_preise, 50):.2f} EUR")
-    print(f"RSI: {berechne_rsi(btc_preise):.1f}")
+    ema20 = berechne_ema(btc_preise, 20)
+    ema50 = berechne_ema(btc_preise, 50)
+    rsi = berechne_rsi(btc_preise)
+    aktuell = btc_preise[-1]
+
+    nachricht = f"""📊 <b>Trading Bot Report</b>
+
+₿ <b>BITCOIN</b>
+💶 Kurs: {aktuell:,.0f} €
+Signal: {signal}
+EMA20: {ema20:,.0f} €
+EMA50: {ema50:,.0f} €
+RSI: {rsi:.1f}
+
+⚠️ Nur zur Information"""
+
+    print(nachricht)
+    send_telegram(nachricht)
     print("=== Bot fertig ===")
 
 if __name__ == "__main__":
