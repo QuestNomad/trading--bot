@@ -17,7 +17,7 @@ jobs:
           python-version: '3.11'
       
       - name: Libraries installieren
-        run: pip install requests pandas
+        run: pip install requests pandas matplotlib
       
       - name: Bot ausführen
         env:
