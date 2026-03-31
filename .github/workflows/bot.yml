@@ -1,0 +1,25 @@
+name: Trading Bot
+
+on:
+  schedule:
+    - cron: '0 8 * * 1-5'  # Mo-Fr um 09:00 Uhr Wien
+  workflow_dispatch:          # Auch manuell startbar
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Python einrichten
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Libraries installieren
+        run: pip install requests pandas
+      
+      - name: Bot ausführen
+        env:
+          BITPANDA_API_KEY: ${{ secrets.BITPANDA_API_KEY }}
+        run: python bot.py
