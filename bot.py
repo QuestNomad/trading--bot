@@ -47,14 +47,17 @@ def get_crypto_preise(coin_id):
 
 def get_aktie_preise(ticker):
     try:
-        df = yf.download(ticker, period="60d", interval="1d", progress=False)
-        if df.empty:
+        df = yf.download(ticker, period="90d", interval="1d", 
+                        progress=False, auto_adjust=True)
+        if df.empty or len(df) < 10:
             return None, None
-        preise = df["Close"].tolist()
-        daten = df.index.to_list()
+        preise = [float(x) for x in df["Close"].values]
+        daten = [x.to_pydatetime() for x in df.index]
         return preise, daten
-    except:
+    except Exception as e:
+        print(f"Fehler bei {ticker}: {e}")
         return None, None
+
 
 def berechne_ema(preise, periode):
     s = pd.Series(preise)
