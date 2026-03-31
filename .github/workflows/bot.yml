@@ -2,8 +2,8 @@ name: Trading Bot
 
 on:
   schedule:
-    - cron: '0 8 * * 1-5'  # Mo-Fr um 09:00 Uhr Wien
-  workflow_dispatch:          # Auch manuell startbar
+    - cron: '0 8 * * 1-5'
+  workflow_dispatch:
 
 jobs:
   run-bot:
@@ -22,4 +22,6 @@ jobs:
       - name: Bot ausführen
         env:
           BITPANDA_API_KEY: ${{ secrets.BITPANDA_API_KEY }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python bot.py
