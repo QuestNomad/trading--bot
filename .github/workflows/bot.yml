@@ -17,7 +17,7 @@ jobs:
           python-version: '3.11'
       
       - name: Libraries installieren
-        run: pip install requests pandas matplotlib
+        run: pip install requests pandas matplotlib yfinance
       
       - name: Bot ausführen
         env:
