@@ -156,8 +156,8 @@ def berechne_signal(preise, sw, seu):
     tp = aktuell+(a*4)
     ps = (KAPITAL*MAX_RISIKO)/(aktuell-sl) if aktuell > sl else 0
     details = {"sma200":s200,"sma50":s50,"rsi":r,"macd":m,"atr":a,"stop_loss":sl,"take_profit":tp,"position_size":ps,"punkte":punkte}
-    if punkte >= 6:  return "🟢 KAUFEN", punkte, details
-    if punkte <= 4:  return "🔴 VERKAUFEN", punkte, details
+    if punkte >= 4:  return "🟢 KAUFEN", punkte, details
+    if punkte <= 5:  return "🔴 VERKAUFEN", punkte, details
     return "🟡 HALTEN", punkte, details
 
 def erstelle_chart(preise, daten, name, signal, details):
