@@ -2,7 +2,7 @@ name: Trading Bot
 
 on:
   schedule:
-    - cron: '0 21 * * 1-5'  # Mo-Fr um 22:00 Uhr Wien
+    - cron: '0 20 * * 1-5'  # Mo-Fr um 22:00 Uhr Wien
   workflow_dispatch:
 
 jobs:
