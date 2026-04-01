@@ -58,25 +58,35 @@ def send_photo(img, caption):
 
 def schreibe_journal(asset_name, signal, kurs, details, sw, seu):
     try:
-        daten = {
-            "datum": datetime.now().strftime("%d.%m.%Y %H:%M"),
-            "asset": asset_name,
-            "signal": signal,
-            "kurs": round(kurs, 2),
-            "sma200": round(details.get("sma200", 0), 2),
-            "rsi": round(details.get("rsi", 0), 1),
-            "score": details.get("punkte", 0),
-            "stop_loss": round(details.get("stop_loss", 0), 2),
-            "take_profit": round(details.get("take_profit", 0), 2),
-            "sentiment_welt": sw,
-            "sentiment_eu": seu,
-            "ergebnis": "",
-            "kommentar": "Paper Trading"
-        }
-        requests.post(SHEETS_URL, json=daten, timeout=10)
+        import csv
+        from pathlib import Path
+        
+        journal_file = "journal.csv"
+        file_exists = Path(journal_file).exists()
+        
+        with open(journal_file, "a", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            if not file_exists:
+                writer.writerow([
+                    "Datum", "Asset", "Signal", "Kurs", "SMA200",
+                    "RSI", "Score", "Stop Loss", "Take Profit",
+                    "Sentiment Welt", "Sentiment EU", "Kommentar"
+                ])
+            writer.writerow([
+                datetime.now().strftime("%d.%m.%Y %H:%M"),
+                asset_name, signal,
+                round(kurs, 2),
+                round(details.get("sma200", 0), 2),
+                round(details.get("rsi", 0), 1),
+                details.get("punkte", 0),
+                round(details.get("stop_loss", 0), 2),
+                round(details.get("take_profit", 0), 2),
+                sw, seu, "Paper Trading"
+            ])
         print(f"Journal: {asset_name} gespeichert")
     except Exception as e:
         print(f"Journal Fehler: {e}")
+
 
 def get_sentiment(kat="welt"):
     scores = []
