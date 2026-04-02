@@ -121,7 +121,10 @@ def get_aktie(ticker):
     try:
         df = yf.download(ticker, period="300d", interval="1d", progress=False, auto_adjust=True)
         if df.empty or len(df) < 50: return None, None
-        return [float(x) for x in df["Close"].values], [x.to_pydatetime() for x in df.index]
+        close = df["Close"]
+        if isinstance(close, pd.DataFrame):
+            close = close.iloc[:, 0]
+        return [float(x) for x in close.values], [x.to_pydatetime() for x in df.index]
     except Exception as e:
         print(f"Fehler {ticker}: {e}")
         return None, None
