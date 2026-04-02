@@ -65,3 +65,11 @@ Datum,Asset,Signal,Kurs,SMA200,RSI,Score,Stop Loss,Take Profit,Sentiment Welt,Se
 02.04.2026 23:16,SAP,🔴 VERKAUFEN,nan,nan,22.6,1,nan,nan,-0.248,-0.236,Paper Trading
 02.04.2026 23:16,Zalando,🔴 VERKAUFEN,nan,nan,29.8,1,nan,nan,-0.248,-0.236,Paper Trading
 02.04.2026 23:16,Short DAX,🔴 VERKAUFEN,nan,nan,51.7,2,nan,nan,-0.248,-0.236,Paper Trading
+02.04.2026 23:45,Brasilien ETF,🟢 KAUFEN,38.35,31.43,66.1,10,37.08,40.89,-0.248,-0.248,Paper Trading
+02.04.2026 23:45,Apple,🟢 KAUFEN,255.92,248.8,59.4,8,251.52,264.72,-0.248,-0.248,Paper Trading
+02.04.2026 23:45,Nikkei ETF,🟢 KAUFEN,85.29,79.79,55.0,8,82.54,90.79,-0.248,-0.248,Paper Trading
+02.04.2026 23:45,EM ETF,🟢 KAUFEN,53.82,52.95,49.1,8,52.28,56.91,-0.248,-0.248,Paper Trading
+02.04.2026 23:45,Gold,🟢 KAUFEN,4702.7,4116.38,38.2,8,4491.24,5125.61,-0.248,-0.248,Paper Trading
+02.04.2026 23:46,SAP,🔴 VERKAUFEN,nan,nan,22.6,1,nan,nan,-0.248,-0.248,Paper Trading
+02.04.2026 23:46,Zalando,🔴 VERKAUFEN,nan,nan,29.8,1,nan,nan,-0.248,-0.248,Paper Trading
+02.04.2026 23:46,Short DAX,🔴 VERKAUFEN,nan,nan,51.7,2,nan,nan,-0.248,-0.248,Paper Trading
