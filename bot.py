@@ -233,6 +233,20 @@ def erstelle_chart(preise, daten, name, signal, details):
 
 def run_bot():
     print("=== Profi Trading Bot gestartet ===")
+    try:
+        vix_df = yf.download("^VIX", period="1d", interval="1d", progress=False, auto_adjust=True)
+        vix_close = vix_df["Close"]
+        if isinstance(vix_close, pd.DataFrame):
+            vix_close = vix_close.iloc[:, 0]
+        vix_wert = float(vix_close.iloc[-1])
+        print(f"VIX aktuell: {vix_wert:.1f}")
+        if vix_wert > 30:
+            send_text(f"🚨 <b>NOTBREMSE!</b>\n\nVIX Angst-Index: {vix_wert:.1f} (über 30)\n⛔ Kein Handel heute!\n\n📊 Bot wird beendet.")
+            return
+        else:
+            send_text(f"✅ VIX: {vix_wert:.1f} – Markt stabil, Analyse startet...")
+    except Exception as e:
+        print(f"VIX Fehler: {e}")
     # VIX Check
     try:
         vix = yf.download("^VIX", period="1d", interval="1d", progress=False, auto_adjust=True)
