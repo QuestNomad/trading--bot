@@ -25,6 +25,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TRADING212_API_KEY: ${{ secrets.TRADING212_API_KEY }}
           BITPANDA_API_KEY: ${{ secrets.BITPANDA_API_KEY }}
+          SHEETS_URL: ${{ secrets.SHEETS_URL }}
         run: python bot.py
 
       - name: Journal in GitHub speichern
