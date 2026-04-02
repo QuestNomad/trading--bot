@@ -45,7 +45,7 @@ ASSETS = [
     {"name": "Weizen",      "typ": "aktie",  "id": "ZW=F",       "symbol": "🌾 Weizen"},
     {"name": "Short S&P 500", "typ": "aktie",  "id": "XSPS.L",    "symbol": "📉 XSPS"},
     {"name": "Short DAX",     "typ": "aktie",  "id": "DXSN.DE",    "symbol": "📉 DXSN"},
-    {"name": "Short Nasdaq",  "typ": "aktie",  "id": "QQQS.L",    "symbol": "📉 QSPS"},
+    {"name": "Short Nasdaq",  "typ": "aktie",  "id": "QQQS.L",    "symbol": "📉 QQQS"},
     {"name": "Russell 2000",  "typ": "aktie",  "id": "IWM",        "symbol": "🇺🇸 IWM"},
     {"name": "China ETF",     "typ": "aktie",  "id": "FXI",        "symbol": "🇨🇳 FXI"},
     {"name": "Indien ETF",    "typ": "aktie",  "id": "INDA",       "symbol": "🇮🇳 INDA"},
