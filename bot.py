@@ -119,7 +119,8 @@ def get_crypto(coin_id):
 
 def get_aktie(ticker):
     try:
-        df = yf.download(ticker, period="300d", interval="1d", progress=False, auto_adjust=True)
+        df = yf.download(ticker, period="300d", interval="1d", 
+                        progress=False, auto_adjust=True)
         if df.empty or len(df) < 50: return None, None
         close = df["Close"]
         if isinstance(close, pd.DataFrame):
