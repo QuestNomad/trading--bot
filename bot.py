@@ -236,7 +236,7 @@ def run_bot():
 
     kaufen = sorted([e for e in ergebnisse if e["signal"] == "KAUFEN"], key=lambda x: -x["punkte"])[:5]
     verkaufen = sorted([e for e in ergebnisse if e["signal"] == "VERKAUFEN"], key=lambda x: x["punkte"])[:3]
-top = kaufen + verkaufen
+    top = kaufen + verkaufen
 
     if not top:
         send_text("🟡 Heute keine klaren Signale – Markt abwarten.")
