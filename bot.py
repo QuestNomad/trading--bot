@@ -227,8 +227,8 @@ def run_bot():
         if preise is None or len(preise) < 50: continue
         signal, punkte, details = berechne_signal(preise, sw, seu)
         ergebnisse.append({"asset":asset,"preise":preise,"daten":daten,"signal":signal,"punkte":punkte,"details":details})
-    kaufen = sorted([e for e in ergebnisse if "KAUFEN" in e["signal"]], key=lambda x: -x["punkte"])[:5]
-    verkaufen = sorted([e for e in ergebnisse if "VERKAUFEN" in e["signal"]], key=lambda x: x["punkte"])[:3]
+    kaufen = sorted([e for e in ergebnisse if e["signal"].startswith("🟢")], key=lambda x: -x["punkte"])[:5]
+verkaufen = sorted([e for e in ergebnisse if e["signal"].startswith("🔴")], key=lambda x: x["punkte"])[:3]
     top = kaufen + verkaufen
     if not top:
         send_text("🟡 Heute keine klaren Signale – Markt abwarten.")
