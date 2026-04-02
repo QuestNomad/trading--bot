@@ -74,9 +74,34 @@ def schreibe_journal(asset_name, signal, kurs, details, sw, seu):
                 round(details.get("take_profit", 0), 2),
                 sw, seu, "Paper Trading"
             ])
-        print(f"Journal: {asset_name} gespeichert")
+        print(f"Journal CSV: {asset_name} gespeichert")
     except Exception as e:
-        print(f"Journal Fehler: {e}")
+        print(f"Journal CSV Fehler: {e}")
+
+    try:
+        sheets_url = os.environ.get("SHEETS_URL")
+        if sheets_url:
+            payload = {
+                "datum": datetime.now().strftime("%d.%m.%Y %H:%M"),
+                "asset": asset_name,
+                "signal": signal,
+                "kurs": round(kurs, 2),
+                "sma200": round(details.get("sma200", 0), 2),
+                "rsi": round(details.get("rsi", 0), 1),
+                "score": details.get("punkte", 0),
+                "stop_loss": round(details.get("stop_loss", 0), 2),
+                "take_profit": round(details.get("take_profit", 0), 2),
+                "sentiment_welt": sw,
+                "sentiment_eu": seu,
+                "ergebnis": "",
+                "kommentar": "Paper Trading"
+            }
+            import json
+            r = requests.post(sheets_url, data=json.dumps(payload),
+                            headers={"Content-Type": "application/json"}, timeout=10)
+            print(f"Journal Sheets: {asset_name} – {r.status_code}")
+    except Exception as e:
+        print(f"Journal Sheets Fehler: {e}")
 
 def get_sentiment(kat="welt"):
     scores = []
