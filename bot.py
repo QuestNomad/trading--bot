@@ -77,7 +77,6 @@ def schreibe_journal(asset_name, signal, kurs, details, sw, seu):
         print(f"Journal CSV: {asset_name} gespeichert")
     except Exception as e:
         print(f"Journal CSV Fehler: {e}")
-
     try:
         sheets_url = os.environ.get("SHEETS_URL")
         if sheets_url:
@@ -247,15 +246,10 @@ def run_bot():
             send_text(f"✅ VIX: {vix_wert:.1f} – Markt stabil, Analyse startet...")
     except Exception as e:
         print(f"VIX Fehler: {e}")
-        else:
-            send_text(f"✅ VIX: {vix_wert:.1f} – Markt stabil, Analyse startet...")
-    except Exception as e:
-        print(f"VIX Fehler: {e}")
     heute = datetime.now().strftime("%d.%m.%Y %H:%M")
     sw = get_sentiment("welt")
     seu = get_sentiment("europa")
     send_text(f"📊 <b>Trading Bot – {heute}</b>\n\n🌍 Weltstimmung: {sentiment_emoji(sw)} ({sw})\n🇪🇺 EU-Stimmung: {sentiment_emoji(seu)} ({seu})\n\n🔍 Scanne {len(ASSETS)} Assets...")
-
     ergebnisse = []
     for asset in ASSETS:
         print(f"Analysiere {asset['name']}...")
@@ -276,17 +270,13 @@ def run_bot():
             "punkte": punkte,
             "details": details
         })
-
     kaufen = sorted([e for e in ergebnisse if e["signal"] == "KAUFEN"], key=lambda x: -x["punkte"])[:5]
     verkaufen = sorted([e for e in ergebnisse if e["signal"] == "VERKAUFEN"], key=lambda x: x["punkte"])[:3]
     top = kaufen + verkaufen
-
     if not top:
         send_text("🟡 Heute keine klaren Signale – Markt abwarten.")
         return
-
     send_text(f"🏆 <b>Top {len(top)} Signale heute:</b>")
-
     for e in top:
         asset = e["asset"]
         details = e["details"]
@@ -305,7 +295,6 @@ def run_bot():
         chart = erstelle_chart(e["preise"], e["daten"], asset["name"], e["signal"], details)
         send_photo(chart, nachricht)
         schreibe_journal(asset["name"], signal_text, aktuell, details, sw, seu)
-
     send_text(f"✅ <b>Analyse abgeschlossen!</b>\n📊 {len(ergebnisse)} Assets analysiert\n🟢 {len(kaufen)} Kaufsignale\n🔴 {len(verkaufen)} Verkaufssignale\n⚠️ Nur Paper Trading!")
     print("=== Bot fertig ===")
 
