@@ -43,6 +43,17 @@ ASSETS = [
     {"name": "Öl",          "typ": "aktie",  "id": "BZ=F",       "symbol": "🛢️ Öl"},
     {"name": "Kupfer",      "typ": "aktie",  "id": "HG=F",       "symbol": "🔧 Kupfer"},
     {"name": "Weizen",      "typ": "aktie",  "id": "ZW=F",       "symbol": "🌾 Weizen"},
+    {"name": "Russell 2000",  "typ": "aktie",  "id": "IWM",        "symbol": "🇺🇸 IWM"},
+    {"name": "China ETF",     "typ": "aktie",  "id": "FXI",        "symbol": "🇨🇳 FXI"},
+    {"name": "Indien ETF",    "typ": "aktie",  "id": "INDA",       "symbol": "🇮🇳 INDA"},
+    {"name": "Brasilien ETF", "typ": "aktie",  "id": "EWZ",        "symbol": "🇧🇷 EWZ"},
+    {"name": "Airbus",        "typ": "aktie",  "id": "AIR.DE",     "symbol": "✈️ AIR"},
+    {"name": "Rheinmetall",   "typ": "aktie",  "id": "RHM.DE",     "symbol": "🛡️ RHM"},
+    {"name": "Zalando",       "typ": "aktie",  "id": "ZAL.DE",     "symbol": "👟 ZAL"},
+    {"name": "Delivery Hero", "typ": "aktie",  "id": "DHER.DE",    "symbol": "🍔 DHER"},
+    {"name": "Deutsche Bank",  "typ": "aktie",  "id": "DBK.DE",     "symbol": "🏦 DBK"},
+    {"name": "BNP Paribas",    "typ": "aktie",  "id": "BNP.PA",     "symbol": "🏦 BNP"},
+    {"name": "UBS",            "typ": "aktie",  "id": "UBSG.SW",    "symbol": "🏦 UBS"},
 ]
 
 def send_text(msg):
