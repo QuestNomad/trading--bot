@@ -59,6 +59,15 @@ ASSETS = [
     {"name": "Deutsche Bank",  "typ": "aktie",  "id": "DBK.DE",     "symbol": "🏦 DBK"},
     {"name": "BNP Paribas",    "typ": "aktie",  "id": "BNP.PA",     "symbol": "🏦 BNP"},
     {"name": "UBS",            "typ": "aktie",  "id": "UBSG.SW",    "symbol": "🏦 UBS"},
+    {"name": "Amazon",     "typ": "aktie", "id": "AMZN",    "symbol": "📦 AMZN"},
+    {"name": "Meta",       "typ": "aktie", "id": "META",    "symbol": "👓 META"},
+    {"name": "Google",     "typ": "aktie", "id": "GOOGL",   "symbol": "🔍 GOOGL"},
+    {"name": "Toyota",     "typ": "aktie", "id": "7203.T",  "symbol": "🚗 Toyota"},
+    {"name": "Sony",       "typ": "aktie", "id": "6758.T",  "symbol": "🎮 Sony"},
+    {"name": "Alibaba HK", "typ": "aktie", "id": "9988.HK", "symbol": "🛒 Alibaba"},
+    {"name": "Tencent",    "typ": "aktie", "id": "0700.HK", "symbol": "🎯 Tencent"},
+    {"name": "Rheinmetall","typ": "aktie", "id": "RHM.DE",  "symbol": "🛡️ RHM"},
+    {"name": "Airbus",     "typ": "aktie", "id": "AIR.DE",  "symbol": "✈️ Airbus"},
 ]
 
 def send_text(msg):
