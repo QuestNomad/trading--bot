@@ -14,6 +14,8 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 KAPITAL = 10000
 MAX_RISIKO = 0.01
 analyzer = SentimentIntensityAnalyzer()
+VIX_LIMIT = 30
+
 
 NEWS_FEEDS = {
     "welt": [
