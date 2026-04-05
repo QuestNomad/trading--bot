@@ -68,6 +68,9 @@ ASSETS = [
     {"name": "Tencent",    "typ": "aktie", "id": "0700.HK", "symbol": "🎯 Tencent"},
     {"name": "Rheinmetall","typ": "aktie", "id": "RHM.DE",  "symbol": "🛡️ RHM"},
     {"name": "Airbus",     "typ": "aktie", "id": "AIR.DE",  "symbol": "✈️ Airbus"},
+    {"name": "Short S&P 500", "typ": "aktie", "id": "S5S1.L",  "symbol": "📉 S&P Short"},
+    {"name": "Short DAX",     "typ": "aktie", "id": "DESB.DE", "symbol": "📉 DAX Short"},
+    {"name": "Short Krypto",  "typ": "aktie", "id": "BITI",    "symbol": "📉 Krypto Short"},
 ]
 
 def send_text(msg):
