@@ -8,26 +8,30 @@ from datetime import datetime
 TELEGRAM_TOKEN   = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 KAPITAL          = 10000
-MAX_RISIKO       = 0.01
 PERIODE          = "2y"
 
 ASSETS = [
-    {"name": "Bitcoin",     "typ": "aktie", "id": "BTC-EUR"},
-    {"name": "Ethereum",    "typ": "aktie", "id": "ETH-EUR"},
-    {"name": "S&P 500",     "typ": "aktie", "id": "SPY"},
-    {"name": "Apple",       "typ": "aktie", "id": "AAPL"},
-    {"name": "Nvidia",      "typ": "aktie", "id": "NVDA"},
-    {"name": "Tesla",       "typ": "aktie", "id": "TSLA"},
-    {"name": "Microsoft",   "typ": "aktie", "id": "MSFT"},
-    {"name": "DAX ETF",     "typ": "aktie", "id": "EXS1.DE"},
-    {"name": "SAP",         "typ": "aktie", "id": "SAP.DE"},
-    {"name": "Gold",        "typ": "aktie", "id": "GC=F"},
-    {"name": "Silber",      "typ": "aktie", "id": "SI=F"},
-    {"name": "Amazon",      "typ": "aktie", "id": "AMZN"},
-    {"name": "Meta",        "typ": "aktie", "id": "META"},
-    {"name": "Google",      "typ": "aktie", "id": "GOOGL"},
-    {"name": "Rheinmetall", "typ": "aktie", "id": "RHM.DE"},
-    {"name": "Airbus",      "typ": "aktie", "id": "AIR.DE"},
+    {"name": "Bitcoin",     "id": "BTC-EUR"},
+    {"name": "Ethereum",    "id": "ETH-EUR"},
+    {"name": "S&P 500",     "id": "SPY"},
+    {"name": "Apple",       "id": "AAPL"},
+    {"name": "Nvidia",      "id": "NVDA"},
+    {"name": "Tesla",       "id": "TSLA"},
+    {"name": "Microsoft",   "id": "MSFT"},
+    {"name": "Gold",        "id": "GC=F"},
+    {"name": "Silber",      "id": "SI=F"},
+    {"name": "Amazon",      "id": "AMZN"},
+    {"name": "Meta",        "id": "META"},
+    {"name": "Google",      "id": "GOOGL"},
+    {"name": "Rheinmetall", "id": "RHM.DE"},
+    {"name": "Airbus",      "id": "AIR.DE"},
+]
+
+PARAMETER_SETS = [
+    {"name": "Original",   "kauf": 8, "verk": 3, "sl": 2, "tp": 4},
+    {"name": "Aggressiv",  "kauf": 7, "verk": 3, "sl": 2, "tp": 6},
+    {"name": "Locker",     "kauf": 7, "verk": 4, "sl": 3, "tp": 6},
+    {"name": "Konservativ","kauf": 9, "verk": 2, "sl": 2, "tp": 5},
 ]
 
 def send_text(msg):
@@ -38,8 +42,7 @@ def send_text(msg):
     requests.post(url, data={"chat_id": TELEGRAM_CHAT_ID, "text": msg, "parse_mode": "HTML"})
 
 def sma(prices, n):
-    s = pd.Series(prices)
-    return float(s.rolling(n).mean().iloc[-1])
+    return float(pd.Series(prices).rolling(n).mean().iloc[-1])
 
 def rsi_val(prices, n=14):
     s = pd.Series(prices)
@@ -65,7 +68,7 @@ def bb_val(prices, n=20):
     std = float(s.rolling(n).std().iloc[-1])
     return m, std
 
-def berechne_signal(preise, sentiment=0):
+def berechne_signal(preise, kauf, verk):
     if len(preise) < 200:
         return "WARTEN", 0
     aktuell = preise[-1]
@@ -73,120 +76,121 @@ def berechne_signal(preise, sentiment=0):
     s50  = sma(preise, 50)
     r    = rsi_val(preise)
     m, ms = macd_val(preise)
-    a    = atr_val(preise)
     bb_m, bb_s = bb_val(preise)
     punkte = 0
     if aktuell > s200:               punkte += 3
     if aktuell > s50:                punkte += 2
     if m > ms:                       punkte += 2
-    if sentiment > 0.1:              punkte += 2
     if r < 70:                       punkte += 1
     if r > 30:                       punkte += 1
     if aktuell < (bb_m + 2 * bb_s): punkte += 1
-    if punkte >= 8:  return "KAUFEN",    punkte
-    if punkte <= 3:  return "VERKAUFEN", punkte
+    if punkte >= kauf:  return "KAUFEN",    punkte
+    if punkte <= verk:  return "VERKAUFEN", punkte
     return "HALTEN", punkte
 
-def lade_preise(asset):
+def lade_preise(asset_id):
     try:
-        df = yf.download(asset["id"], period=PERIODE, progress=False, auto_adjust=True)
+        df = yf.download(asset_id, period=PERIODE, progress=False, auto_adjust=True)
         if df.empty or len(df) < 50:
-            return None, None
+            return None
         close = df["Close"]
         if isinstance(close, pd.DataFrame):
             close = close.iloc[:, 0]
-        preise = [float(x) for x in close.values if not np.isnan(x)]
-        daten  = [x.to_pydatetime() for x in df.index]
-        return preise, daten
-    except Exception as e:
-        print(f"Fehler {asset['name']}: {e}")
-        return None, None
-
-def backtest_asset(asset):
-    preise, daten = lade_preise(asset)
-    if not preise or len(preise) < 220:
+        return [float(x) for x in close.values if not np.isnan(x)]
+    except:
         return None
-    kapital    = float(KAPITAL)
-    position   = None
-    trades     = []
-    hold_start = preise[200]
-    for i in range(200, len(preise)):
-        slice_   = preise[:i + 1]
-        aktuell  = preise[i]
-        signal, punkte = berechne_signal(slice_)
-        a        = atr_val(slice_)
-        sl       = aktuell - a * 2
-        tp       = aktuell + a * 4
-        if signal == "KAUFEN" and position is None and sl < aktuell:
-            risiko_euro = kapital * MAX_RISIKO
-            shares      = risiko_euro / (aktuell - sl)
-            kosten      = shares * aktuell
-            if kosten < kapital * 0.5:
-                position = {"shares": shares, "entry": aktuell, "sl": sl, "tp": tp}
-                kapital -= kosten
-        elif position:
-            exit_grund = None
-            if aktuell <= position["sl"]:   exit_grund = "Stop Loss"
-            elif aktuell >= position["tp"]: exit_grund = "Take Profit"
-            elif signal == "VERKAUFEN":     exit_grund = "Signal"
-            if exit_grund:
-                exit_wert = position["shares"] * aktuell
-                pnl       = exit_wert - position["shares"] * position["entry"]
-                kapital  += exit_wert
-                trades.append({"pnl": round(pnl, 2), "win": pnl > 0})
-                position = None
-    if position:
-        exit_wert = position["shares"] * preise[-1]
-        pnl       = exit_wert - position["shares"] * position["entry"]
-        kapital  += exit_wert
-        trades.append({"pnl": round(pnl, 2), "win": pnl > 0})
-    hold_return = (preise[-1] / hold_start - 1) * 100
-    bot_return  = (kapital / KAPITAL - 1) * 100
-    wins        = sum(1 for t in trades if t["win"])
-    win_rate    = (wins / len(trades) * 100) if trades else 0
+
+def backtest_params(preise_list, params):
+    kauf = params["kauf"]
+    verk = params["verk"]
+    sl_m = params["sl"]
+    tp_m = params["tp"]
+    gesamt_bot  = 0
+    gesamt_hold = 0
+    gesamt_trades = 0
+
+    for preise in preise_list:
+        if not preise or len(preise) < 220:
+            continue
+        kapital    = float(KAPITAL)
+        position   = None
+        trades     = []
+        hold_start = preise[200]
+
+        for i in range(200, len(preise)):
+            slice_  = preise[:i + 1]
+            aktuell = preise[i]
+            signal, _ = berechne_signal(slice_, kauf, verk)
+            a  = atr_val(slice_)
+            sl = aktuell - a * sl_m
+            tp = aktuell + a * tp_m
+
+            if signal == "KAUFEN" and position is None and sl < aktuell:
+                risiko_euro = kapital * 0.01
+                shares      = risiko_euro / (aktuell - sl)
+                kosten      = shares * aktuell
+                if kosten < kapital * 0.5:
+                    position = {"shares": shares, "entry": aktuell, "sl": sl, "tp": tp}
+                    kapital -= kosten
+            elif position:
+                exit_grund = None
+                if aktuell <= position["sl"]:   exit_grund = "SL"
+                elif aktuell >= position["tp"]: exit_grund = "TP"
+                elif signal == "VERKAUFEN":     exit_grund = "Signal"
+                if exit_grund:
+                    exit_wert = position["shares"] * aktuell
+                    pnl       = exit_wert - position["shares"] * position["entry"]
+                    kapital  += exit_wert
+                    trades.append(pnl > 0)
+                    position = None
+
+        if position:
+            exit_wert = position["shares"] * preise[-1]
+            kapital  += exit_wert
+
+        gesamt_bot  += (kapital / KAPITAL - 1) * 100
+        gesamt_hold += (preise[-1] / preise[200] - 1) * 100
+        gesamt_trades += len(trades)
+
+    n = len(preise_list)
     return {
-        "name":        asset["name"],
-        "bot_return":  round(bot_return, 1),
-        "hold_return": round(hold_return, 1),
-        "trades":      len(trades),
-        "win_rate":    round(win_rate, 1),
-        "schlaegt":    bot_return > hold_return,
+        "bot":    round(gesamt_bot / n, 1) if n > 0 else 0,
+        "hold":   round(gesamt_hold / n, 1) if n > 0 else 0,
+        "trades": gesamt_trades,
     }
 
 def main():
-    print("=== Backtest gestartet ===")
+    print("=== Parameter-Optimierung gestartet ===")
     heute = datetime.now().strftime("%d.%m.%Y")
-    ergebnisse = []
+
+    print("Lade Preisdaten...")
+    preise_list = []
     for asset in ASSETS:
-        print(f"Teste {asset['name']}...")
-        r = backtest_asset(asset)
-        if r:
-            ergebnisse.append(r)
-    if not ergebnisse:
-        print("Keine Ergebnisse")
-        return
-    ergebnisse.sort(key=lambda x: x["bot_return"], reverse=True)
-    schlaegt     = sum(1 for e in ergebnisse if e["schlaegt"])
-    avg_bot      = round(sum(e["bot_return"] for e in ergebnisse) / len(ergebnisse), 1)
-    avg_hold     = round(sum(e["hold_return"] for e in ergebnisse) / len(ergebnisse), 1)
-    total_trades = sum(e["trades"] for e in ergebnisse)
-    msg  = f"Backtest Report - {heute}\n"
-    msg += f"Zeitraum: 2 Jahre - {len(ergebnisse)} Assets\n\n"
-    msg += f"Bot Return:     {avg_bot:+.1f}%\n"
-    msg += f"Buy and Hold:   {avg_hold:+.1f}%\n"
-    msg += f"Bot schlaegt:   {schlaegt}/{len(ergebnisse)}\n"
-    msg += f"Trades gesamt:  {total_trades}\n\n"
-    msg += "Top 5:\n"
-    for e in ergebnisse[:5]:
-        icon = "OK" if e["schlaegt"] else "!!"
-        msg += f"{icon} {e['name']}: Bot {e['bot_return']:+.1f}% vs Hold {e['hold_return']:+.1f}% ({e['win_rate']}% WR)\n"
-    msg += "\nSchlechteste:\n"
-    for e in ergebnisse[-3:]:
-        icon = "OK" if e["schlaegt"] else "XX"
-        msg += f"{icon} {e['name']}: Bot {e['bot_return']:+.1f}% vs Hold {e['hold_return']:+.1f}%\n"
+        p = lade_preise(asset["id"])
+        if p:
+            preise_list.append(p)
+    print(f"{len(preise_list)} Assets geladen")
+
+    msg  = f"Backtest Optimierung - {heute}\n"
+    msg += f"2 Jahre - {len(preise_list)} Assets\n\n"
+
+    beste = None
+    bester_name = ""
+
+    for params in PARAMETER_SETS:
+        print(f"Teste {params['name']}...")
+        r = backtest_params(preise_list, params)
+        diff = r["bot"] - r["hold"]
+        icon = "OK" if diff > 0 else "!!"
+        msg += f"{icon} {params['name']} (Kauf>={params['kauf']} SL*{params['sl']} TP*{params['tp']})\n"
+        msg += f"   Bot {r['bot']:+.1f}% vs Hold {r['hold']:+.1f}% ({r['trades']} Trades)\n\n"
+        if beste is None or r["bot"] > beste:
+            beste = r["bot"]
+            bester_name = params["name"]
+
+    msg += f"Beste Strategie: {bester_name} mit {beste:+.1f}%"
     send_text(msg)
-    print("=== Backtest fertig ===")
-    print(msg)
+    print("=== Fertig ===")
 
 if __name__ == "__main__":
     main()
