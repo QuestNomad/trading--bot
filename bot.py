@@ -208,10 +208,10 @@ def berechne_signal(preise, sw, seu):
     bb_s = float(pd.Series(preise).rolling(20).std().iloc[-1])
     if aktuell < (bb_m + 2*bb_s): punkte += 1
     sl = aktuell-(a*2)
-    tp = aktuell+(a*4)
+    tp = aktuell+(a*6)
     ps = (KAPITAL*MAX_RISIKO)/(aktuell-sl) if aktuell > sl else 0
     details = {"sma200":s200,"sma50":s50,"rsi":r,"macd":m,"atr":a,"stop_loss":sl,"take_profit":tp,"position_size":ps,"punkte":punkte}
-    if punkte >= 8:  return "KAUFEN", punkte, details
+    if punkte >= 7:  return "KAUFEN", punkte, details
     if punkte <= 3:  return "VERKAUFEN", punkte, details
     return "HALTEN", punkte, details
 
