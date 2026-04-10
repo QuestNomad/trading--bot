@@ -57,7 +57,7 @@ ASSETS = [
 
 PARAMETER_SETS = [
     {"name": "Original",     "kauf": 7, "verk": 3, "sl": 2, "tp": 4},
-    {"name": "Aggressiv",    "kauf": 7, "verk": 3, "sl": 2, "tp": 6},
+    {"name": "Aggressiv",    "kauf": 8, "verk": 3, "sl": 3, "tp": 8},
     {"name": "Locker",       "kauf": 7, "verk": 4, "sl": 3, "tp": 6},
     {"name": "Konservativ",  "kauf": 9, "verk": 2, "sl": 2, "tp": 5},
 ]
@@ -119,7 +119,7 @@ def bb_val(prices, n=20):
 
 
 # ── Signal (synchron mit bot.py) ──────────────────────────────
-def berechne_signal(preise, kauf_schwelle=7, verk_schwelle=3, sw=0.0, seu=0.0):
+def berechne_signal(preise, kauf_schwelle=8, verk_schwelle=3, sw=0.0, seu=0.0):
     """
     Einheitliche Signalberechnung – identisch mit bot.py.
     sw/seu = 0.0 im Backtest (kein Live-Sentiment).
@@ -483,7 +483,7 @@ def bb_val(prices, n=20):
 
 
 # ── Signal (synchron mit bot.py) ──────────────────────────────
-def berechne_signal(preise, kauf_schwelle=7, verk_schwelle=3, sw=0.0, seu=0.0):
+def berechne_signal(preise, kauf_schwelle=8, verk_schwelle=3, sw=0.0, seu=0.0):
     """
     Einheitliche Signalberechnung – identisch mit bot.py.
     sw/seu = 0.0 im Backtest (kein Live-Sentiment).
