@@ -278,7 +278,7 @@ def atr_val(p, n=14):
     return float(tr.rolling(n).mean().iloc[-1])
 
 # ── Signal-Berechnung (synchron mit backtest.py) ──────────────
-def berechne_signal(preise, sw=0.0, seu=0.0, kauf_schwelle=7, verk_schwelle=3):
+def berechne_signal(preise, sw=0.0, seu=0.0, kauf_schwelle=8, verk_schwelle=3):
     """
     Einheitliche Signalberechnung für Bot und Backtest.
     Gibt (signal, punkte, details) zurück.
@@ -307,8 +307,8 @@ def berechne_signal(preise, sw=0.0, seu=0.0, kauf_schwelle=7, verk_schwelle=3):
     if aktuell < (bb_m + 2 * bb_s):
         punkte += 1
 
-    sl = aktuell - (a * 2)
-    tp = aktuell + (a * 6)
+    sl = aktuell - (a * 3)
+    tp = aktuell + (a * 8)
     ps = (KAPITAL * MAX_RISIKO) / (aktuell - sl) if aktuell > sl else 0
 
     details = {
@@ -431,8 +431,8 @@ def analysiere_asset(asset, sw, seu):
             # Stop-Loss und Take-Profit tauschen (Short-Logik)
             aktuell = float(preise[-1])
             atr = details["atr"]
-            details["stop_loss"]   = aktuell + (atr * 2)
-            details["take_profit"] = aktuell - (atr * 6)
+            details["stop_loss"]   = aktuell + (atr * 3)
+            details["take_profit"] = aktuell - (atr * 8)
 
         return {
             "asset": asset,
