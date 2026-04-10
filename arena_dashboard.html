@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bot Arena Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #1a1d28; --border: #2a2d3a;
+    --text: #e4e6f0; --muted: #8b8fa3;
+    --gold: #ffd700; --silver: #c0c0c0; --bronze: #cd7f32;
+    --green: #00c853; --red: #ff1744; --blue: #448aff;
+    --purple: #bb86fc; --orange: #ff9100; --cyan: #18ffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 20px; min-height: 100vh; }
+  h1 { text-align: center; font-size: 2em; margin-bottom: 5px; }
+  .subtitle { text-align: center; color: var(--muted); margin-bottom: 25px; font-size: 0.95em; }
+  .upload-box { background: var(--surface); border: 2px dashed var(--border); border-radius: 12px; padding: 40px; text-align: center; margin-bottom: 25px; cursor: pointer; transition: border-color .2s; }
+  .upload-box:hover { border-color: var(--blue); }
+  .upload-box input { display: none; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 20px; }
+  .card { background: var(--surface); border-radius: 12px; padding: 20px; border: 1px solid var(--border); }
+  .card h2 { font-size: 1.1em; margin-bottom: 12px; color: var(--muted); }
+  .rank-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; background: rgba(255,255,255,0.03); }
+  .rank-row.r1 { border-left: 4px solid var(--gold); background: rgba(255,215,0,0.06); }
+  .rank-row.r2 { border-left: 4px solid var(--silver); }
+  .rank-row.r3 { border-left: 4px solid var(--bronze); }
+  .rank-pos { font-size: 1.5em; min-width: 36px; }
+  .rank-name { font-weight: 600; font-size: 1.05em; flex: 1; margin-left: 10px; }
+  .rank-value { text-align: right; }
+  .rank-value .val { font-size: 1.15em; font-weight: 700; }
+  .rank-value .pnl { font-size: 0.85em; }
+  .pos { color: var(--green); } .neg { color: var(--red); }
+  .stats { display: flex; gap: 20px; flex-wrap: wrap; }
+  .stat { flex: 1; min-width: 80px; text-align: center; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; }
+  .stat .num { font-size: 1.3em; font-weight: 700; }
+  .stat .lbl { font-size: 0.75em; color: var(--muted); margin-top: 4px; }
+  .chart-box { background: var(--surface); border-radius: 12px; padding: 20px; border: 1px solid var(--border); margin-bottom: 20px; }
+  .chart-box h2 { font-size: 1.1em; margin-bottom: 12px; color: var(--muted); }
+  .chart-container { position: relative; height: 380px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+  th { text-align: left; padding: 8px 10px; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 500; }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  .bot-color { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
+  .hidden { display: none; }
+  @media (max-width: 600px) { body { padding: 10px; } .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<h1>\ud83c\udfdf\ufe0f Bot Arena</h1>
+<p class="subtitle">5 Trading-Strategien im direkten Vergleich</p>
+
+<div class="upload-box" id="uploadBox" onclick="document.getElementById('fileInput').click()">
+  <input type="file" id="fileInput" accept=".json" onchange="loadFile(event)">
+  <p style="font-size:1.2em;margin-bottom:8px">\ud83d\udcc2 arena_results.json hier ablegen oder klicken</p>
+  <p style="color:var(--muted)">Dashboard wird automatisch befuellt</p>
+</div>
+
+<div id="dashboard" class="hidden">
+
+  <!-- Rangliste -->
+  <div class="card" style="margin-bottom:20px">
+    <h2>\ud83c\udfc6 Rangliste</h2>
+    <div id="rangliste"></div>
+  </div>
+
+  <!-- KPI-Zeile -->
+  <div class="grid" id="kpiGrid"></div>
+
+  <!-- Equity Curves -->
+  <div class="chart-box">
+    <h2>\ud83d\udcc8 Equity Curves</h2>
+    <div class="chart-container"><canvas id="equityChart"></canvas></div>
+  </div>
+
+  <!-- P&L Vergleich -->
+  <div class="chart-box">
+    <h2>\ud83d\udcb0 P&L Vergleich (%)</h2>
+    <div class="chart-container" style="height:260px"><canvas id="pnlChart"></canvas></div>
+  </div>
+
+  <!-- Positionen pro Bot -->
+  <div class="chart-box">
+    <h2>\ud83d\udccb Aktuelle Positionen pro Bot</h2>
+    <div id="positionenTabellen"></div>
+  </div>
+
+</div>
+
+<script>
+const COLORS = {
+  Momentum:     '#448aff',
+  Crash_Guard:  '#ff9100',
+  Score_Trader: '#bb86fc',
+  Buy_Hold:     '#00c853',
+  Hybrid:       '#18ffff'
+};
+const LABELS = {
+  Momentum:     'Momentum',
+  Crash_Guard:  'Crash Guard',
+  Score_Trader: 'Score Trader',
+  Buy_Hold:     'Buy & Hold',
+  Hybrid:       'Hybrid'
+};
+const STARTKAPITAL = 100000;
+let equityChartInst = null;
+let pnlChartInst = null;
+
+// Drag & Drop
+const box = document.getElementById('uploadBox');
+box.addEventListener('dragover', e => { e.preventDefault(); box.style.borderColor = '#448aff'; });
+box.addEventListener('dragleave', () => { box.style.borderColor = ''; });
+box.addEventListener('drop', e => {
+  e.preventDefault(); box.style.borderColor = '';
+  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+
+function loadFile(e) { if (e.target.files.length) handleFile(e.target.files[0]); }
+
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      render(data);
+    } catch(err) { alert('Fehler beim Parsen: ' + err.message); }
+  };
+  reader.readAsText(file);
+}
+
+function render(data) {
+  document.getElementById('uploadBox').classList.add('hidden');
+  document.getElementById('dashboard').classList.remove('hidden');
+  document.querySelector('.subtitle').textContent =
+    `Start: ${data.start_datum || '\u2013'} | Letztes Update: ${data.letztes_update || '\u2013'}`;
+
+  const bots = data.bots;
+  const names = Object.keys(bots);
+
+  // --- Berechne aktuelle Werte ---
+  const werte = {};
+  names.forEach(n => {
+    const h = bots[n].history;
+    werte[n] = h.length ? h[h.length - 1].wert : STARTKAPITAL;
+  });
+
+  // Rangliste sortiert
+  const sorted = names.slice().sort((a, b) => werte[b] - werte[a]);
+  const medals = ['\ud83e\udd47', '\ud83e\udd48', '\ud83e\udd49', '4\ufe0f\u20e3', '5\ufe0f\u20e3'];
+  const rangDiv = document.getElementById('rangliste');
+  rangDiv.innerHTML = sorted.map((n, i) => {
+    const pnl = werte[n] - STARTKAPITAL;
+    const pnlPct = ((pnl / STARTKAPITAL) * 100).toFixed(2);
+    const cls = i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : '';
+    return `<div class=\"rank-row ${cls}\">
+      <span class=\"rank-pos\">${medals[i]}</span>
+      <span class=\"rank-name\"><span class=\"bot-color\" style=\"background:${COLORS[n]}\"></span>${LABELS[n]}</span>
+      <div class=\"rank-value\">
+        <div class=\"val\">$${werte[n].toLocaleString('de-DE', {minimumFractionDigits:2})}</div>
+        <div class=\"pnl ${pnl>=0?'pos':'neg'}\">${pnl>=0?'+':''}$${pnl.toLocaleString('de-DE',{minimumFractionDigits:2})} (${pnl>=0?'+':''}${pnlPct}%)</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // --- KPIs ---
+  const kpiGrid = document.getElementById('kpiGrid');
+  kpiGrid.innerHTML = sorted.map(n => {
+    const b = bots[n];
+    const pnl = werte[n] - STARTKAPITAL;
+    const pnlPct = ((pnl / STARTKAPITAL) * 100).toFixed(2);
+    const maxW = b.history.length ? Math.max(...b.history.map(h=>h.wert)) : STARTKAPITAL;
+    const dd = ((maxW - werte[n]) / maxW * 100).toFixed(1);
+    return `<div class=\"card\">
+      <h2><span class=\"bot-color\" style=\"background:${COLORS[n]}\"></span>${LABELS[n]}</h2>
+      <div class=\"stats\">
+        <div class=\"stat\"><div class=\"num ${pnl>=0?'pos':'neg'}\">${pnl>=0?'+':''}${pnlPct}%</div><div class=\"lbl\">P&L</div></div>
+        <div class=\"stat\"><div class=\"num\">${b.trades}</div><div class=\"lbl\">Trades</div></div>
+        <div class=\"stat\"><div class=\"num\">${Object.keys(b.positionen).length}</div><div class=\"lbl\">Positionen</div></div>
+        <div class=\"stat\"><div class=\"num neg\">-${dd}%</div><div class=\"lbl\">Drawdown</div></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // --- Equity Chart ---
+  const allDates = new Set();
+  names.forEach(n => bots[n].history.forEach(h => allDates.add(h.datum)));
+  const dates = [...allDates].sort();
+
+  const datasets = names.map(n => {
+    const map = {};
+    bots[n].history.forEach(h => { map[h.datum] = h.wert; });
+    let last = STARTKAPITAL;
+    return {
+      label: LABELS[n],
+      data: dates.map(d => { if(map[d] !== undefined) last = map[d]; return last; }),
+      borderColor: COLORS[n],
+      backgroundColor: COLORS[n] + '22',
+      borderWidth: 2, pointRadius: 0, tension: 0.3, fill: false
+    };
+  });
+
+  if (equityChartInst) equityChartInst.destroy();
+  equityChartInst = new Chart(document.getElementById('equityChart'), {
+    type: 'line',
+    data: { labels: dates, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { labels: { color: '#8b8fa3' } }, tooltip: {
+        callbacks: { label: ctx => `${ctx.dataset.label}: $${ctx.raw.toLocaleString('de-DE',{minimumFractionDigits:2})}` }
+      }},
+      scales: {
+        x: { ticks: { color: '#8b8fa3', maxTicksLimit: 15 }, grid: { color: '#2a2d3a' } },
+        y: { ticks: { color: '#8b8fa3', callback: v => '$' + v.toLocaleString() }, grid: { color: '#2a2d3a' } }
+      }
+    }
+  });
+
+  // --- P&L Bar Chart ---
+  if (pnlChartInst) pnlChartInst.destroy();
+  pnlChartInst = new Chart(document.getElementById('pnlChart'), {
+    type: 'bar',
+    data: {
+      labels: sorted.map(n => LABELS[n]),
+      datasets: [{
+        data: sorted.map(n => ((werte[n] - STARTKAPITAL) / STARTKAPITAL * 100).toFixed(2)),
+        backgroundColor: sorted.map(n => werte[n] >= STARTKAPITAL ? '#00c85366' : '#ff174466'),
+        borderColor: sorted.map(n => werte[n] >= STARTKAPITAL ? '#00c853' : '#ff1744'),
+        borderWidth: 2, borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.raw + '%' } } },
+      scales: {
+        x: { ticks: { color: '#8b8fa3' }, grid: { display: false } },
+        y: { ticks: { color: '#8b8fa3', callback: v => v + '%' }, grid: { color: '#2a2d3a' } }
+      }
+    }
+  });
+
+  // --- Positionen-Tabellen ---
+  const posDiv = document.getElementById('positionenTabellen');
+  posDiv.innerHTML = sorted.map(n => {
+    const b = bots[n];
+    const pos = Object.entries(b.positionen);
+    if (!pos.length) return `<div style=\"margin-bottom:20px\"><h3 style=\"margin-bottom:8px\"><span class=\"bot-color\" style=\"background:${COLORS[n]}\"></span>${LABELS[n]}</h3><p style=\"color:var(--muted)\">Keine Positionen (100% Cash: $${b.kapital.toLocaleString('de-DE',{minimumFractionDigits:2})})</p></div>`;
+    return `<div style=\"margin-bottom:20px\">
+      <h3 style=\"margin-bottom:8px\"><span class=\"bot-color\" style=\"background:${COLORS[n]}\"></span>${LABELS[n]} <span style=\"color:var(--muted);font-weight:400;font-size:.85em\">| Cash: $${b.kapital.toLocaleString('de-DE',{minimumFractionDigits:2})}</span></h3>
+      <table>
+        <thead><tr><th>Symbol</th><th>Menge</th></tr></thead>
+        <tbody>${pos.sort((a,b)=>b[1]-a[1]).map(([s,m]) =>
+          `<tr><td><b>${s}</b></td><td>${m.toFixed(4)}</td></tr>`
+        ).join('')}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
