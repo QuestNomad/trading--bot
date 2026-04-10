@@ -13,6 +13,7 @@ import feedparser
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
+from pnl_tracker import pruefe_offene_positionen
 
 # ── Konfiguration ─────────────────────────────────────────────
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
@@ -595,6 +596,12 @@ def run_bot():
             schreibe_journal(
                 asset["name"], signal_text, aktuell, details, sw, seu
             )
+
+    # P&L Tracking
+    try:
+        pruefe_offene_positionen("journal.csv", send_text)
+    except Exception as e:
+        logging.error(f"P&L Tracker Fehler: {e}")
 
     # Zusammenfassung
     laufzeit = round(time.time() - start_zeit, 1)
@@ -1189,3 +1196,4 @@ def run_bot():
 
 if __name__ == "__main__":
     run_bot()
+# test
