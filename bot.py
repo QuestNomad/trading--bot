@@ -255,6 +255,9 @@ def rsi_val(p, n=14):
     d = s.diff()
     g = d.where(d > 0, 0).rolling(n).mean()
     l = -d.where(d < 0, 0).rolling(n).mean()
+    avg_loss = float(l.iloc[-1])
+    if avg_loss == 0:
+        return 100.0
     return float((100 - (100 / (1 + (g / l)))).iloc[-1])
 
 
