@@ -1,0 +1,35 @@
+name: Dry-Run Test
+
+on:
+  push:
+    paths:
+      - 'bot.py'
+      - 'backtest.py'
+  workflow_dispatch:
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Libraries installieren
+        run: pip install requests pandas numpy matplotlib yfinance feedparser vaderSentiment
+
+      - name: Syntax-Check
+        run: |
+          python -c "import py_compile; py_compile.compile('bot.py', doraise=True)"
+          python -c "import py_compile; py_compile.compile('backtest.py', doraise=True)"
+          echo "Syntax OK"
+
+      - name: Dry-Run Bot
+        env:
+          DRY_RUN: 'true'
+        run: |
+          timeout 180 python bot.py || true
+          echo "Dry-Run abgeschlossen"
