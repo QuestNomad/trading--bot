@@ -78,6 +78,15 @@ def pruefe_offene_positionen(journal_pfad="journal.csv", send_text=None):
         else:
             continue
 
+        # ── Trailing Stop: SL nachziehen wenn Position im Plus ──
+        if signal == "KAUFEN" and not ist_short and stop_loss:
+            atr_geschaetzt = (einstieg - stop_loss) / 3  # ATR aus SL ableiten
+            trailing_sl = einstieg + atr_geschaetzt  # Einstieg + 1×ATR
+            if kurs_aktuell > einstieg and trailing_sl > stop_loss:
+                df.at[idx, "Stop_Loss"] = round(trailing_sl, 2)
+                stop_loss = trailing_sl
+                logging.info(f"Trailing Stop für {symbol}: SL auf {trailing_sl:.2f} nachgezogen")
+
         # Prüfe ob SL oder TP erreicht
         geschlossen = False
         grund = ""
