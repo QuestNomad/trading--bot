@@ -4,6 +4,15 @@ on:
   schedule:
     - cron: '0 21 * * 1-5'  # Mo-Fr um 22:00 Uhr Wien
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry-Run Modus (keine Telegram-Nachrichten)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 jobs:
   run-bot:
@@ -26,6 +35,7 @@ jobs:
           TRADING212_API_KEY: ${{ secrets.TRADING212_API_KEY }}
           BITPANDA_API_KEY: ${{ secrets.BITPANDA_API_KEY }}
           SHEETS_URL: ${{ secrets.SHEETS_URL }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: python bot.py
 
       - name: Journal in GitHub speichern
