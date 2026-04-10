@@ -39,7 +39,7 @@ def hole_aktuellen_kurs(symbol):
     return None
 
 
-def pruefe_offene_positionen(journal_pfad="journal.csv", send_text=None, chat_id=None, bot_token=None):
+def pruefe_offene_positionen(journal_pfad="journal.csv", send_text=None):
     """
     Prüft alle offenen Positionen gegen Stop-Loss und Take-Profit.
     Aktualisiert journal.csv und sendet Telegram-Nachricht.
@@ -114,13 +114,13 @@ def pruefe_offene_positionen(journal_pfad="journal.csv", send_text=None, chat_id
         logging.info(f"{len(geschlossene)} Position(en) geschlossen")
 
     # Telegram P&L Zusammenfassung
-    if send_text and chat_id and bot_token:
-        sende_pnl_zusammenfassung(df, geschlossene, send_text, chat_id, bot_token)
+    if send_text:
+        sende_pnl_zusammenfassung(df, geschlossene, send_text)
 
     return geschlossene
 
 
-def sende_pnl_zusammenfassung(df, geschlossene, send_text, chat_id, bot_token):
+def sende_pnl_zusammenfassung(df, geschlossene, send_text):
     """Sendet P&L-Zusammenfassung per Telegram"""
     offene = df[df["Status"] == "offen"]
     alle_geschlossen = df[df["Status"] == "geschlossen"]
@@ -145,6 +145,6 @@ def sende_pnl_zusammenfassung(df, geschlossene, send_text, chat_id, bot_token):
     msg += f"📋 Offene Positionen: {len(offene)}"
 
     try:
-        send_text(msg, chat_id, bot_token)
+        send_text(msg)
     except Exception as e:
         logging.error(f"P&L Telegram-Nachricht fehlgeschlagen: {e}")
