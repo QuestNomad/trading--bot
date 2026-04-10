@@ -13,30 +13,50 @@ KAPITAL = 10000
 MAX_RISIKO = 0.01
 PERIODE = "2y"
 
-# ── Assets (synchron mit bot.py) ──────────────────────────────
+# ── 38 Assets (synchron mit bot.py) ────────────────────────────
 ASSETS = [
-    {"name": "Bitcoin",       "id": "BTC-EUR"},
-    {"name": "Ethereum",      "id": "ETH-EUR"},
-    {"name": "S&P 500",       "id": "SPY"},
-    {"name": "Apple",         "id": "AAPL"},
-    {"name": "Nvidia",        "id": "NVDA"},
-    {"name": "Tesla",         "id": "TSLA"},
-    {"name": "Microsoft",     "id": "MSFT"},
-    {"name": "Amazon",        "id": "AMZN"},
-    {"name": "Meta",          "id": "META"},
-    {"name": "Google",        "id": "GOOGL"},
-    {"name": "DAX ETF",       "id": "EXS1.DE"},
-    {"name": "SAP",           "id": "SAP.DE"},
-    {"name": "Rheinmetall",   "id": "RHM.DE"},
-    {"name": "Airbus",        "id": "AIR.DE"},
-    {"name": "Gold",          "id": "GC=F"},
-    {"name": "Silber",        "id": "SI=F"},
-    {"name": "Russell 2000",  "id": "IWM"},
-    {"name": "Nikkei ETF",    "id": "EWJ"},
+    {"name": "Bitcoin",        "id": "BTC-EUR"},
+    {"name": "Ethereum",       "id": "ETH-EUR"},
+    {"name": "S&P 500",        "id": "SPY"},
+    {"name": "Apple",          "id": "AAPL"},
+    {"name": "Nvidia",         "id": "NVDA"},
+    {"name": "Tesla",          "id": "TSLA"},
+    {"name": "Microsoft",      "id": "MSFT"},
+    {"name": "Amazon",         "id": "AMZN"},
+    {"name": "Meta",           "id": "META"},
+    {"name": "Google",         "id": "GOOGL"},
+    {"name": "DAX ETF",        "id": "EXS1.DE"},
+    {"name": "SAP",            "id": "SAP.DE"},
+    {"name": "Rheinmetall",    "id": "RHM.DE"},
+    {"name": "Airbus",         "id": "AIR.DE"},
+    {"name": "Zalando",        "id": "ZAL.DE"},
+    {"name": "Delivery Hero",  "id": "DHER.DE"},
+    {"name": "Deutsche Bank",  "id": "DBK.DE"},
+    {"name": "BNP Paribas",    "id": "BNP.PA"},
+    {"name": "UBS",            "id": "UBSG.SW"},
+    {"name": "Nikkei ETF",     "id": "EWJ"},
+    {"name": "Toyota",         "id": "7203.T"},
+    {"name": "Sony",           "id": "6758.T"},
+    {"name": "China ETF",      "id": "FXI"},
+    {"name": "Alibaba HK",     "id": "9988.HK"},
+    {"name": "Tencent",        "id": "0700.HK"},
+    {"name": "Indien ETF",     "id": "INDA"},
+    {"name": "Brasilien ETF",  "id": "EWZ"},
+    {"name": "EM ETF",         "id": "VWO"},
+    {"name": "Russell 2000",   "id": "IWM"},
+    {"name": "Gold",           "id": "GC=F"},
+    {"name": "Silber",         "id": "SI=F"},
+    {"name": "Öl",             "id": "BZ=F"},
+    {"name": "Kupfer",         "id": "HG=F"},
+    {"name": "Weizen",         "id": "ZW=F"},
+    {"name": "Short S&P 500",  "id": "XSPS.L"},
+    {"name": "Short DAX",      "id": "DXSN.DE"},
+    {"name": "Short Nasdaq",   "id": "QQQS.L"},
+    {"name": "Short Krypto",   "id": "BITI"},
 ]
 
 PARAMETER_SETS = [
-    {"name": "Original",     "kauf": 8, "verk": 3, "sl": 2, "tp": 4},
+    {"name": "Original",     "kauf": 7, "verk": 3, "sl": 2, "tp": 4},
     {"name": "Aggressiv",    "kauf": 7, "verk": 3, "sl": 2, "tp": 6},
     {"name": "Locker",       "kauf": 7, "verk": 4, "sl": 3, "tp": 6},
     {"name": "Konservativ",  "kauf": 9, "verk": 2, "sl": 2, "tp": 5},
@@ -69,6 +89,9 @@ def rsi_val(prices, n=14):
     d = s.diff()
     g = d.where(d > 0, 0).rolling(n).mean()
     l = (-d.where(d < 0, 0)).rolling(n).mean()
+    avg_loss = float(l.iloc[-1])
+    if avg_loss == 0:
+        return 100.0
     rs = g / l
     return float((100 - 100 / (1 + rs)).iloc[-1])
 
@@ -96,7 +119,7 @@ def bb_val(prices, n=20):
 
 
 # ── Signal (synchron mit bot.py) ──────────────────────────────
-def berechne_signal(preise, kauf_schwelle=8, verk_schwelle=3, sw=0.0, seu=0.0):
+def berechne_signal(preise, kauf_schwelle=7, verk_schwelle=3, sw=0.0, seu=0.0):
     """
     Einheitliche Signalberechnung – identisch mit bot.py.
     sw/seu = 0.0 im Backtest (kein Live-Sentiment).
