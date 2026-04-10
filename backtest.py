@@ -421,7 +421,7 @@ ASSETS = [
 
 PARAMETER_SETS = [
     {"name": "Original",     "kauf": 7, "verk": 3, "sl": 2, "tp": 4},
-    {"name": "Aggressiv",    "kauf": 7, "verk": 3, "sl": 2, "tp": 6},
+    {"name": "Aggressiv",    "kauf": 8, "verk": 3, "sl": 3, "tp": 8},
     {"name": "Locker",       "kauf": 7, "verk": 4, "sl": 3, "tp": 6},
     {"name": "Konservativ",  "kauf": 9, "verk": 2, "sl": 2, "tp": 5},
 ]
