@@ -198,7 +198,7 @@ canvas{{max-height:350px}}</style></head><body>
 <div class="chart-box"><canvas id="dd"></canvas></div>
 <script>
 new Chart(document.getElementById("eq"),{{type:"line",data:{{labels:{labels_eq},datasets:[{",".join(equity_datasets)}]}},options:{{plugins:{{title:{{display:true,text:"Equity Curves",color:"#e2e8f0"}}}},scales:{{x:{{display:false}},y:{{ticks:{{color:"#94a3b8"}}}}}}}}}});
-new Chart(document.getElementById("dd"),{{type:"line",data:{{labels:{labels_eq},datasets:[{",".join(dd_datasets)}]}},options:{{plugins:{{title:{{display:true,text:"Drawdown %",color:"#e2e8f0"}}}},scales:{{x:{{display:false}},y:{{ticks:{{color:"#94a3b8"}}}}}}}}}}});
+new Chart(document.getElementById("dd"),{{type:"line",data:{{labels:{labels_eq},datasets:[{",".join(dd_datasets)}]}},options:{{plugins:{{title:{{display:true,text:"Drawdown %",color:"#e2e8f0"}}}},scales:{{x:{{display:false}},y:{{ticks:{{color:"#94a3b8"}}}}}}}}}});
 </script></body></html>""")
 pathlib.Path("arena_backtest_dashboard.html").write_text(html)
 print("Done - arena_backtest_results.json + arena_backtest_dashboard.html written.")
