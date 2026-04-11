@@ -175,7 +175,6 @@ def strat_ensemble():
         sma200_all[a] = h.rolling(200).mean()
         mom63[a] = h.pct_change(63)
     for i, d in enumerate(dates):
-        # Check existing positions for SL/TP DAILY
         for a in list(positions.keys()):
             try:
                 p = close[a].loc[d]
@@ -232,46 +231,5 @@ def strat_ensemble():
     k = kpi(eq, trades); k["WinRate%"] = wr
     return eq, k
 
-# -- HTML Dashboard --------------------------------------------------------
-colors = ["#2563eb","#dc2626","#16a34a","#f59e0b","#8b5cf6","#ec4899"]
-equity_datasets = []
-for i, (name, v) in enumerate(results.items()):
-    eq = v["equity"]
-    sampled = eq.iloc[::5]
-    equity_datasets.append(f'{{label:"{name}",data:{json.dumps([round(x,0) for x in sampled.values.tolist()])},borderColor:"{colors[i]}",fill:false,tension:0.3,pointRadius:0}}')
-labels_eq = json.dumps([str(d.date()) for d in results["Buy & Hold"]["equity"].iloc[::5].index])
-
-dd_datasets = []
-for i, (name, v) in enumerate(results.items()):
-    eq = v["equity"]; peak = eq.cummax(); dd = ((eq-peak)/peak*100)
-    sampled = dd.iloc[::5]
-    dd_datasets.append(f'{{label:"{name}",data:{json.dumps([round(x,2) for x in sampled.values.tolist()])},borderColor:"{colors[i]}",fill:false,tension:0.3,pointRadius:0}}')
-
-rows = ""
-ranked = sorted(results.items(), key=lambda x: x[1]["kpi"]["Return%"], reverse=True)
-for rank, (name, v) in enumerate(ranked, 1):
-    k = v["kpi"]
-    wr = k.get("WinRate%", "-")
-    rows += f"<tr><td>{rank}</td><td><b>{name}</b></td><td>{k['Return%']}%</td><td>{k['Sharpe']}</td><td>{k['MaxDD%']}%</td><td>{wr}</td><td>{k['Trades']}</td></tr>"
-
-html = textwrap.dedent(f"""\
-<!DOCTYPE html><html><head><meta charset="utf-8"><title>Arena Backtest Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>body{{font-family:system-ui;margin:20px;background:#0f172a;color:#e2e8f0}}
-h1{{text-align:center}}table{{border-collapse:collapse;width:100%;margin:20px 0}}
-th,td{{border:1px solid #334155;padding:8px;text-align:center}}th{{background:#1e293b}}
-.chart-box{{background:#1e293b;border-radius:12px;padding:16px;margin:20px 0}}
-.fee-note{{text-align:center;color:#94a3b8;font-size:0.85em;margin-top:-10px}}
-canvas{{max-height:350px}}</style></head><body>
-<h1>Arena Backtest Dashboard</h1>
-<p style="text-align:center">{len(ASSETS)} Assets | {len(dates)} Trading Days | Generated {dt.date.today()}</p>
-<p class="fee-note">inkl. Trading 212 Gebuehren (0.15% FX-Fee + 0.05% Spread pro Trade)</p>
-<table><tr><th>#</th><th>Strategy</th><th>Return</th><th>Sharpe</th><th>Max DD</th><th>Win Rate</th><th>Trades</th></tr>{rows}</table>
-<div class="chart-box"><canvas id="eq"></canvas></div>
-<div class="chart-box"><canvas id="dd"></canvas></div>
-<script>
-new Chart(document.getElementById("eq"),{{type:"line",data:{{labels:{labels_eq},datasets:[{",".join(equity_datasets)}]}},options:{{plugins:{{title:{{display:true,text:"Equity Curves (inkl. 0.20% Gesamtkosten)",color:"#e2e8f0"}}}},scales:{{x:{{display:false}},y:{{ticks:{{color:"#94a3b8"}}}}}}}}}});
-new Chart(document.getElementById("dd"),{{type:"line",data:{{labels:{labels_eq},datasets:[{",".join(dd_datasets)}]}},options:{{plugins:{{title:{{display:true,text:"Drawdown %",color:"#e2e8f0"}}}},scales:{{x:{{display:false}},y:{{ticks:{{color:"#94a3b8"}}}}}}}}}});
-</script></body></html>""")
 pathlib.Path("arena_backtest_dashboard.html").write_text(html)
 print("Done - arena_backtest_results.json + arena_backtest_dashboard.html written.")
