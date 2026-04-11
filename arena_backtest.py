@@ -7,6 +7,11 @@ Enhancements v2:
   2. Out-of-Sample Test (7yr train / 3yr test)
   3. Slippage Modelling (0.10% on top of fees)
   4. Parameter Sensitivity Test for Score Trader
+
+Enhancements v3:
+  5. Walk-Forward Analysis (rolling 3yr train / 1yr test)
+  6. Monte Carlo Simulation (bootstrap drawdown analysis)
+  7. Kelly Criterion (position sizing)
 """
 
 import json, datetime as dt, numpy as np, pandas as pd, yfinance as yf, pathlib, textwrap
@@ -440,6 +445,305 @@ def run_parameter_sensitivity():
     return {"grid_results": results, "summary": summary}
 
 
+
+
+# ============================================================================
+# ENHANCEMENT 5: Walk-Forward Analysis
+# ============================================================================
+def walk_forward_analysis():
+    """Rolling 3yr train / 1yr test windows for Score Trader.
+
+    Splits the full date range into overlapping windows:
+      - Window 0: years 0-3 train, year 3-4 test
+      - Window 1: years 1-4 train, year 4-5 test
+      - etc.
+    Runs Score Trader on each train period to validate, then measures on test.
+    Reports consistency of performance across windows.
+    """
+    print("  Running Walk-Forward Analysis ...")
+    total_days = len(dates)
+    trading_days_per_year = 252
+    train_len = 3 * trading_days_per_year   # 3 years
+    test_len  = 1 * trading_days_per_year   # 1 year
+    window_step = 1 * trading_days_per_year # slide by 1 year
+
+    windows = []
+    start_idx = 0
+    while start_idx + train_len + test_len <= total_days:
+        train_start = start_idx
+        train_end   = start_idx + train_len
+        test_start  = train_end
+        test_end    = min(train_end + test_len, total_days)
+
+        # Run Score Trader on train window
+        eq_train, k_train, _ = strat_score_trader(
+            date_range=(train_start, train_end), track_per_asset=False)
+
+        # Run Score Trader on test window
+        eq_test, k_test, _ = strat_score_trader(
+            date_range=(test_start, test_end), track_per_asset=False)
+
+        windows.append({
+            "window":       len(windows) + 1,
+            "train_start":  str(dates[train_start]),
+            "train_end":    str(dates[train_end - 1]),
+            "test_start":   str(dates[test_start]),
+            "test_end":     str(dates[test_end - 1]),
+            "train_return%": k_train["Return%"],
+            "test_return%":  k_test["Return%"],
+            "train_sharpe":  k_train["Sharpe"],
+            "test_sharpe":   k_test["Sharpe"],
+            "train_maxdd%":  k_train["MaxDD%"],
+            "test_maxdd%":   k_test["MaxDD%"],
+            "train_trades":  k_train["Trades"],
+            "test_trades":   k_test["Trades"],
+        })
+
+        start_idx += window_step
+
+    # Aggregate statistics across all windows
+    if windows:
+        train_returns = [w["train_return%"] for w in windows]
+        test_returns  = [w["test_return%"]  for w in windows]
+        train_sharpes = [w["train_sharpe"]  for w in windows]
+        test_sharpes  = [w["test_sharpe"]   for w in windows]
+
+        # Consistency: how often does test period remain profitable?
+        profitable_tests = sum(1 for r in test_returns if r > 0)
+
+        summary = {
+            "n_windows":            len(windows),
+            "train_return_mean%":   round(np.mean(train_returns), 2),
+            "train_return_std%":    round(np.std(train_returns), 2),
+            "test_return_mean%":    round(np.mean(test_returns), 2),
+            "test_return_std%":     round(np.std(test_returns), 2),
+            "test_profitable_pct%": round(profitable_tests / len(windows) * 100, 1),
+            "train_sharpe_mean":    round(np.mean(train_sharpes), 2),
+            "test_sharpe_mean":     round(np.mean(test_sharpes), 2),
+            "avg_return_degradation%": round(
+                np.mean(train_returns) - np.mean(test_returns), 2),
+        }
+    else:
+        summary = {"n_windows": 0, "error": "Not enough data for walk-forward"}
+
+    return {"windows": windows, "summary": summary}
+
+
+# ============================================================================
+# ENHANCEMENT 6: Monte Carlo Simulation
+# ============================================================================
+def monte_carlo_simulation(n_sims=1000):
+    """Bootstrap shuffle of daily returns from Score Trader.
+
+    Randomly reshuffles the daily return sequence 1000 times to build
+    a distribution of possible outcomes. For each simulation:
+      - Compute total return and max drawdown
+    Reports median, 5th, and 95th percentile for drawdowns and returns,
+    plus probability of experiencing >20% and >30% drawdowns.
+    Uses TOTAL_COST (0.30%) applied proportionally in the base equity curve.
+    """
+    print("  Running Monte Carlo Simulation (n={}) ...".format(n_sims))
+
+    # Get the Score Trader equity curve and extract daily returns
+    eq_st, _, _ = strat_score_trader(track_per_asset=False)
+    daily_returns = eq_st.pct_change().dropna().values.copy()
+    n_days = len(daily_returns)
+
+    sim_total_returns = []
+    sim_max_drawdowns = []
+    sim_final_equity  = []
+
+    rng = np.random.RandomState(42)   # reproducible
+
+    for _ in range(n_sims):
+        # Bootstrap: shuffle daily returns (preserves return distribution,
+        # destroys autocorrelation to test path-dependency)
+        shuffled = daily_returns.copy()
+        rng.shuffle(shuffled)
+
+        # Build equity curve from shuffled returns
+        equity = np.empty(n_days + 1)
+        equity[0] = 10000.0
+        for j in range(n_days):
+            equity[j + 1] = equity[j] * (1 + shuffled[j])
+
+        # Total return
+        total_ret = (equity[-1] / equity[0]) - 1.0
+        sim_total_returns.append(total_ret)
+        sim_final_equity.append(equity[-1])
+
+        # Max drawdown
+        running_max = np.maximum.accumulate(equity)
+        drawdowns = (equity - running_max) / running_max
+        sim_max_drawdowns.append(drawdowns.min())
+
+    sim_total_returns = np.array(sim_total_returns)
+    sim_max_drawdowns = np.array(sim_max_drawdowns)
+    sim_final_equity  = np.array(sim_final_equity)
+
+    result = {
+        "n_simulations":     n_sims,
+        "n_days_per_sim":    n_days,
+        "total_return": {
+            "median%":       round(np.median(sim_total_returns) * 100, 2),
+            "percentile_5%": round(np.percentile(sim_total_returns, 5) * 100, 2),
+            "percentile_95%":round(np.percentile(sim_total_returns, 95) * 100, 2),
+            "mean%":         round(np.mean(sim_total_returns) * 100, 2),
+            "std%":          round(np.std(sim_total_returns) * 100, 2),
+        },
+        "max_drawdown": {
+            "median%":       round(np.median(sim_max_drawdowns) * 100, 2),
+            "percentile_5%": round(np.percentile(sim_max_drawdowns, 5) * 100, 2),
+            "percentile_95%":round(np.percentile(sim_max_drawdowns, 95) * 100, 2),
+            "mean%":         round(np.mean(sim_max_drawdowns) * 100, 2),
+        },
+        "drawdown_probabilities": {
+            "prob_gt_20%":   round(
+                np.mean(sim_max_drawdowns < -0.20) * 100, 1),
+            "prob_gt_30%":   round(
+                np.mean(sim_max_drawdowns < -0.30) * 100, 1),
+            "prob_gt_40%":   round(
+                np.mean(sim_max_drawdowns < -0.40) * 100, 1),
+        },
+        "final_equity": {
+            "median":        round(float(np.median(sim_final_equity)), 2),
+            "percentile_5":  round(float(np.percentile(sim_final_equity, 5)), 2),
+            "percentile_95": round(float(np.percentile(sim_final_equity, 95)), 2),
+        },
+    }
+    return result
+
+
+# ============================================================================
+# ENHANCEMENT 7: Kelly Criterion
+# ============================================================================
+def kelly_criterion():
+    """Compute Kelly fraction and position sizing for Score Trader.
+
+    Uses actual trade-level win rate and average win/loss from per-asset
+    analysis. Calculates:
+      - Full Kelly fraction (f*)
+      - Half Kelly and Quarter Kelly (conservative sizing)
+      - Theoretical annual return estimates at each Kelly fraction
+      - Risk of ruin estimate
+
+    Formula: f* = (win_rate * avg_win - (1 - win_rate) * avg_loss) / avg_win
+    Uses TOTAL_COST (0.30%) deducted from each trade's P&L.
+    """
+    print("  Running Kelly Criterion analysis ...")
+
+    # Run Score Trader with per-asset tracking to get trade-level data
+    eq_st, k_st, asset_stats = strat_score_trader(track_per_asset=True)
+
+    # Collect all individual trade returns across all assets
+    all_returns = []
+    for a in ASSETS:
+        for r in asset_stats[a]["returns"]:
+            # Each trade return already reflects market movement;
+            # additionally deduct TOTAL_COST for round-trip cost
+            net_return = r - TOTAL_COST
+            all_returns.append(net_return)
+
+    if not all_returns:
+        return {"error": "No trades found for Kelly calculation"}
+
+    all_returns = np.array(all_returns)
+    wins  = all_returns[all_returns > 0]
+    losses = all_returns[all_returns <= 0]
+
+    n_trades  = len(all_returns)
+    n_wins    = len(wins)
+    n_losses  = len(losses)
+    win_rate  = n_wins / n_trades if n_trades > 0 else 0.0
+    avg_win   = float(np.mean(wins))  if len(wins)  > 0 else 0.0
+    avg_loss  = float(np.mean(np.abs(losses))) if len(losses) > 0 else 0.001
+
+    # Kelly formula: f* = (p * b - q) / b
+    # where p = win_rate, q = 1 - win_rate, b = avg_win / avg_loss
+    if avg_win > 0 and avg_loss > 0:
+        b = avg_win / avg_loss   # win/loss ratio
+        kelly_full = (win_rate * b - (1 - win_rate)) / b
+    else:
+        b = 0.0
+        kelly_full = 0.0
+
+    kelly_half    = kelly_full / 2.0
+    kelly_quarter = kelly_full / 4.0
+
+    # Theoretical geometric growth rate: g = p * ln(1 + f*b) + q * ln(1 - f)
+    def growth_rate(f, p, b_ratio):
+        """Geometric growth rate per trade at fraction f."""
+        if f <= 0 or f >= 1:
+            return 0.0
+        q = 1 - p
+        try:
+            g = p * np.log(1 + f * b_ratio) + q * np.log(1 - f)
+            return g
+        except:
+            return 0.0
+
+    # Estimate trades per year from actual data
+    total_period_years = len(dates) / 252.0
+    trades_per_year = k_st["Trades"] / total_period_years if total_period_years > 0 else 50
+
+    # Annual growth estimates at each Kelly level
+    g_full    = growth_rate(max(kelly_full, 0), win_rate, b)
+    g_half    = growth_rate(max(kelly_half, 0), win_rate, b)
+    g_quarter = growth_rate(max(kelly_quarter, 0), win_rate, b)
+
+    annual_g_full    = g_full * trades_per_year
+    annual_g_half    = g_half * trades_per_year
+    annual_g_quarter = g_quarter * trades_per_year
+
+    # Risk of ruin estimate (simplified): P(ruin) ~ ((1-p)/p)^(bankroll_units)
+    # Using a more practical estimate based on consecutive losses
+    max_consecutive_losses = 0
+    current_streak = 0
+    for r in all_returns:
+        if r <= 0:
+            current_streak += 1
+            max_consecutive_losses = max(max_consecutive_losses, current_streak)
+        else:
+            current_streak = 0
+
+    result = {
+        "trade_statistics": {
+            "total_trades":     n_trades,
+            "wins":             n_wins,
+            "losses":           n_losses,
+            "win_rate%":        round(win_rate * 100, 2),
+            "avg_win%":         round(avg_win * 100, 2),
+            "avg_loss%":        round(avg_loss * 100, 2),
+            "win_loss_ratio":   round(b, 3),
+            "expectancy%":      round((win_rate * avg_win - (1 - win_rate) * avg_loss) * 100, 3),
+            "max_consecutive_losses": max_consecutive_losses,
+        },
+        "kelly_fractions": {
+            "full_kelly%":      round(kelly_full * 100, 2),
+            "half_kelly%":      round(kelly_half * 100, 2),
+            "quarter_kelly%":   round(kelly_quarter * 100, 2),
+        },
+        "theoretical_annual_growth": {
+            "full_kelly%":      round(annual_g_full * 100, 2),
+            "half_kelly%":      round(annual_g_half * 100, 2),
+            "quarter_kelly%":   round(annual_g_quarter * 100, 2),
+        },
+        "position_sizing": {
+            "recommended":      "half_kelly",
+            "recommended_pct%": round(kelly_half * 100, 2),
+            "rationale":        ("Half Kelly balances growth vs. drawdown risk. "
+                                 "Full Kelly is mathematically optimal but assumes "
+                                 "perfect edge estimation and infinite time horizon."),
+            "trades_per_year":  round(trades_per_year, 1),
+        },
+        "cost_assumptions": {
+            "total_cost_per_trade%": round(TOTAL_COST * 100, 2),
+            "breakdown": "Trading 212: 0.15% FX + 0.05% Spread + 0.10% Slippage",
+        },
+    }
+    return result
+
+
 # -- Run all strategies ----------------------------------------------------
 strategies = [
     ("Buy & Hold",    strat_buyhold),
@@ -467,6 +771,15 @@ results["out_of_sample"] = run_out_of_sample()
 # Parameter Sensitivity (Enhancement 4)
 results["parameter_sensitivity"] = run_parameter_sensitivity()
 
+# Walk-Forward Analysis (Enhancement 5)
+results["walk_forward"] = walk_forward_analysis()
+
+# Monte Carlo Simulation (Enhancement 6)
+results["monte_carlo"] = monte_carlo_simulation(n_sims=1000)
+
+# Kelly Criterion (Enhancement 7)
+results["kelly_criterion"] = kelly_criterion()
+
 # Meta
 results["_meta"] = {
     "generated":   str(dt.date.today()),
@@ -479,6 +792,9 @@ results["_meta"] = {
         "out-of-sample 7yr/3yr split",
         "slippage modelling (0.10%)",
         "parameter sensitivity (BB/RSI/ATR grid)",
+        "walk-forward analysis (3yr train / 1yr test rolling windows)",
+        "Monte Carlo simulation (1000 bootstrap reshuffles)",
+        "Kelly criterion (position sizing + growth estimates)",
     ],
 }
 
