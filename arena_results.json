@@ -20,6 +20,7 @@
           "cash": 100000,
           "positionen_anzahl": 0,
           "trades_gesamt": 0
+
         }
       ]
     },
@@ -43,6 +44,7 @@
           "cash": 0,
           "positionen_anzahl": 1,
           "trades_gesamt": 1
+
         }
       ]
     },
@@ -64,6 +66,7 @@
           "cash": 100000,
           "positionen_anzahl": 0,
           "trades_gesamt": 0
+
         }
       ],
       "meta": {}
@@ -125,6 +128,7 @@
           "cash": 0.0,
           "positionen_anzahl": 38,
           "trades_gesamt": 38
+
         }
       ]
     },
@@ -146,6 +150,7 @@
           "cash": 100000,
           "positionen_anzahl": 0,
           "trades_gesamt": 0
+
         }
       ]
     }
