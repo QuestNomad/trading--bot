@@ -1,5 +1,5 @@
 """
-Bot Arena - 5 Trading-Strategien im direkten Vergleich
+Bot Arena - 6 Trading-Strategien im direkten Vergleich
 Laeuft taeglich via GitHub Actions (Mo-Fr nach Marktschluss)
 
 Bots:
@@ -34,6 +34,7 @@ ASSETS = [
 
 ARENA_FILE = "arena_results.json"
 STARTKAPITAL = 100_000  # virtuelles Startkapital pro Bot
+SPREAD_COST = 0.0005    # 0.05% Spread-Simulation pro Trade
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
@@ -536,6 +537,116 @@ def bot_adaptiv(state: dict, close: pd.DataFrame, ind: dict, heute: str):
         logger.info(f"Adaptiv: Moduswechsel {modus_alt} -> {modus} (VIX={vix:.1f})")
 
 # ---------------------------------------------------------------------------
+# Bot 6: Ensemble
+# ---------------------------------------------------------------------------
+def bot_ensemble(state: dict, close: pd.DataFrame, ind: dict, heute: str):
+    """
+    Ensemble: Handelt nur wenn mehrere Strategien uebereinstimmen.
+    Kombiniert Score-basiert, Momentum, SMA200-Trend und RSI.
+    Kauft nur wenn >= 3 von 4 Signalen positiv sind.
+    """
+    bot = state["bots"]["Ensemble"]
+    kurse = ind["aktuell"]
+    if "meta" not in bot:
+        bot["meta"] = {}
+
+    # Pruefe bestehende Positionen auf SL/TP/Signal-Drop
+    for symbol in list(bot["positionen"].keys()):
+        kurs = kurse.get(symbol, 0)
+        if not kurs or np.isnan(kurs) or kurs <= 0:
+            continue
+        meta = bot["meta"].get(symbol, {})
+        sl = meta.get("sl", 0)
+        tp = meta.get("tp", 999999)
+
+        # Count current signals
+        signals = 0
+        total_checks = 0
+        # Signal 1: Score-based
+        score = berechne_score(symbol, kurs, ind)
+        if score >= 6:
+            signals += 1
+        total_checks += 1
+        # Signal 2: Momentum
+        mom = ind["momentum_63"][symbol].iloc[-1] if symbol in ind["momentum_63"].columns else None
+        if mom is not None and not np.isnan(mom):
+            if mom > 0.05:
+                signals += 1
+            total_checks += 1
+        # Signal 3: SMA200
+        sma200_val = ind["sma200_spy"].iloc[-1] if symbol == "SPY" and len(ind["sma200_spy"]) > 0 else None
+        if sma200_val is None:
+            sma20_val = ind["sma20"][symbol].iloc[-1] if symbol in ind["sma20"].columns else None
+            if sma20_val and not np.isnan(sma20_val):
+                if kurs > sma20_val:
+                    signals += 1
+                total_checks += 1
+        else:
+            if not np.isnan(sma200_val) and kurs > sma200_val:
+                signals += 1
+            total_checks += 1
+        # Signal 4: RSI sweet spot
+        rsi = ind["rsi"][symbol].iloc[-1] if symbol in ind["rsi"].columns else None
+        if rsi and not np.isnan(rsi):
+            if 30 < rsi < 65:
+                signals += 1
+            total_checks += 1
+
+        if kurs <= sl or kurs >= tp or signals <= 1:
+            verkaufe(bot, symbol, kurs)
+            if symbol in bot["meta"]:
+                del bot["meta"][symbol]
+            logger.info(f"Ensemble: {symbol} VERKAUFT (SL/TP/Signale={signals})")
+
+    # Suche neue Kaufgelegenheiten
+    for symbol in ASSETS:
+        if symbol in bot["positionen"]:
+            continue
+        kurs = kurse.get(symbol, 0)
+        if not kurs or np.isnan(kurs) or kurs <= 0:
+            continue
+
+        signals = 0
+        total_checks = 0
+        # Signal 1: Score-based
+        score = berechne_score(symbol, kurs, ind)
+        if score >= 6:
+            signals += 1
+        total_checks += 1
+        # Signal 2: Momentum (>5% in 63 days)
+        mom = ind["momentum_63"][symbol].iloc[-1] if symbol in ind["momentum_63"].columns else None
+        if mom is not None and not np.isnan(mom):
+            if mom > 0.05:
+                signals += 1
+            total_checks += 1
+        # Signal 3: SMA200/SMA20 trend
+        sma20_val = ind["sma20"][symbol].iloc[-1] if symbol in ind["sma20"].columns else None
+        if sma20_val and not np.isnan(sma20_val):
+            if kurs > sma20_val:
+                signals += 1
+            total_checks += 1
+        # Signal 4: RSI sweet spot (30-65)
+        rsi = ind["rsi"][symbol].iloc[-1] if symbol in ind["rsi"].columns else None
+        if rsi and not np.isnan(rsi):
+            if 30 < rsi < 65:
+                signals += 1
+            total_checks += 1
+
+        # BUY if >= 3 signals agree
+        if signals >= 3 and total_checks >= 3:
+            atr = ind["atr"][symbol].iloc[-1] if symbol in ind["atr"].columns else np.nan
+            if np.isnan(atr) or atr <= 0:
+                atr = kurs * 0.02
+            sl = kurs - 3 * atr
+            tp = kurs + 8 * atr
+            gesamt = portfolio_wert(bot, kurse)
+            betrag = min(gesamt * 0.10, bot["kapital"])  # max 10% per position
+            if betrag > 50:
+                if kaufe(bot, symbol, betrag, kurs):
+                    bot["meta"][symbol] = {"sl": round(sl, 2), "tp": round(tp, 2), "signals": signals}
+                    logger.info(f"Ensemble: KAUF {symbol} Signals={signals}/{total_checks} SL={sl:.2f} TP={tp:.2f}")
+
+# ---------------------------------------------------------------------------
 # Arena State Management
 # ---------------------------------------------------------------------------
 
@@ -559,6 +670,7 @@ def lade_arena_state() -> dict:
             "Score_Trader": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": [], "meta": {}},
             "Buy_Hold": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": []},
             "Adaptiv": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": [], "modus": "momentum"},
+            "Ensemble": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": [], "meta": {}},
         },
     }
 
@@ -608,6 +720,7 @@ def main():
         ("Score_Trader", bot_score_trader),
         ("Buy_Hold", bot_buy_hold),
         ("Adaptiv", bot_adaptiv),
+        ("Ensemble", bot_ensemble),
     ]
 
     for name, funk in bot_funktionen:
@@ -654,7 +767,7 @@ def main():
         "",
         "<b>Rangliste:</b>",
     ]
-    medaillen = ["\ud83e\udd47", "\ud83e\udd48", "\ud83e\udd49", "4\ufe0f\u20e3", "5\ufe0f\u20e3"]
+    medaillen = ["\ud83e\udd47", "\ud83e\udd48", "\ud83e\udd49", "4\ufe0f\u20e3", "5\ufe0f\u20e3", "6\ufe0f\u20e3"]
     for i, (name, wert, pnl, pnl_pct, trades, pos) in enumerate(rangliste):
         emoji = medaillen[i] if i < len(medaillen) else "  "
         pfeil = "\ud83d\udcc8" if pnl >= 0 else "\ud83d\udcc9"
