@@ -1,0 +1,48 @@
+name: Paper Trading Bot
+
+on:
+  schedule:
+    - cron: '0 22 * * 1-5'   # Mon-Fri at 22:00 UTC (after US market close)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry-Run Mode (no Telegram messages)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+jobs:
+  paper-trade:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests pandas numpy yfinance feedparser vaderSentiment python-telegram-bot
+
+      - name: Run Paper Trading
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: python paper_trading.py
+
+      - name: Commit updated portfolio
+        run: |
+          git config user.email "bot@trading.com"
+          git config user.name "Paper Trading Bot"
+          git add paper_portfolio.json
+          git diff --staged --quiet || git commit -m "Paper Portfolio Update $(date +'%Y-%m-%d %H:%M')"
+          git push
+
