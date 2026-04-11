@@ -115,43 +115,53 @@ def strat_score_trader():
     k = kpi(eq, trades); k["WinRate%"] = wr
     return eq, k
 
-def strat_hybrid():
-    vals = [10000.0]; prev = 10000.0; trades = 0
+def strat_adaptiv():
+    """Adaptiv: VIX-basierter Moduswechsel (Momentum/Crash Guard/Cash) mit Hysterese."""
+    vix_close = close[VIX] if VIX in close.columns else pd.Series(20, index=close.index)
+    vals = [10000.0]; prev = 10000.0; trades = 0; modus = "momentum"
     for i, d in enumerate(dates):
-        if risk_off.loc[d]:
+        vix = vix_close.loc[d] if d in vix_close.index else 20
+
+        # Modus bestimmen mit Hysterese
+        modus_alt = modus
+        if vix > 30:
+            modus = "cash"
+        elif vix > 20:
+            modus = "crash_guard"
+        elif vix < 18 or modus_alt == "momentum":
+            modus = "momentum"
+        # else: bleibe im aktuellen Modus (Hysterese)
+
+        if modus != modus_alt:
+            trades += 1
+
+        if modus == "cash":
             r = 0.0
-        else:
-            mom = close[ASSETS].loc[:d].pct_change(63).iloc[-1].nlargest(10).index.tolist()
-            picked = []
-            for a in mom:
-                try:
-                    p = close[a].loc[d]; sma20 = close[a].loc[:d].rolling(20).mean().iloc[-1]
-                    bb_std = close[a].loc[:d].rolling(20).std().iloc[-1]
-                    delta = close[a].diff()
-                    gain = delta.clip(lower=0).rolling(14).mean()
-                    loss = (-delta.clip(upper=0)).rolling(14).mean()
-                    rsi = (100 - 100/(1 + gain/(loss+1e-9))).iloc[-1]
-                    score = 0
-                    if p > sma20: score += 3
-                    if p < sma20 + 0.5*bb_std: score += 3
-                    if rsi < 55: score += 2
-                    if score >= 6: picked.append(a)
-                except: pass
-            if picked:
-                r = ret.loc[d, picked].mean()
-                if i % REBAL_DAYS == 0: trades += len(picked)
+        elif modus == "crash_guard":
+            if not risk_off.loc[d]:
+                r = ret.loc[d, BENCH]
             else:
                 r = 0.0
+        else:  # momentum
+            if i % REBAL_DAYS == 0:
+                mom = close[ASSETS].loc[:d].pct_change(63).iloc[-1].nlargest(10).index.tolist()
+                trades += len(mom)
+            if 'mom' in dir() and mom:
+                r = ret.loc[d, mom].mean()
+            else:
+                r = 0.0
+
         prev *= (1 + r); vals.append(prev)
     eq = pd.Series(vals[1:], index=dates)
     return eq, kpi(eq, trades)
+
 
 # -- Ausfuehrung ------------------------------------------------------------
 print("Running strategies ...")
 results = {}
 for name, fn in [("Buy & Hold", strat_buyhold), ("Crash Guard", strat_crash_guard),
                   ("Momentum", strat_momentum), ("Score Trader", strat_score_trader),
-                  ("Hybrid", strat_hybrid)]:
+                  ("Adaptiv", strat_adaptiv)]:
     eq, k = fn()
     results[name] = {"equity": eq, "kpi": k}
     print(f"  {name}: {k}")
@@ -198,7 +208,7 @@ canvas{{max-height:350px}}</style></head><body>
 <div class="chart-box"><canvas id="dd"></canvas></div>
 <script>
 new Chart(document.getElementById("eq"),{{type:"line",data:{{labels:{labels_eq},datasets:[{",".join(equity_datasets)}]}},options:{{plugins:{{title:{{display:true,text:"Equity Curves",color:"#e2e8f0"}}}},scales:{{x:{{display:false}},y:{{ticks:{{color:"#94a3b8"}}}}}}}}}});
-new Chart(document.getElementById("dd"),{{type:"line",data:{{labels:{labels_eq},datasets:[{",".join(dd_datasets)}]}},options:{{plugins:{{title:{{display:true,text:"Drawdown %",color:"#e2e8f0"}}}},scales:{{x:{{display:false}},y:{{ticks:{{color:"#94a3b8"}}}}}}}}}}});
+new Chart(document.getElementById("dd"),{{type:"line",data:{{labels:{labels_eq},datasets:[{",".join(dd_datasets)}]}},options:{{plugins:{{title:{{display:true,text:"Drawdown %",color:"#e2e8f0"}}}},scales:{{x:{{display:false}},y:{{ticks:{{color:"#94a3b8"}}}}}}}}}});
 </script></body></html>""")
 pathlib.Path("arena_backtest_dashboard.html").write_text(html)
 print("Done - arena_backtest_results.json + arena_backtest_dashboard.html written.")
