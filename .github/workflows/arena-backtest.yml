@@ -1,0 +1,20 @@
+name: Arena Backtest (Retrospektiv)
+on:
+  workflow_dispatch:
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install yfinance pandas numpy
+      - run: python arena_backtest.py
+      - name: Commit results
+        run: |
+          git config user.name "Arena Backtest"
+          git config user.email "bot@arena.local"
+          git add arena_backtest_results.json arena_backtest_dashboard.html
+          git diff --cached --quiet || git commit -m "Arena Backtest \$(date +%Y-%m-%d)"
+          git push
