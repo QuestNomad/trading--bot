@@ -322,7 +322,7 @@ def berechne_score(symbol: str, kurs: float, ind: dict) -> int:
 def bot_score_trader(state: dict, close: pd.DataFrame, ind: dict, heute: str):
     """
     Score-basiertes Trading mit SMA20, BB, RSI, ATR.
-    Kaufe wenn Score >= 8. SL 3xATR, TP 8xATR.
+    Kaufe wenn Score >= 8. SL 3xATR, Trailing Stop 3xATR.
     """
     bot = state["bots"]["Score_Trader"]
     kurse = ind["aktuell"]
@@ -339,18 +339,22 @@ def bot_score_trader(state: dict, close: pd.DataFrame, ind: dict, heute: str):
 
         meta = bot["meta"].get(symbol, {})
         sl = meta.get("sl", 0)
-        tp = meta.get("tp", 999999)
+        atr_entry = meta.get("atr", kurs * 0.02)
+        high = meta.get("high", kurs)
 
-        if kurs <= sl:
-            logger.info(f"Score Trader: {symbol} STOP-LOSS bei {kurs:.2f} (SL={sl:.2f})")
+        # Update trailing stop
+        new_high = max(high, kurs)
+        trailing_stop = new_high - 3 * atr_entry
+        effective_sl = max(sl, trailing_stop)
+
+        if kurs <= effective_sl:
+            logger.info(f"Score Trader: {symbol} TRAILING-STOP bei {kurs:.2f} (SL={effective_sl:.2f}, High={new_high:.2f})")
             verkaufe(bot, symbol, kurs)
             if symbol in bot["meta"]:
                 del bot["meta"][symbol]
-        elif kurs >= tp:
-            logger.info(f"Score Trader: {symbol} TAKE-PROFIT bei {kurs:.2f} (TP={tp:.2f})")
-            verkaufe(bot, symbol, kurs)
-            if symbol in bot["meta"]:
-                del bot["meta"][symbol]
+        else:
+            # Update high watermark
+            bot["meta"][symbol]["high"] = round(new_high, 2)
 
     # Suche neue Kaufgelegenheiten
     for symbol in ASSETS:
@@ -369,7 +373,6 @@ def bot_score_trader(state: dict, close: pd.DataFrame, ind: dict, heute: str):
                 atr = kurs * 0.02  # Fallback: 2% des Kurses
 
             sl = kurs - 3 * atr
-            tp = kurs + 8 * atr
 
             # Investiere max 5% des Portfolios pro Trade
             gesamt = portfolio_wert(bot, kurse)
@@ -377,8 +380,8 @@ def bot_score_trader(state: dict, close: pd.DataFrame, ind: dict, heute: str):
 
             if betrag > 50:
                 if kaufe(bot, symbol, betrag, kurs):
-                    bot["meta"][symbol] = {"sl": round(sl, 2), "tp": round(tp, 2), "score": score}
-                    logger.info(f"Score Trader: KAUF {symbol} Score={score} SL={sl:.2f} TP={tp:.2f}")
+                    bot["meta"][symbol] = {"sl": round(sl, 2), "atr": round(atr, 4), "high": round(kurs, 2), "score": score}
+                    logger.info(f"Score Trader: KAUF {symbol} Score={score} SL={sl:.2f} ATR={atr:.2f}")
 
 
 # ---------------------------------------------------------------------------
