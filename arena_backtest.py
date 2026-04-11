@@ -159,9 +159,11 @@ def strat_adaptiv():
     return eq, kpi(eq, trades)
 
 def strat_ensemble():
-    """Ensemble: Handelt nur wenn mehrere Strategien uebereinstimmen."""
+    """Ensemble: Handelt nur wenn ALLE Signale uebereinstimmen, woechentlich"""
     vals = [10000.0]; prev = 10000.0; positions = {}; trades = 0
-    atr14 = {}; rsi14 = {}; sma20_all = {}; bb_lower_all = {}; sma200_all = {}; mom63 = {}
+    cooldown = {}  # ticker -> cooldown_until_index
+    MAX_POSITIONS = 5
+    atr14 = {}; rsi14 = {}; sma20_all = {}; sma200_all = {}; mom63 = {}
     for a in ASSETS:
         h = close[a]
         delta = h.diff()
@@ -170,81 +172,55 @@ def strat_ensemble():
         rsi14[a] = 100 - 100/(1 + gain/(loss+1e-9))
         atr14[a] = h.diff().abs().rolling(14).mean()
         sma20_all[a] = h.rolling(20).mean()
-        bb_std = h.rolling(20).std()
-        bb_lower_all[a] = sma20_all[a] - 2 * bb_std
         sma200_all[a] = h.rolling(200).mean()
         mom63[a] = h.pct_change(63)
-    for d in dates:
-        # Check existing positions for SL/TP/signal-drop
-        for a in list(positions):
-            p = close[a].loc[d]
-            entry, sl, tp = positions[a]
-            # Count current signals for this position
-            signals = 0; total_checks = 0
-            s20 = sma20_all[a].loc[d] if a in sma20_all else None
-            bbl = bb_lower_all[a].loc[d] if a in bb_lower_all else None
-            rsi_val = rsi14[a].loc[d] if a in rsi14 else None
-            score = 0
-            if s20 and p > s20: score += 2
-            if bbl and p < bbl * 1.02: score += 3
-            if rsi_val and rsi_val < 35: score += 2
-            if rsi_val and rsi_val < 50: score += 1
-            if score >= 6: signals += 1
-            total_checks += 1
-            r63 = mom63[a].loc[d] if a in mom63 else None
-            if r63 is not None and not np.isnan(r63):
-                if r63 > 0.05: signals += 1
-                total_checks += 1
-            s200 = sma200_all[a].loc[d] if a in sma200_all else None
-            if s200 and not np.isnan(s200):
-                if p > s200: signals += 1
-                total_checks += 1
-            if rsi_val and not np.isnan(rsi_val):
-                if 30 < rsi_val < 65: signals += 1
-                total_checks += 1
-            if p <= sl or p >= tp or signals <= 1:
-                n_pos = max(len(positions), 1)
-                prev *= (1 - (TRADING_FEE + SPREAD_COST) / n_pos)
-                trades += 1; del positions[a]
-        # Look for new buys
-        for a in ASSETS:
-            if a in positions: continue
+    for i, d in enumerate(dates):
+        # Check existing positions for SL/TP DAILY
+        for a in list(positions.keys()):
             try:
                 p = close[a].loc[d]
+                pos = positions[a]
+                if p <= pos[1] or p >= pos[2]:
+                    prev *= (1 - (TRADING_FEE + SPREAD_COST))
+                    trades += 1
+                    cooldown[a] = i + 10
+                    del positions[a]
+            except: pass
+        is_monday = hasattr(d, 'weekday') and d.weekday() == 0
+        if is_monday and len(positions) < MAX_POSITIONS:
+            for a in ASSETS:
+                if a in positions or (a in cooldown and i < cooldown[a]):
+                    continue
+                try:
+                    p = close[a].loc[d]
+                except: continue
                 signals = 0; total_checks = 0
-                # Signal 1: Score-based
                 s20 = sma20_all[a].loc[d]
-                bbl = bb_lower_all[a].loc[d]
                 rsi_val = rsi14[a].loc[d]
                 score = 0
-                if s20 and p > s20: score += 2
-                if bbl and p < bbl * 1.02: score += 3
-                if rsi_val and rsi_val < 35: score += 2
-                if rsi_val and rsi_val < 50: score += 1
-                if score >= 6: signals += 1
+                if not np.isnan(s20) and p > s20: score += 2
+                if not np.isnan(rsi_val):
+                    if rsi_val < 35: score += 2
+                    elif rsi_val < 50: score += 1
+                if score >= 3: signals += 1
                 total_checks += 1
-                # Signal 2: Momentum
                 r63 = mom63[a].loc[d]
-                if r63 is not None and not np.isnan(r63):
+                if not np.isnan(r63):
                     if r63 > 0.05: signals += 1
                     total_checks += 1
-                # Signal 3: SMA200 trend
                 s200 = sma200_all[a].loc[d]
-                if s200 and not np.isnan(s200):
+                if not np.isnan(s200):
                     if p > s200: signals += 1
                     total_checks += 1
-                # Signal 4: RSI sweet spot
-                if rsi_val and not np.isnan(rsi_val):
+                if not np.isnan(rsi_val):
                     if 30 < rsi_val < 65: signals += 1
                     total_checks += 1
-                # BUY if >= 3 signals agree
-                if signals >= 3 and total_checks >= 3:
+                if signals >= 4 and total_checks >= 4 and len(positions) < MAX_POSITIONS:
                     atr = atr14[a].loc[d]
                     if np.isnan(atr) or atr <= 0: atr = p * 0.02
                     n_pos = max(len(positions) + 1, 1)
-                    prev *= (1 - (TRADING_FEE + SPREAD_COST) / n_pos)
-                    positions[a] = (p, p - 3 * atr, p + 8 * atr); trades += 1
-            except: pass
+                    prev *= (1 - (TRADING_FEE + SPREAD_COST)) / n_pos
+                    positions[a] = (p, p - 4 * atr, p + 10 * atr); trades += 1
         if positions:
             r = np.mean([ret.loc[d, a] for a in positions])
         else:
@@ -255,23 +231,6 @@ def strat_ensemble():
     wr = round(win/len(dates)*100, 1)
     k = kpi(eq, trades); k["WinRate%"] = wr
     return eq, k
-
-# -- Ausfuehrung ------------------------------------------------------------
-print("Running strategies ...")
-results = {}
-for name, fn in [("Buy & Hold", strat_buyhold), ("Crash Guard", strat_crash_guard),
-                 ("Momentum", strat_momentum), ("Score Trader", strat_score_trader),
-                 ("Adaptiv", strat_adaptiv),
-                  ("Ensemble", strat_ensemble)]:
-    eq, k = fn()
-    results[name] = {"equity": eq, "kpi": k}
-    print(f"  {name}: {k}")
-
-# -- JSON --------------------------------------------------------------------
-out = {name: v["kpi"] for name, v in results.items()}
-out["_meta"] = {"generated": str(dt.date.today()), "assets": len(ASSETS), "period_days": len(dates),
-                "fees": "Trading 212: 0.15% FX-Fee + 0.05% Spread = 0.20% pro Trade (EUR->USD)"}
-pathlib.Path("arena_backtest_results.json").write_text(json.dumps(out, indent=2))
 
 # -- HTML Dashboard --------------------------------------------------------
 colors = ["#2563eb","#dc2626","#16a34a","#f59e0b","#8b5cf6","#ec4899"]
