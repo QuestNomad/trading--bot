@@ -7,7 +7,7 @@ Bots:
   2. Crash Guard  - Buy & Hold SPY mit SMA200-Schutz
   3. Score Trader - SMA20/BB/RSI/ATR Score-System (kauf_schwelle=8)
   4. Buy & Hold   - Gleichgewichtet alle 38 Assets
-  5. Hybrid       - Momentum-Auswahl + Score-Filter + Crash-Schutz
+  5. Adaptiv      - Wechselt zwischen Momentum, Crash Guard und Cash je nach VIX
 """
 
 import yfinance as yf
@@ -107,6 +107,17 @@ def berechne_indikatoren(close: pd.DataFrame) -> dict:
 
     # Momentum (63-Tage-Rendite)
     ind["momentum_63"] = close.pct_change(63)
+
+    # VIX (fuer Adaptiv-Bot)
+    try:
+        vix_data = yf.download("^VIX", period="5d", progress=False)
+        if isinstance(vix_data.columns, pd.MultiIndex):
+            vix_close = vix_data["Close"]["^VIX"]
+        else:
+            vix_close = vix_data["Close"]
+        ind["vix"] = vix_close.iloc[-1] if len(vix_close) > 0 else 20
+    except Exception:
+        ind["vix"] = 20  # Fallback
 
     # Aktuelle Kurse (letzter verfuegbarer Tag)
     ind["aktuell"] = close.iloc[-1].to_dict()
@@ -412,83 +423,119 @@ def bot_buy_hold(state: dict, close: pd.DataFrame, ind: dict, heute: str):
 
 
 # ---------------------------------------------------------------------------
-# Bot 5: Hybrid
+# Bot 5: Adaptiv
 # ---------------------------------------------------------------------------
-
-def bot_hybrid(state: dict, close: pd.DataFrame, ind: dict, heute: str):
+def bot_adaptiv(state: dict, close: pd.DataFrame, ind: dict, heute: str):
     """
-    Momentum Top-10 Auswahl, aber nur kaufen wenn Score >= 6.
-    Crash-Schutz: Alles verkaufen wenn SPY < SMA200.
+    Adaptiv: Wechselt zwischen Momentum, Crash Guard und Cash je nach VIX.
+    - VIX < 20 (ruhig): Momentum-Strategie (Top 10 nach 63-Tage-Rendite)
+    - VIX 20-30 (unruhig): Crash Guard (100% SPY, SMA200-Schutz)
+    - VIX > 30 (Krise): Komplett Cash
+    - Hysterese: Wechsel von unruhig zurueck zu ruhig erst bei VIX < 18
     """
-    bot = state["bots"]["Hybrid"]
+    bot = state["bots"]["Adaptiv"]
     kurse = ind["aktuell"]
     spy_kurs = kurse.get("SPY", 0)
     spy_sma200 = ind["sma200_spy"].iloc[-1] if len(ind["sma200_spy"]) > 0 else 0
 
-    # Crash-Schutz
-    if spy_kurs and spy_sma200 and not np.isnan(spy_sma200) and spy_kurs < spy_sma200:
+    # VIX aus Indikatoren (falls verfuegbar, sonst Fallback 20)
+    vix = ind.get("vix", 20)
+    if isinstance(vix, pd.Series):
+        vix = vix.iloc[-1] if len(vix) > 0 else 20
+    if np.isnan(vix):
+        vix = 20
+
+    modus_alt = bot.get("modus", "momentum")
+
+    # Modus bestimmen mit Hysterese
+    if vix > 30:
+        modus = "cash"
+    elif vix > 20:
+        modus = "crash_guard"
+    elif vix < 18 or modus_alt == "momentum":
+        modus = "momentum"
+    else:
+        modus = modus_alt  # Hysterese: bleibe im aktuellen Modus
+
+    bot["modus"] = modus
+
+    if modus == "cash":
+        # Alles verkaufen
         if bot["positionen"]:
-            logger.info("Hybrid: CRASH-SCHUTZ \u2013 Verkaufe alles (SPY < SMA200)")
+            logger.info("Adaptiv: KRISE (VIX > 30) - Verkaufe alles, gehe in Cash")
             verkaufe_alles(bot, kurse)
-        return
 
-    # Rebalancing nur Montags
-    try:
-        tag = pd.Timestamp(heute)
-        if tag.dayofweek != 0:
+    elif modus == "crash_guard":
+        # Nur SPY halten, Rest verkaufen
+        for symbol in list(bot["positionen"].keys()):
+            if symbol != "SPY":
+                verkaufe(bot, symbol, kurse.get(symbol, 0))
+
+        hat_spy = "SPY" in bot["positionen"] and bot["positionen"].get("SPY", 0) > 0
+        spy_ueber_sma200 = (spy_kurs and spy_sma200 and not np.isnan(spy_sma200)
+                            and spy_kurs >= spy_sma200)
+
+        if hat_spy and not spy_ueber_sma200:
+            # SPY unter SMA200 -> verkaufen
+            verkaufe(bot, "SPY", spy_kurs)
+            logger.info("Adaptiv: Crash Guard - SPY VERKAUFT (unter SMA200)")
+        elif not hat_spy and spy_ueber_sma200:
+            # SPY kaufen mit gesamtem Kapital
+            kaufe(bot, "SPY", bot["kapital"], spy_kurs)
+            logger.info("Adaptiv: Crash Guard - SPY GEKAUFT (ueber SMA200)")
+        else:
+            logger.info(f"Adaptiv: Crash Guard Modus (VIX={vix:.1f})")
+
+    elif modus == "momentum":
+        # Top-10 Momentum, gleichgewichtet - analog zu bot_momentum
+        # Rebalancing nur Montags
+        try:
+            tag = pd.Timestamp(heute)
+            if tag.dayofweek != 0:  # 0 = Montag
+                return
+        except Exception:
+            pass
+
+        mom = ind["momentum_63"].iloc[-1].dropna().sort_values(ascending=False)
+        top10 = mom.head(10).index.tolist()
+
+        if not top10:
             return
-    except Exception:
-        pass
 
-    # Top-10 nach Momentum
-    mom = ind["momentum_63"].iloc[-1].dropna().sort_values(ascending=False)
-    top10 = mom.head(10).index.tolist()
+        # Verkaufe alles was nicht mehr in Top-10 ist
+        for symbol in list(bot["positionen"].keys()):
+            if symbol not in top10:
+                verkaufe(bot, symbol, kurse.get(symbol, 0))
 
-    # Filtere nach Score >= 6
-    qualifiziert = []
-    for symbol in top10:
-        kurs = kurse.get(symbol, 0)
-        if not kurs or np.isnan(kurs) or kurs <= 0:
-            continue
-        score = berechne_score(symbol, kurs, ind)
-        if score >= 6:
-            qualifiziert.append(symbol)
+        # Berechne Gesamtwert und Zielallokation
+        gesamt = portfolio_wert(bot, kurse)
+        ziel_pro_asset = gesamt / len(top10)
 
-    # Verkaufe was nicht mehr qualifiziert ist
-    for symbol in list(bot["positionen"].keys()):
-        if symbol not in qualifiziert:
-            verkaufe(bot, symbol, kurse.get(symbol, 0))
+        for symbol in top10:
+            kurs = kurse.get(symbol, 0)
+            if not kurs or np.isnan(kurs) or kurs <= 0:
+                continue
 
-    if not qualifiziert:
-        logger.info("Hybrid: Keine qualifizierten Assets (Momentum + Score)")
-        return
+            aktueller_wert = bot["positionen"].get(symbol, 0) * kurs
+            diff = ziel_pro_asset - aktueller_wert
+            if diff > 100:
+                kaufe(bot, symbol, diff, kurs)
+            elif diff < -100:
+                ueberschuss_menge = abs(diff) / kurs
+                aktuelle_menge = bot["positionen"].get(symbol, 0)
+                verkauf_menge = min(ueberschuss_menge, aktuelle_menge)
+                if verkauf_menge > 0:
+                    erloes = verkauf_menge * kurs
+                    bot["kapital"] += erloes
+                    bot["positionen"][symbol] = aktuelle_menge - verkauf_menge
+                    if bot["positionen"][symbol] < 0.0001:
+                        del bot["positionen"][symbol]
+                    bot["trades"] += 1
 
-    # Gleichgewichtet aufteilen
-    gesamt = portfolio_wert(bot, kurse)
-    ziel_pro_asset = gesamt / len(qualifiziert)
+        logger.info(f"Adaptiv: Momentum Modus (VIX={vix:.1f}) - {len(bot['positionen'])} Positionen")
 
-    for symbol in qualifiziert:
-        kurs = kurse.get(symbol, 0)
-        if not kurs or np.isnan(kurs) or kurs <= 0:
-            continue
-        aktueller_wert = bot["positionen"].get(symbol, 0) * kurs
-        diff = ziel_pro_asset - aktueller_wert
-        if diff > 100:
-            kaufe(bot, symbol, diff, kurs)
-        elif diff < -100:
-            ueberschuss_menge = abs(diff) / kurs
-            aktuelle_menge = bot["positionen"].get(symbol, 0)
-            verkauf_menge = min(ueberschuss_menge, aktuelle_menge)
-            if verkauf_menge > 0:
-                erloes = verkauf_menge * kurs
-                bot["kapital"] += erloes
-                bot["positionen"][symbol] = aktuelle_menge - verkauf_menge
-                if bot["positionen"][symbol] < 0.0001:
-                    del bot["positionen"][symbol]
-                bot["trades"] += 1
-
-    logger.info(f"Hybrid: {len(qualifiziert)} qualifizierte Assets von Top-10")
-
+    if modus != modus_alt:
+        logger.info(f"Adaptiv: Moduswechsel {modus_alt} -> {modus} (VIX={vix:.1f})")
 
 # ---------------------------------------------------------------------------
 # Arena State Management
@@ -513,7 +560,7 @@ def lade_arena_state() -> dict:
             "Crash_Guard": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": []},
             "Score_Trader": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": [], "meta": {}},
             "Buy_Hold": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": []},
-            "Hybrid": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": []},
+            "Adaptiv": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": [], "modus": "momentum"},
         },
     }
 
@@ -550,6 +597,7 @@ def main():
 
     logger.info(f"Handelstag: {heute}")
     logger.info(f"SPY: {kurse.get('SPY', 'N/A')}")
+    logger.info(f"VIX: {ind.get('vix', 'N/A')}")
 
     # 4. Lasse jeden Bot agieren
     logger.info("-" * 40)
@@ -561,7 +609,7 @@ def main():
         ("Crash_Guard", bot_crash_guard),
         ("Score_Trader", bot_score_trader),
         ("Buy_Hold", bot_buy_hold),
-        ("Hybrid", bot_hybrid),
+        ("Adaptiv", bot_adaptiv),
     ]
 
     for name, funk in bot_funktionen:
@@ -604,7 +652,7 @@ def main():
     # 7. Telegram-Nachricht
     msg_lines = [
         f"<b>\ud83c\udfdf\ufe0f Bot Arena \u2013 {heute}</b>",
-        f"SPY: ${kurse.get('SPY', 0):,.2f}",
+        f"SPY: ${kurse.get('SPY', 0):,.2f} | VIX: {ind.get('vix', 0):.1f}",
         "",
         "<b>Rangliste:</b>",
     ]
