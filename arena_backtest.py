@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Arena Backtest - 6 Strategien, 34 Assets, 10 Jahre retrospektiv (inkl. Trading 212 Gebuehren + Spread)."""
+"""Arena Backtest - 6 Strategien, 38 Assets, 10 Jahre retrospektiv (inkl. Trading 212 Gebuehren + Spread)."""
 import json, datetime as dt, numpy as np, pandas as pd, yfinance as yf, pathlib, textwrap
 
 # -- Trading 212 Gebuehren ---------------------------------------------------
@@ -225,7 +225,7 @@ def strat_ensemble():
                     atr = atr14[a].loc[d]
                     if np.isnan(atr) or atr <= 0: atr = p * 0.02
                     n_pos = max(len(positions) + 1, 1)
-                    prev *= (1 - (TRADING_FEE + SPREAD_COST)) / n_pos
+                    prev *= (1 - (TRADING_FEE + SPREAD_COST) / n_pos)
                     positions[a] = (p, p - 4 * atr, p + 10 * atr); trades += 1
         if positions:
             r = np.mean([ret.loc[d, a] for a in positions])
