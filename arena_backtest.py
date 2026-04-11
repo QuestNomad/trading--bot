@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Arena Backtest - 6 Strategien, 38 Assets, 2 Jahre retrospektiv (inkl. Trading 212 Gebuehren + Spread)."""
+"""Arena Backtest - 6 Strategien, 38 Assets, 10 Jahre retrospektiv (inkl. Trading 212 Gebuehren + Spread)."""
 import json, datetime as dt, numpy as np, pandas as pd, yfinance as yf, pathlib, textwrap
 
 # -- Trading 212 Gebuehren ---------------------------------------------------
@@ -14,7 +14,7 @@ ASSETS = [
     "AAPL","MSFT","TSLA"
 ]
 BENCH = "SPY"; VIX = "^VIX"; RF = 0.045; REBAL_DAYS = 5
-end = dt.date.today(); start = end - dt.timedelta(days=2*365+30)
+end = dt.date.today(); start = end - dt.timedelta(days=10*365+30)
 
 # -- Daten laden ------------------------------------------------------------
 print("Downloading data ...")
