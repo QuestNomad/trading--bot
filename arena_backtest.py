@@ -231,5 +231,5 @@ def strat_ensemble():
     k = kpi(eq, trades); k["WinRate%"] = wr
     return eq, k
 
-pathlib.Path("arena_backtest_dashboard.html").write_text(html)
-print("Done - arena_backtest_results.json + arena_backtest_dashboard.html written.")
+# Dashboard generation temporarily disabled
+print("Done - arena_backtest_results.json written.")
