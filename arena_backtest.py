@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Arena Backtest - 5 Strategien, 38 Assets, 2 Jahre retrospektiv (inkl. Trading 212 Gebuehren)."""
+"""Arena Backtest - 6 Strategien, 38 Assets, 2 Jahre retrospektiv (inkl. Trading 212 Gebuehren + Spread)."""
 import json, datetime as dt, numpy as np, pandas as pd, yfinance as yf, pathlib, textwrap
 
 # -- Trading 212 Gebuehren ---------------------------------------------------
 TRADING_FEE = 0.0015  # 0.15% FX-Fee pro Trade (Trading 212, EUR->USD)
+SPREAD_COST = 0.0005  # 0.05% Spread-Simulation pro Trade
 
 # -- Assets ------------------------------------------------------------------
 ASSETS = [
@@ -53,7 +54,7 @@ def strat_crash_guard():
     for d in dates:
         is_off = risk_off.loc[d]
         if was_off is not None and is_off != was_off:
-            prev *= (1 - TRADING_FEE)  # FX-Fee bei Switch (Kauf oder Verkauf)
+            prev *= (1 - TRADING_FEE - SPREAD_COST)  # FX-Fee bei Switch (Kauf oder Verkauf)
         was_off = is_off
         r = ret.loc[d, BENCH] if not is_off else 0.0
         prev *= (1 + r); vals.append(prev)
@@ -67,15 +68,15 @@ def strat_momentum():
         if i % REBAL_DAYS == 0:
             if risk_off.loc[d]:
                 if held:
-                    prev *= (1 - TRADING_FEE)  # FX-Fee: Verkauf aller Positionen
+                    prev *= (1 - TRADING_FEE - SPREAD_COST)  # FX-Fee: Verkauf aller Positionen
                     trades += len(held)
                 held = []
             else:
                 mom = close[ASSETS].loc[:d].pct_change(63).iloc[-1].nlargest(10).index.tolist()
                 if set(mom) != set(held):
                     if held:
-                        prev *= (1 - TRADING_FEE)  # FX-Fee: Verkauf alter Positionen
-                    prev *= (1 - TRADING_FEE)  # FX-Fee: Kauf neuer Positionen
+                        prev *= (1 - TRADING_FEE - SPREAD_COST)  # FX-Fee: Verkauf alter Positionen
+                    prev *= (1 - TRADING_FEE - SPREAD_COST)  # FX-Fee: Kauf neuer Positionen
                     trades += len(mom)
                 held = mom
         if held: r = ret.loc[d, held].mean()
@@ -100,7 +101,7 @@ def strat_score_trader():
             p = close[a].loc[d]
             if p <= sl or p >= tp:
                 n_pos = max(len(positions), 1)
-                prev *= (1 - TRADING_FEE / n_pos)  # FX-Fee: Verkauf (anteilig)
+                prev *= (1 - (TRADING_FEE + SPREAD_COST) / n_pos)  # FX-Fee: Verkauf (anteilig)
                 trades += 1; del positions[a]
         for a in ASSETS:
             if a in positions: continue
@@ -115,7 +116,7 @@ def strat_score_trader():
                 if score >= 8:
                     atr = atr14[a].loc[d]
                     n_pos = max(len(positions) + 1, 1)
-                    prev *= (1 - TRADING_FEE / n_pos)  # FX-Fee: Kauf (anteilig)
+                    prev *= (1 - (TRADING_FEE + SPREAD_COST) / n_pos)  # FX-Fee: Kauf (anteilig)
                     positions[a] = (p, p - 3*atr, p + 8*atr); trades += 1
             except: pass
         if positions: r = np.mean([ret.loc[d, a] for a in positions])
@@ -140,7 +141,7 @@ def strat_adaptiv():
         elif vix < 18 or modus_alt == "momentum": modus = "momentum"
         # else: bleibe im aktuellen Modus (Hysterese)
         if modus != modus_alt:
-            prev *= (1 - TRADING_FEE)  # FX-Fee bei Moduswechsel
+            prev *= (1 - TRADING_FEE - SPREAD_COST)  # FX-Fee bei Moduswechsel
             trades += 1
         if modus == "cash": r = 0.0
         elif modus == "crash_guard":
@@ -149,7 +150,7 @@ def strat_adaptiv():
         else:  # momentum
             if i % REBAL_DAYS == 0:
                 mom = close[ASSETS].loc[:d].pct_change(63).iloc[-1].nlargest(10).index.tolist()
-                prev *= (1 - TRADING_FEE)  # FX-Fee: Rebalancing
+                prev *= (1 - TRADING_FEE - SPREAD_COST)  # FX-Fee: Rebalancing
                 trades += len(mom)
             if 'mom' in dir() and mom: r = ret.loc[d, mom].mean()
             else: r = 0.0
@@ -157,12 +158,111 @@ def strat_adaptiv():
     eq = pd.Series(vals[1:], index=dates)
     return eq, kpi(eq, trades)
 
+def strat_ensemble():
+    """Ensemble: Handelt nur wenn mehrere Strategien uebereinstimmen."""
+    vals = [10000.0]; prev = 10000.0; positions = {}; trades = 0
+    atr14 = {}; rsi14 = {}; sma20_all = {}; bb_lower_all = {}; sma200_all = {}; mom63 = {}
+    for a in ASSETS:
+        h = close[a]
+        delta = h.diff()
+        gain = delta.clip(lower=0).rolling(14).mean()
+        loss = (-delta.clip(upper=0)).rolling(14).mean()
+        rsi14[a] = 100 - 100/(1 + gain/(loss+1e-9))
+        atr14[a] = h.diff().abs().rolling(14).mean()
+        sma20_all[a] = h.rolling(20).mean()
+        bb_std = h.rolling(20).std()
+        bb_lower_all[a] = sma20_all[a] - 2 * bb_std
+        sma200_all[a] = h.rolling(200).mean()
+        mom63[a] = h.pct_change(63)
+    for d in dates:
+        # Check existing positions for SL/TP/signal-drop
+        for a in list(positions):
+            p = close[a].loc[d]
+            entry, sl, tp = positions[a]
+            # Count current signals for this position
+            signals = 0; total_checks = 0
+            s20 = sma20_all[a].loc[d] if a in sma20_all else None
+            bbl = bb_lower_all[a].loc[d] if a in bb_lower_all else None
+            rsi_val = rsi14[a].loc[d] if a in rsi14 else None
+            score = 0
+            if s20 and p > s20: score += 2
+            if bbl and p < bbl * 1.02: score += 3
+            if rsi_val and rsi_val < 35: score += 2
+            if rsi_val and rsi_val < 50: score += 1
+            if score >= 6: signals += 1
+            total_checks += 1
+            r63 = mom63[a].loc[d] if a in mom63 else None
+            if r63 is not None and not np.isnan(r63):
+                if r63 > 0.05: signals += 1
+                total_checks += 1
+            s200 = sma200_all[a].loc[d] if a in sma200_all else None
+            if s200 and not np.isnan(s200):
+                if p > s200: signals += 1
+                total_checks += 1
+            if rsi_val and not np.isnan(rsi_val):
+                if 30 < rsi_val < 65: signals += 1
+                total_checks += 1
+            if p <= sl or p >= tp or signals <= 1:
+                n_pos = max(len(positions), 1)
+                prev *= (1 - (TRADING_FEE + SPREAD_COST) / n_pos)
+                trades += 1; del positions[a]
+        # Look for new buys
+        for a in ASSETS:
+            if a in positions: continue
+            try:
+                p = close[a].loc[d]
+                signals = 0; total_checks = 0
+                # Signal 1: Score-based
+                s20 = sma20_all[a].loc[d]
+                bbl = bb_lower_all[a].loc[d]
+                rsi_val = rsi14[a].loc[d]
+                score = 0
+                if s20 and p > s20: score += 2
+                if bbl and p < bbl * 1.02: score += 3
+                if rsi_val and rsi_val < 35: score += 2
+                if rsi_val and rsi_val < 50: score += 1
+                if score >= 6: signals += 1
+                total_checks += 1
+                # Signal 2: Momentum
+                r63 = mom63[a].loc[d]
+                if r63 is not None and not np.isnan(r63):
+                    if r63 > 0.05: signals += 1
+                    total_checks += 1
+                # Signal 3: SMA200 trend
+                s200 = sma200_all[a].loc[d]
+                if s200 and not np.isnan(s200):
+                    if p > s200: signals += 1
+                    total_checks += 1
+                # Signal 4: RSI sweet spot
+                if rsi_val and not np.isnan(rsi_val):
+                    if 30 < rsi_val < 65: signals += 1
+                    total_checks += 1
+                # BUY if >= 3 signals agree
+                if signals >= 3 and total_checks >= 3:
+                    atr = atr14[a].loc[d]
+                    if np.isnan(atr) or atr <= 0: atr = p * 0.02
+                    n_pos = max(len(positions) + 1, 1)
+                    prev *= (1 - (TRADING_FEE + SPREAD_COST) / n_pos)
+                    positions[a] = (p, p - 3 * atr, p + 8 * atr); trades += 1
+            except: pass
+        if positions:
+            r = np.mean([ret.loc[d, a] for a in positions])
+        else:
+            r = 0.0
+        prev *= (1 + r); vals.append(prev)
+    eq = pd.Series(vals[1:], index=dates)
+    win = sum(1 for v1,v2 in zip(vals[:-1],vals[1:]) if v2>v1)
+    wr = round(win/len(dates)*100, 1)
+    k = kpi(eq, trades); k["WinRate%"] = wr
+    return eq, k
+
 # -- Ausfuehrung ------------------------------------------------------------
 print("Running strategies ...")
 results = {}
 for name, fn in [("Buy & Hold", strat_buyhold), ("Crash Guard", strat_crash_guard),
                  ("Momentum", strat_momentum), ("Score Trader", strat_score_trader),
-                 ("Adaptiv", strat_adaptiv)]:
+                 ("Adaptiv", strat_adaptiv),
+                  ("Ensemble", strat_ensemble)]:
     eq, k = fn()
     results[name] = {"equity": eq, "kpi": k}
     print(f"  {name}: {k}")
@@ -170,11 +270,11 @@ for name, fn in [("Buy & Hold", strat_buyhold), ("Crash Guard", strat_crash_guar
 # -- JSON --------------------------------------------------------------------
 out = {name: v["kpi"] for name, v in results.items()}
 out["_meta"] = {"generated": str(dt.date.today()), "assets": len(ASSETS), "period_days": len(dates),
-                "fees": "Trading 212: 0.15% FX-Fee pro Trade (EUR->USD)"}
+                "fees": "Trading 212: 0.15% FX-Fee + 0.05% Spread = 0.20% pro Trade (EUR->USD)"}
 pathlib.Path("arena_backtest_results.json").write_text(json.dumps(out, indent=2))
 
 # -- HTML Dashboard --------------------------------------------------------
-colors = ["#2563eb","#dc2626","#16a34a","#f59e0b","#8b5cf6"]
+colors = ["#2563eb","#dc2626","#16a34a","#f59e0b","#8b5cf6","#ec4899"]
 equity_datasets = []
 for i, (name, v) in enumerate(results.items()):
     eq = v["equity"]
@@ -206,12 +306,12 @@ th,td{{border:1px solid #334155;padding:8px;text-align:center}}th{{background:#1
 canvas{{max-height:350px}}</style></head><body>
 <h1>Arena Backtest Dashboard</h1>
 <p style="text-align:center">{len(ASSETS)} Assets | {len(dates)} Trading Days | Generated {dt.date.today()}</p>
-<p class="fee-note">inkl. Trading 212 Gebuehren (0.15% FX-Fee pro Trade)</p>
+<p class="fee-note">inkl. Trading 212 Gebuehren (0.15% FX-Fee + 0.05% Spread pro Trade)</p>
 <table><tr><th>#</th><th>Strategy</th><th>Return</th><th>Sharpe</th><th>Max DD</th><th>Win Rate</th><th>Trades</th></tr>{rows}</table>
 <div class="chart-box"><canvas id="eq"></canvas></div>
 <div class="chart-box"><canvas id="dd"></canvas></div>
 <script>
-new Chart(document.getElementById("eq"),{{type:"line",data:{{labels:{labels_eq},datasets:[{",".join(equity_datasets)}]}},options:{{plugins:{{title:{{display:true,text:"Equity Curves (inkl. 0.15% FX-Fee)",color:"#e2e8f0"}}}},scales:{{x:{{display:false}},y:{{ticks:{{color:"#94a3b8"}}}}}}}}}});
+new Chart(document.getElementById("eq"),{{type:"line",data:{{labels:{labels_eq},datasets:[{",".join(equity_datasets)}]}},options:{{plugins:{{title:{{display:true,text:"Equity Curves (inkl. 0.20% Gesamtkosten)",color:"#e2e8f0"}}}},scales:{{x:{{display:false}},y:{{ticks:{{color:"#94a3b8"}}}}}}}}}});
 new Chart(document.getElementById("dd"),{{type:"line",data:{{labels:{labels_eq},datasets:[{",".join(dd_datasets)}]}},options:{{plugins:{{title:{{display:true,text:"Drawdown %",color:"#e2e8f0"}}}},scales:{{x:{{display:false}},y:{{ticks:{{color:"#94a3b8"}}}}}}}}}});
 </script></body></html>""")
 pathlib.Path("arena_backtest_dashboard.html").write_text(html)
