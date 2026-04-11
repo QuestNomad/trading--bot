@@ -97,12 +97,17 @@ def strat_score_trader():
         atr14[a] = h.diff().abs().rolling(14).mean()
     for d in dates:
         for a in list(positions):
-            entry, sl, tp = positions[a]
+            entry, sl, atr_entry, high = positions[a]
             p = close[a].loc[d]
-            if p <= sl or p >= tp:
+            new_high = max(high, p)
+            trailing_stop = new_high - 3 * atr_entry
+            effective_sl = max(sl, trailing_stop)
+            if p <= effective_sl:
                 n_pos = max(len(positions), 1)
                 prev *= (1 - (TRADING_FEE + SPREAD_COST) / n_pos)  # FX-Fee: Verkauf (anteilig)
                 trades += 1; del positions[a]
+            else:
+                positions[a] = (entry, sl, atr_entry, new_high)
         for a in ASSETS:
             if a in positions: continue
             try:
@@ -117,7 +122,7 @@ def strat_score_trader():
                     atr = atr14[a].loc[d]
                     n_pos = max(len(positions) + 1, 1)
                     prev *= (1 - (TRADING_FEE + SPREAD_COST) / n_pos)  # FX-Fee: Kauf (anteilig)
-                    positions[a] = (p, p - 3*atr, p + 8*atr); trades += 1
+                    positions[a] = (p, p - 3*atr, atr, p); trades += 1
             except: pass
         if positions: r = np.mean([ret.loc[d, a] for a in positions])
         else: r = 0.0
