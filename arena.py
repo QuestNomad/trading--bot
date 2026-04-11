@@ -7,7 +7,7 @@ Bots:
   2. Crash Guard  - Buy & Hold SPY mit SMA200-Schutz
   3. Score Trader - SMA20/BB/RSI/ATR Score-System (kauf_schwelle=8)
   4. Buy & Hold   - Gleichgewichtet alle 38 Assets
-  5. Hybrid       - Momentum-Auswahl + Score-Filter + Crash-Schutz
+  5. Adaptiv      - VIX-gesteuerter Regime-Wechsel (Momentum/CrashGuard/Cash)
 """
 
 import yfinance as yf
@@ -412,82 +412,114 @@ def bot_buy_hold(state: dict, close: pd.DataFrame, ind: dict, heute: str):
 
 
 # ---------------------------------------------------------------------------
-# Bot 5: Hybrid
+# Bot 5: Adaptiv
 # ---------------------------------------------------------------------------
 
-def bot_hybrid(state: dict, close: pd.DataFrame, ind: dict, heute: str):
-    """
-    Momentum Top-10 Auswahl, aber nur kaufen wenn Score >= 6.
-    Crash-Schutz: Alles verkaufen wenn SPY < SMA200.
-    """
-    bot = state["bots"]["Hybrid"]
+def bot_adaptiv(state: dict, close: pd.DataFrame, ind: dict, heute: str):
+    """Adaptiv: VIX-gesteuerter Regime-Wechsel"""
+    bot = state["bots"]["Adaptiv"]
     kurse = ind["aktuell"]
-    spy_kurs = kurse.get("SPY", 0)
-    spy_sma200 = ind["sma200_spy"].iloc[-1] if len(ind["sma200_spy"]) > 0 else 0
 
-    # Crash-Schutz
-    if spy_kurs and spy_sma200 and not np.isnan(spy_sma200) and spy_kurs < spy_sma200:
-        if bot["positionen"]:
-            logger.info("Hybrid: CRASH-SCHUTZ \u2013 Verkaufe alles (SPY < SMA200)")
-            verkaufe_alles(bot, kurse)
-        return
+    # Aktuellen Modus aus bot-state lesen (oder default "momentum")
+    modus = bot.get("modus", "momentum")
 
-    # Rebalancing nur Montags
+    # VIX-Level ermitteln (aus ind falls vorhanden, sonst default 20)
     try:
-        tag = pd.Timestamp(heute)
-        if tag.dayofweek != 0:
-            return
+        vix = ind.get("vix_close", 20)
+        if hasattr(vix, 'iloc'):
+            vix = vix.iloc[-1]
+        if np.isnan(vix):
+            vix = 20
     except Exception:
-        pass
+        vix = 20
 
-    # Top-10 nach Momentum
-    mom = ind["momentum_63"].iloc[-1].dropna().sort_values(ascending=False)
-    top10 = mom.head(10).index.tolist()
+    # Regime-Erkennung mit Hysterese
+    if vix > 30:
+        neuer_modus = "cash"
+    elif vix > 20:
+        neuer_modus = "crash_guard"
+    elif vix < 18 or modus == "momentum":
+        neuer_modus = "momentum"
+    else:
+        neuer_modus = modus  # Hysterese-Zone 18-20: Modus beibehalten
 
-    # Filtere nach Score >= 6
-    qualifiziert = []
-    for symbol in top10:
-        kurs = kurse.get(symbol, 0)
-        if not kurs or np.isnan(kurs) or kurs <= 0:
-            continue
-        score = berechne_score(symbol, kurs, ind)
-        if score >= 6:
-            qualifiziert.append(symbol)
+    # Bei Regime-Wechsel alles liquidieren
+    if neuer_modus != modus:
+        if bot["positionen"]:
+            logger.info(f"Adaptiv: Regime-Wechsel {modus} -> {neuer_modus} (VIX={vix:.1f}) - Liquidiere alles")
+            verkaufe_alles(bot, kurse)
+        modus = neuer_modus
 
-    # Verkaufe was nicht mehr qualifiziert ist
-    for symbol in list(bot["positionen"].keys()):
-        if symbol not in qualifiziert:
-            verkaufe(bot, symbol, kurse.get(symbol, 0))
+    bot["modus"] = modus
 
-    if not qualifiziert:
-        logger.info("Hybrid: Keine qualifizierten Assets (Momentum + Score)")
+    # Strategie je nach Modus ausfuehren
+    if modus == "cash":
+        logger.info(f"Adaptiv: CASH-Modus (VIX={vix:.1f}) - Keine Trades")
         return
 
-    # Gleichgewichtet aufteilen
-    gesamt = portfolio_wert(bot, kurse)
-    ziel_pro_asset = gesamt / len(qualifiziert)
+    elif modus == "crash_guard":
+        # 100% SPY mit SMA200-Schutz
+        spy_kurs = kurse.get("SPY", 0)
+        spy_sma200 = ind["sma200_spy"].iloc[-1] if len(ind["sma200_spy"]) > 0 else 0
 
-    for symbol in qualifiziert:
-        kurs = kurse.get(symbol, 0)
-        if not kurs or np.isnan(kurs) or kurs <= 0:
-            continue
-        aktueller_wert = bot["positionen"].get(symbol, 0) * kurs
-        diff = ziel_pro_asset - aktueller_wert
-        if diff > 100:
-            kaufe(bot, symbol, diff, kurs)
-        elif diff < -100:
-            ueberschuss_menge = abs(diff) / kurs
-            aktuelle_menge = bot["positionen"].get(symbol, 0)
-            verkauf_menge = min(ueberschuss_menge, aktuelle_menge)
-            if verkauf_menge > 0:
-                erloes = verkauf_menge * kurs
-                bot["kapital"] += erloes
-                bot["positionen"][symbol] = aktuelle_menge - verkauf_menge
-                if bot["positionen"][symbol] < 0.0001:
-                    del bot["positionen"][symbol]
-                bot["trades"] += 1
+        if spy_kurs and spy_sma200 and not np.isnan(spy_sma200):
+            if "SPY" not in bot["positionen"] and spy_kurs > spy_sma200:
+                # Kaufe SPY
+                gesamt = portfolio_wert(bot, kurse)
+                kaufe(bot, "SPY", gesamt * 0.99, spy_kurs)
+                logger.info(f"Adaptiv: CRASH_GUARD - Kaufe SPY (Kurs > SMA200)")
+            elif "SPY" in bot["positionen"] and spy_kurs < spy_sma200:
+                # Verkaufe SPY
+                verkaufe(bot, "SPY", spy_kurs)
+                logger.info(f"Adaptiv: CRASH_GUARD - Verkaufe SPY (Kurs < SMA200)")
+        return
 
-    logger.info(f"Hybrid: {len(qualifiziert)} qualifizierte Assets von Top-10")
+    elif modus == "momentum":
+        # Top-10 nach 63-Tage-Momentum, woechentliches Rebalancing
+        try:
+            tag = pd.Timestamp(heute)
+            if tag.dayofweek != 0:
+                return
+        except Exception:
+            pass
+
+        mom = ind["momentum_63"].iloc[-1].dropna().sort_values(ascending=False)
+        top10 = mom.head(10).index.tolist()
+
+        # Verkaufe was nicht mehr in Top-10 ist
+        for symbol in list(bot["positionen"].keys()):
+            if symbol not in top10:
+                verkaufe(bot, symbol, kurse.get(symbol, 0))
+
+        if not top10:
+            logger.info("Adaptiv: Keine Momentum-Assets gefunden")
+            return
+
+        # Gleichgewichtet aufteilen
+        gesamt = portfolio_wert(bot, kurse)
+        ziel_pro_asset = gesamt / len(top10)
+
+        for symbol in top10:
+            kurs = kurse.get(symbol, 0)
+            if not kurs or np.isnan(kurs) or kurs <= 0:
+                continue
+            aktueller_wert = bot["positionen"].get(symbol, 0) * kurs
+            diff = ziel_pro_asset - aktueller_wert
+            if diff > 100:
+                kaufe(bot, symbol, diff, kurs)
+            elif diff < -100:
+                ueberschuss_menge = abs(diff) / kurs
+                aktuelle_menge = bot["positionen"].get(symbol, 0)
+                verkauf_menge = min(ueberschuss_menge, aktuelle_menge)
+                if verkauf_menge > 0:
+                    erloes = verkauf_menge * kurs
+                    bot["kapital"] += erloes
+                    bot["positionen"][symbol] = aktuelle_menge - verkauf_menge
+                    if bot["positionen"][symbol] < 0.0001:
+                        del bot["positionen"][symbol]
+                    bot["trades"] += 1
+
+        logger.info(f"Adaptiv: MOMENTUM-Modus (VIX={vix:.1f}) - {len(top10)} Assets")
 
 
 # ---------------------------------------------------------------------------
@@ -513,7 +545,7 @@ def lade_arena_state() -> dict:
             "Crash_Guard": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": []},
             "Score_Trader": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": [], "meta": {}},
             "Buy_Hold": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": []},
-            "Hybrid": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": []},
+            "Adaptiv": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": [], "modus": "momentum"},
         },
     }
 
@@ -561,7 +593,7 @@ def main():
         ("Crash_Guard", bot_crash_guard),
         ("Score_Trader", bot_score_trader),
         ("Buy_Hold", bot_buy_hold),
-        ("Hybrid", bot_hybrid),
+        ("Adaptiv", bot_adaptiv),
     ]
 
     for name, funk in bot_funktionen:
