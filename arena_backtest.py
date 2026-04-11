@@ -238,3 +238,30 @@ def strat_ensemble():
 
 # Dashboard generation temporarily disabled
 print("Done - arena_backtest_results.json written.")
+# -- Run all strategies ------------------------------------------------
+strategies = [
+    ("Buy & Hold", strat_buyhold),
+    ("Crash Guard", strat_crash_guard),
+    ("Momentum", strat_momentum),
+    ("Score Trader", strat_score_trader),
+    ("Adaptiv", strat_adaptiv),
+    ("Ensemble", strat_ensemble),
+]
+
+results = {}
+for name, func in strategies:
+    eq, k = func()
+    results[name] = k
+
+results["_meta"] = {
+    "generated": str(dt.date.today()),
+    "assets": len(ASSETS),
+    "period_days": len(dates),
+    "fees": "Trading 212: 0.15% FX-Fee + 0.05% Spread = 0.20% pro Trade (EUR->USD)"
+}
+
+with open("arena_backtest_results.json", "w") as f:
+    json.dump(results, f, indent=2)
+
+# Dashboard generation temporarily disabled
+print("Done - arena_backtest_results.json written.")
