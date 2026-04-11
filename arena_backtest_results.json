@@ -1,46 +1,46 @@
 {
   "Buy & Hold": {
-    "Return%": 16.64,
-    "Sharpe": 0.53,
-    "MaxDD%": -16.57,
+    "Return%": 266.5,
+    "Sharpe": 0.67,
+    "MaxDD%": -29.83,
     "Trades": 0
   },
   "Crash Guard": {
-    "Return%": 17.37,
-    "Sharpe": 0.77,
-    "MaxDD%": -6.56,
-    "Trades": 6
+    "Return%": 460.92,
+    "Sharpe": 1.24,
+    "MaxDD%": -10.1,
+    "Trades": 50
   },
   "Momentum": {
-    "Return%": 12.58,
-    "Sharpe": 0.35,
-    "MaxDD%": -12.65,
-    "Trades": 490
+    "Return%": 202.01,
+    "Sharpe": 0.52,
+    "MaxDD%": -25.18,
+    "Trades": 3700
   },
   "Score Trader": {
-    "Return%": 24.99,
-    "Sharpe": 0.86,
-    "MaxDD%": -9.37,
-    "Trades": 468,
-    "WinRate%": 54.7
+    "Return%": 4605.1,
+    "Sharpe": 2.63,
+    "MaxDD%": -9.88,
+    "Trades": 4109,
+    "WinRate%": 59.0
   },
   "Adaptiv": {
-    "Return%": 21.84,
-    "Sharpe": 0.71,
-    "MaxDD%": -12.39,
-    "Trades": 447
+    "Return%": 483.75,
+    "Sharpe": 1.09,
+    "MaxDD%": -16.8,
+    "Trades": 2940
   },
   "Ensemble": {
-    "Return%": 1.59,
-    "Sharpe": -0.11,
-    "MaxDD%": -17.54,
-    "Trades": 719,
-    "WinRate%": 54.0
+    "Return%": -100.0,
+    "Sharpe": -3.24,
+    "MaxDD%": -100.0,
+    "Trades": 318,
+    "WinRate%": 42.6
   },
   "_meta": {
     "generated": "2026-04-11",
-    "assets": 38,
-    "period_days": 322,
+    "assets": 34,
+    "period_days": 2334,
     "fees": "Trading 212: 0.15% FX-Fee + 0.05% Spread = 0.20% pro Trade (EUR->USD)"
   }
 }
