@@ -435,8 +435,6 @@ def bot_adaptiv(state: dict, close: pd.DataFrame, ind: dict, heute: str):
     """
     bot = state["bots"]["Adaptiv"]
     kurse = ind["aktuell"]
-    spy_kurs = kurse.get("SPY", 0)
-    spy_sma200 = ind["sma200_spy"].iloc[-1] if len(ind["sma200_spy"]) > 0 else 0
 
     # VIX aus Indikatoren (falls verfuegbar, sonst Fallback 20)
     vix = ind.get("vix", 20)
