@@ -11,7 +11,9 @@ ASSETS = [
     "SPY","QQQ","IWM","EFA","EEM","VGK","EWJ","FXI","VNQ","XLE","XLF","XLV",
     "XLK","XLI","XLU","XLP","XLY","XLRE","XBI","ARKK","GLD","SLV","TLT",
     "HYG","LQD","BND","UNG","USO","DBA","MSTR","NVDA",
-    "AAPL","MSFT","TSLA"
+    "AAPL","MSFT","TSLA",
+
+    "IBIT","BITO","COIN","XLC"
 ]
 BENCH = "SPY"; VIX = "^VIX"; RF = 0.045; REBAL_DAYS = 5
 end = dt.date.today(); start = end - dt.timedelta(days=10*365+30)
