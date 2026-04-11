@@ -116,89 +116,45 @@ def strat_score_trader():
     return eq, k
 
 def strat_adaptiv():
-    """Adaptiv: VIX-gesteuerter Regime-Wechsel"""
-    positions = {}
-    cash = 100000
-    modus = "momentum"
-    history = []
+    """Adaptiv: VIX-basierter Moduswechsel (Momentum/Crash Guard/Cash) mit Hysterese."""
+    vix_close = close[VIX] if VIX in close.columns else pd.Series(20, index=close.index)
+    vals = [10000.0]; prev = 10000.0; trades = 0; modus = "momentum"
+    for i, d in enumerate(dates):
+        vix = vix_close.loc[d] if d in vix_close.index else 20
 
-    for i in range(200, len(close)):
-        date = close.index[i]
-        daily = close.iloc[i]
-
-        # VIX-Level
-        try:
-            vix = close["^VIX"].iloc[i] if "^VIX" in close.columns else 20
-        except:
-            vix = 20
-
-        # Regime-Erkennung mit Hysterese
+        # Modus bestimmen mit Hysterese
+        modus_alt = modus
         if vix > 30:
-            neuer_modus = "cash"
+            modus = "cash"
         elif vix > 20:
-            neuer_modus = "crash_guard"
-        elif vix < 18 or modus == "momentum":
-            neuer_modus = "momentum"
-        else:
-            neuer_modus = modus
+            modus = "crash_guard"
+        elif vix < 18 or modus_alt == "momentum":
+            modus = "momentum"
+        # else: bleibe im aktuellen Modus (Hysterese)
 
-        # Bei Regime-Wechsel alles liquidieren
-        if neuer_modus != modus:
-            for ticker, shares in list(positions.items()):
-                price = daily.get(ticker)
-                if price and price > 0:
-                    cash += shares * price
-            positions = {}
-            modus = neuer_modus
+        if modus != modus_alt:
+            trades += 1
 
         if modus == "cash":
-            pass
+            r = 0.0
         elif modus == "crash_guard":
-            spy_price = daily.get("SPY")
-            spy_sma200 = close["SPY"].iloc[i-200:i].mean() if "SPY" in close.columns else None
-            if spy_price and spy_sma200:
-                if "SPY" not in positions and spy_price > spy_sma200:
-                    shares = int(cash / spy_price)
-                    if shares > 0:
-                        positions["SPY"] = shares
-                        cash -= shares * spy_price
-                elif "SPY" in positions and spy_price < spy_sma200:
-                    cash += positions["SPY"] * spy_price
-                    del positions["SPY"]
-        elif modus == "momentum":
-            if hasattr(date, "weekday") and date.weekday() == 0:
-                returns = {}
-                for ticker in close.columns:
-                    if ticker.startswith("^"):
-                        continue
-                    try:
-                        ret = close[ticker].iloc[i] / close[ticker].iloc[i-63] - 1
-                        if not np.isnan(ret):
-                            returns[ticker] = ret
-                    except:
-                        pass
-                top = sorted(returns, key=returns.get, reverse=True)[:10]
-                for ticker in list(positions.keys()):
-                    if ticker not in top:
-                        price = daily.get(ticker)
-                        if price and price > 0:
-                            cash += positions[ticker] * price
-                            del positions[ticker]
-                if top:
-                    per_stock = cash / len(top)
-                    for ticker in top:
-                        if ticker not in positions:
-                            price = daily.get(ticker)
-                            if price and price > 0:
-                                shares = int(per_stock / price)
-                                if shares > 0:
-                                    positions[ticker] = shares
-                                    cash -= shares * price
+            if not risk_off.loc[d]:
+                r = ret.loc[d, BENCH]
+            else:
+                r = 0.0
+        else:  # momentum
+            if i % REBAL_DAYS == 0:
+                mom = close[ASSETS].loc[:d].pct_change(63).iloc[-1].nlargest(10).index.tolist()
+                trades += len(mom)
+            if 'mom' in dir() and mom:
+                r = ret.loc[d, mom].mean()
+            else:
+                r = 0.0
 
-        total = cash + sum(positions.get(t, 0) * daily.get(t, 0) for t in positions)
-        history.append({"date": date, "value": total, "modus": modus})
+        prev *= (1 + r); vals.append(prev)
+    eq = pd.Series(vals[1:], index=dates)
+    return eq, kpi(eq, trades)
 
-    return pd.DataFrame(history).set_index("date")["value"]
 
 # -- Ausfuehrung ------------------------------------------------------------
 print("Running strategies ...")
