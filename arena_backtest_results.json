@@ -24,11 +24,11 @@
     "Trades": 468,
     "WinRate%": 56.2
   },
-  "Hybrid": {
-    "Return%": -31.44,
-    "Sharpe": -1.44,
-    "MaxDD%": -36.64,
-    "Trades": 46
+  "Adaptiv": {
+    "Return%": 39.61,
+    "Sharpe": 1.32,
+    "MaxDD%": -10.81,
+    "Trades": 447
   },
   "_meta": {
     "generated": "2026-04-11",
