@@ -1,0 +1,38 @@
+{
+  "Buy & Hold": {
+    "Return%": 16.64,
+    "Sharpe": 0.53,
+    "MaxDD%": -16.57,
+    "Trades": 0
+  },
+  "Crash Guard": {
+    "Return%": 18.79,
+    "Sharpe": 0.84,
+    "MaxDD%": -6.56,
+    "Trades": 6
+  },
+  "Momentum": {
+    "Return%": 35.35,
+    "Sharpe": 1.12,
+    "MaxDD%": -9.34,
+    "Trades": 490
+  },
+  "Score Trader": {
+    "Return%": 32.65,
+    "Sharpe": 1.14,
+    "MaxDD%": -8.72,
+    "Trades": 468,
+    "WinRate%": 56.2
+  },
+  "Hybrid": {
+    "Return%": -31.44,
+    "Sharpe": -1.44,
+    "MaxDD%": -36.64,
+    "Trades": 46
+  },
+  "_meta": {
+    "generated": "2026-04-11",
+    "assets": 38,
+    "period_days": 322
+  }
+}
