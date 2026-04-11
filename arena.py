@@ -541,16 +541,20 @@ def bot_adaptiv(state: dict, close: pd.DataFrame, ind: dict, heute: str):
 # ---------------------------------------------------------------------------
 def bot_ensemble(state: dict, close: pd.DataFrame, ind: dict, heute: str):
     """
-    Ensemble: Handelt nur wenn mehrere Strategien uebereinstimmen.
-    Kombiniert Score-basiert, Momentum, SMA200-Trend und RSI.
-    Kauft nur wenn >= 3 von 4 Signalen positiv sind.
+    Ensemble: Handelt nur wenn ALLE 4 Signale uebereinstimmen.
+    Woechentliches Rebalancing (nur Montags), max 5 Positionen,
+    4x ATR Stop-Loss, 10x ATR Take-Profit, 10-Tage Cooldown.
     """
+    import datetime as dt
     bot = state["bots"]["Ensemble"]
     kurse = ind["aktuell"]
+    MAX_POSITIONS = 5
     if "meta" not in bot:
         bot["meta"] = {}
+    if "cooldown" not in bot:
+        bot["cooldown"] = {}
 
-    # Pruefe bestehende Positionen auf SL/TP/Signal-Drop
+    # Pruefe bestehende Positionen auf SL/TP TAEGLICH
     for symbol in list(bot["positionen"].keys()):
         kurs = kurse.get(symbol, 0)
         if not kurs or np.isnan(kurs) or kurs <= 0:
@@ -559,49 +563,44 @@ def bot_ensemble(state: dict, close: pd.DataFrame, ind: dict, heute: str):
         sl = meta.get("sl", 0)
         tp = meta.get("tp", 999999)
 
-        # Count current signals
-        signals = 0
-        total_checks = 0
-        # Signal 1: Score-based
-        score = berechne_score(symbol, kurs, ind)
-        if score >= 6:
-            signals += 1
-        total_checks += 1
-        # Signal 2: Momentum
-        mom = ind["momentum_63"][symbol].iloc[-1] if symbol in ind["momentum_63"].columns else None
-        if mom is not None and not np.isnan(mom):
-            if mom > 0.05:
-                signals += 1
-            total_checks += 1
-        # Signal 3: SMA200
-        sma200_val = ind["sma200_spy"].iloc[-1] if symbol == "SPY" and len(ind["sma200_spy"]) > 0 else None
-        if sma200_val is None:
-            sma20_val = ind["sma20"][symbol].iloc[-1] if symbol in ind["sma20"].columns else None
-            if sma20_val and not np.isnan(sma20_val):
-                if kurs > sma20_val:
-                    signals += 1
-                total_checks += 1
-        else:
-            if not np.isnan(sma200_val) and kurs > sma200_val:
-                signals += 1
-            total_checks += 1
-        # Signal 4: RSI sweet spot
-        rsi = ind["rsi"][symbol].iloc[-1] if symbol in ind["rsi"].columns else None
-        if rsi and not np.isnan(rsi):
-            if 30 < rsi < 65:
-                signals += 1
-            total_checks += 1
-
-        if kurs <= sl or kurs >= tp or signals <= 1:
+        if kurs <= sl or kurs >= tp:
             verkaufe(bot, symbol, kurs)
             if symbol in bot["meta"]:
                 del bot["meta"][symbol]
-            logger.info(f"Ensemble: {symbol} VERKAUFT (SL/TP/Signale={signals})")
+            bot["cooldown"][symbol] = heute
+            logger.info(f"Ensemble: {symbol} VERKAUFT (SL/TP) Kurs={kurs:.2f}")
+
+    # Nur Montags neue Kaeufe pruefen
+    try:
+        heute_date = dt.datetime.strptime(heute, "%Y-%m-%d").date()
+        is_monday = heute_date.weekday() == 0
+    except:
+        is_monday = False
+
+    if not is_monday:
+        return
+
+    # Cooldown pruefen (14 Kalendertage ~ 10 Handelstage)
+    def is_cooled_down(symbol):
+        if symbol not in bot["cooldown"]:
+            return True
+        try:
+            last_sell = dt.datetime.strptime(bot["cooldown"][symbol], "%Y-%m-%d").date()
+            return (heute_date - last_sell).days >= 14
+        except:
+            return True
+
+    if len(bot["positionen"]) >= MAX_POSITIONS:
+        return
 
     # Suche neue Kaufgelegenheiten
     for symbol in ASSETS:
         if symbol in bot["positionen"]:
             continue
+        if not is_cooled_down(symbol):
+            continue
+        if len(bot["positionen"]) >= MAX_POSITIONS:
+            break
         kurs = kurse.get(symbol, 0)
         if not kurs or np.isnan(kurs) or kurs <= 0:
             continue
@@ -619,10 +618,10 @@ def bot_ensemble(state: dict, close: pd.DataFrame, ind: dict, heute: str):
             if mom > 0.05:
                 signals += 1
             total_checks += 1
-        # Signal 3: SMA200/SMA20 trend
-        sma20_val = ind["sma20"][symbol].iloc[-1] if symbol in ind["sma20"].columns else None
-        if sma20_val and not np.isnan(sma20_val):
-            if kurs > sma20_val:
+        # Signal 3: SMA200 trend
+        sma200_val = ind["sma200"][symbol].iloc[-1] if symbol in ind["sma200"].columns else None
+        if sma200_val and not np.isnan(sma200_val):
+            if kurs > sma200_val:
                 signals += 1
             total_checks += 1
         # Signal 4: RSI sweet spot (30-65)
@@ -632,21 +631,20 @@ def bot_ensemble(state: dict, close: pd.DataFrame, ind: dict, heute: str):
                 signals += 1
             total_checks += 1
 
-        # BUY if >= 3 signals agree
-        if signals >= 3 and total_checks >= 3:
+        # BUY only if ALL 4 signals agree
+        if signals >= 4 and total_checks >= 4:
             atr = ind["atr"][symbol].iloc[-1] if symbol in ind["atr"].columns else np.nan
             if np.isnan(atr) or atr <= 0:
                 atr = kurs * 0.02
-            sl = kurs - 3 * atr
-            tp = kurs + 8 * atr
+            sl = kurs - 4 * atr
+            tp = kurs + 10 * atr
             gesamt = portfolio_wert(bot, kurse)
-            betrag = min(gesamt * 0.10, bot["kapital"])  # max 10% per position
+            betrag = min(gesamt * 0.20, bot["kapital"])  # max 20% per position (5 slots)
             if betrag > 50:
                 if kaufe(bot, symbol, betrag, kurs):
                     bot["meta"][symbol] = {"sl": round(sl, 2), "tp": round(tp, 2), "signals": signals}
                     logger.info(f"Ensemble: KAUF {symbol} Signals={signals}/{total_checks} SL={sl:.2f} TP={tp:.2f}")
 
-# ---------------------------------------------------------------------------
 # Arena State Management
 # ---------------------------------------------------------------------------
 
