@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Arena Backtest - 6 Strategien, 38 Assets, 10 Jahre retrospektiv (inkl. Trading 212 Gebuehren + Spread)."""
+"""Arena Backtest - 6 Strategien, 34 Assets, 10 Jahre retrospektiv (inkl. Trading 212 Gebuehren + Spread)."""
 import json, datetime as dt, numpy as np, pandas as pd, yfinance as yf, pathlib, textwrap
 
 # -- Trading 212 Gebuehren ---------------------------------------------------
@@ -9,8 +9,8 @@ SPREAD_COST = 0.0005  # 0.05% Spread-Simulation pro Trade
 # -- Assets ------------------------------------------------------------------
 ASSETS = [
     "SPY","QQQ","IWM","EFA","EEM","VGK","EWJ","FXI","VNQ","XLE","XLF","XLV",
-    "XLK","XLI","XLU","XLP","XLY","XLC","XLRE","XBI","ARKK","GLD","SLV","TLT",
-    "HYG","LQD","BND","UNG","USO","DBA","IBIT","BITO","MSTR","COIN","NVDA",
+    "XLK","XLI","XLU","XLP","XLY","XLRE","XBI","ARKK","GLD","SLV","TLT",
+    "HYG","LQD","BND","UNG","USO","DBA","MSTR","NVDA",
     "AAPL","MSFT","TSLA"
 ]
 BENCH = "SPY"; VIX = "^VIX"; RF = 0.045; REBAL_DAYS = 5
