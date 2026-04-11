@@ -115,43 +115,97 @@ def strat_score_trader():
     k = kpi(eq, trades); k["WinRate%"] = wr
     return eq, k
 
-def strat_hybrid():
-    vals = [10000.0]; prev = 10000.0; trades = 0
-    for i, d in enumerate(dates):
-        if risk_off.loc[d]:
-            r = 0.0
+def strat_adaptiv():
+    """Adaptiv: VIX-gesteuerter Regime-Wechsel"""
+    positions = {}
+    cash = 100000
+    modus = "momentum"
+    history = []
+
+    for i in range(200, len(close)):
+        date = close.index[i]
+        daily = close.iloc[i]
+
+        # VIX-Level
+        try:
+            vix = close["^VIX"].iloc[i] if "^VIX" in close.columns else 20
+        except:
+            vix = 20
+
+        # Regime-Erkennung mit Hysterese
+        if vix > 30:
+            neuer_modus = "cash"
+        elif vix > 20:
+            neuer_modus = "crash_guard"
+        elif vix < 18 or modus == "momentum":
+            neuer_modus = "momentum"
         else:
-            mom = close[ASSETS].loc[:d].pct_change(63).iloc[-1].nlargest(10).index.tolist()
-            picked = []
-            for a in mom:
-                try:
-                    p = close[a].loc[d]; sma20 = close[a].loc[:d].rolling(20).mean().iloc[-1]
-                    bb_std = close[a].loc[:d].rolling(20).std().iloc[-1]
-                    delta = close[a].diff()
-                    gain = delta.clip(lower=0).rolling(14).mean()
-                    loss = (-delta.clip(upper=0)).rolling(14).mean()
-                    rsi = (100 - 100/(1 + gain/(loss+1e-9))).iloc[-1]
-                    score = 0
-                    if p > sma20: score += 3
-                    if p < sma20 + 0.5*bb_std: score += 3
-                    if rsi < 55: score += 2
-                    if score >= 6: picked.append(a)
-                except: pass
-            if picked:
-                r = ret.loc[d, picked].mean()
-                if i % REBAL_DAYS == 0: trades += len(picked)
-            else:
-                r = 0.0
-        prev *= (1 + r); vals.append(prev)
-    eq = pd.Series(vals[1:], index=dates)
-    return eq, kpi(eq, trades)
+            neuer_modus = modus
+
+        # Bei Regime-Wechsel alles liquidieren
+        if neuer_modus != modus:
+            for ticker, shares in list(positions.items()):
+                price = daily.get(ticker)
+                if price and price > 0:
+                    cash += shares * price
+            positions = {}
+            modus = neuer_modus
+
+        if modus == "cash":
+            pass
+        elif modus == "crash_guard":
+            spy_price = daily.get("SPY")
+            spy_sma200 = close["SPY"].iloc[i-200:i].mean() if "SPY" in close.columns else None
+            if spy_price and spy_sma200:
+                if "SPY" not in positions and spy_price > spy_sma200:
+                    shares = int(cash / spy_price)
+                    if shares > 0:
+                        positions["SPY"] = shares
+                        cash -= shares * spy_price
+                elif "SPY" in positions and spy_price < spy_sma200:
+                    cash += positions["SPY"] * spy_price
+                    del positions["SPY"]
+        elif modus == "momentum":
+            if hasattr(date, "weekday") and date.weekday() == 0:
+                returns = {}
+                for ticker in close.columns:
+                    if ticker.startswith("^"):
+                        continue
+                    try:
+                        ret = close[ticker].iloc[i] / close[ticker].iloc[i-63] - 1
+                        if not np.isnan(ret):
+                            returns[ticker] = ret
+                    except:
+                        pass
+                top = sorted(returns, key=returns.get, reverse=True)[:10]
+                for ticker in list(positions.keys()):
+                    if ticker not in top:
+                        price = daily.get(ticker)
+                        if price and price > 0:
+                            cash += positions[ticker] * price
+                            del positions[ticker]
+                if top:
+                    per_stock = cash / len(top)
+                    for ticker in top:
+                        if ticker not in positions:
+                            price = daily.get(ticker)
+                            if price and price > 0:
+                                shares = int(per_stock / price)
+                                if shares > 0:
+                                    positions[ticker] = shares
+                                    cash -= shares * price
+
+        total = cash + sum(positions.get(t, 0) * daily.get(t, 0) for t in positions)
+        history.append({"date": date, "value": total, "modus": modus})
+
+    return pd.DataFrame(history).set_index("date")["value"]
 
 # -- Ausfuehrung ------------------------------------------------------------
 print("Running strategies ...")
 results = {}
 for name, fn in [("Buy & Hold", strat_buyhold), ("Crash Guard", strat_crash_guard),
                   ("Momentum", strat_momentum), ("Score Trader", strat_score_trader),
-                  ("Hybrid", strat_hybrid)]:
+                  ("Adaptiv", strat_adaptiv)]:
     eq, k = fn()
     results[name] = {"equity": eq, "kpi": k}
     print(f"  {name}: {k}")
@@ -198,7 +252,7 @@ canvas{{max-height:350px}}</style></head><body>
 <div class="chart-box"><canvas id="dd"></canvas></div>
 <script>
 new Chart(document.getElementById("eq"),{{type:"line",data:{{labels:{labels_eq},datasets:[{",".join(equity_datasets)}]}},options:{{plugins:{{title:{{display:true,text:"Equity Curves",color:"#e2e8f0"}}}},scales:{{x:{{display:false}},y:{{ticks:{{color:"#94a3b8"}}}}}}}}}});
-new Chart(document.getElementById("dd"),{{type:"line",data:{{labels:{labels_eq},datasets:[{",".join(dd_datasets)}]}},options:{{plugins:{{title:{{display:true,text:"Drawdown %",color:"#e2e8f0"}}}},scales:{{x:{{display:false}},y:{{ticks:{{color:"#94a3b8"}}}}}}}}}}});
+new Chart(document.getElementById("dd"),{{type:"line",data:{{labels:{labels_eq},datasets:[{",".join(dd_datasets)}]}},options:{{plugins:{{title:{{display:true,text:"Drawdown %",color:"#e2e8f0"}}}},scales:{{x:{{display:false}},y:{{ticks:{{color:"#94a3b8"}}}}}}}}}});
 </script></body></html>""")
 pathlib.Path("arena_backtest_dashboard.html").write_text(html)
 print("Done - arena_backtest_results.json + arena_backtest_dashboard.html written.")
