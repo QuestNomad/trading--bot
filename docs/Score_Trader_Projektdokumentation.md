@@ -43,3 +43,4 @@ Score Trader ist ein automatisierter Trading-Bot mit Bollinger Bands, RSI, SMA20
 | 2026-04-12 | Paper Trading + Telegram Alerts |
 | 2026-04-12 | Telegram Bot @scoretrader_alert_bot eingerichtet |
 | 2026-04-12 | Projektdokumentation erstellt |
+| 2026-04-12 | Max-Exposure-Regel (80% Cap) und Sektor-Korrelationsfilter (max 4/Sektor) eingebaut |
