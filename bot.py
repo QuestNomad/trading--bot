@@ -16,14 +16,58 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
 
 # ── Konfiguration ─────────────────────────────────────────────
-TELEGRAM_TOKEN  = os.environ.get("TELEGRAM_TOKEN")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 DRY_RUN = os.environ.get("DRY_RUN", "false").lower() == "true"
-KAPITAL    = 10000
+KAPITAL = 10000
 MAX_RISIKO = 0.01
-VIX_LIMIT  = 30
+VIX_LIMIT = 30
 MAX_RETRIES = 3
 RETRY_DELAY = 5
+
+# ── Risk Management (sync mit arena_backtest.py) ──────────────
+KELLY_FRACTION = 0.0694  # Half Kelly = 6.94% pro Position
+MAX_EXPOSURE = 0.80      # Max 80% Gesamtexposure
+MAX_POSITIONS_PER_SECTOR = 4
+
+# ── Bollinger/RSI/ATR Parameter (sync mit arena_backtest.py) ──
+BB_PERIOD = 20
+RSI_PERIOD = 14
+ATR_SL_MULTIPLIER = 3.0  # Trailing Stop = 3x ATR
+BUY_THRESHOLD = 8
+SELL_THRESHOLD = 3
+
+# ── Trading 212 Gebühren ──────────────────────────────────────
+TRADING_FEE = 0.0015    # 0.15% FX-Fee
+SPREAD_COST = 0.0005    # 0.05% Spread
+SLIPPAGE_COST = 0.001   # 0.10% Slippage
+TOTAL_COST = TRADING_FEE + SPREAD_COST + SLIPPAGE_COST  # 0.30%
+
+# ── Sektor-Zuordnung (sync mit arena_backtest.py) ─────────────
+SECTORS = {
+    "Tech": ["AAPL", "MSFT", "GOOGL", "NVDA", "META"],
+    "Consumer": ["AMZN", "TSLA"],
+    "Finance": ["DBK.DE", "BNP.PA", "UBSG.SW"],
+    "Auto": ["7203.T"],
+    "Entertainment": ["6758.T"],
+    "Defense": ["RHM.DE"],
+    "Aerospace": ["AIR.DE"],
+    "Ecommerce": ["ZAL.DE", "9988.HK"],
+    "Delivery": ["DHER.DE"],
+    "Internet": ["0700.HK"],
+    "Index_EU": ["EXS1.DE", "SAP.DE"],
+    "Index_US": ["SPY", "IWM"],
+    "Index_Asia": ["EWJ", "FXI"],
+    "EM": ["INDA", "EWZ", "VWO"],
+    "Commodities": ["GC=F", "SI=F", "HG=F", "BZ=F", "ZW=F"],
+    "Crypto": ["bitcoin", "ethereum"],
+    "Short": ["XSPS.L", "DXSN.DE", "QQQS.L", "BITI"],
+}
+
+ASSET_TO_SECTOR = {}
+for sector, assets in SECTORS.items():
+    for asset_id in assets:
+        ASSET_TO_SECTOR[asset_id] = sector
 
 analyzer = SentimentIntensityAnalyzer()
 _yf_lock = threading.Lock()
@@ -39,68 +83,67 @@ NEWS_FEEDS = {
     ]
 }
 
-# ── Journal-Header (erweitert für P&L) ──────────────────────────
+# ── Journal-Header (erweitert für Trailing Stop) ──────────────
 JOURNAL_HEADER = [
-    "Datum", "Asset", "Signal", "Kurs", "SMA200", "RSI", "Score",
-    "Stop Loss", "Take Profit", "Sentiment Welt", "Sentiment EU",
+    "Datum", "Asset", "Signal", "Kurs", "SMA20", "RSI", "Score",
+    "Stop Loss", "Trailing_Stop", "Sentiment Welt", "Sentiment EU",
     "Status", "Ergebnis", "Geschlossen_am", "Kommentar"
 ]
 
 # ── 38 eindeutige Assets ────────────────────────────────────────
 ASSETS = [
-    {"name": "Bitcoin",        "typ": "crypto", "id": "bitcoin",   "symbol": "₿ BTC"},
-    {"name": "Ethereum",       "typ": "crypto", "id": "ethereum",  "symbol": "Ξ ETH"},
-    {"name": "S&P 500",        "typ": "aktie",  "id": "SPY",       "symbol": "🇺🇸 SPY"},
-    {"name": "Apple",          "typ": "aktie",  "id": "AAPL",      "symbol": "🍎 AAPL"},
-    {"name": "Nvidia",         "typ": "aktie",  "id": "NVDA",      "symbol": "🟢 NVDA"},
-    {"name": "Tesla",          "typ": "aktie",  "id": "TSLA",      "symbol": "🚗 TSLA"},
-    {"name": "Microsoft",      "typ": "aktie",  "id": "MSFT",      "symbol": "🪟 MSFT"},
-    {"name": "Amazon",         "typ": "aktie",  "id": "AMZN",      "symbol": "📦 AMZN"},
-    {"name": "Meta",           "typ": "aktie",  "id": "META",      "symbol": "👓 META"},
-    {"name": "Google",         "typ": "aktie",  "id": "GOOGL",     "symbol": "🔍 GOOGL"},
-    {"name": "DAX ETF",        "typ": "aktie",  "id": "EXS1.DE",   "symbol": "🇩🇪 DAX"},
-    {"name": "SAP",            "typ": "aktie",  "id": "SAP.DE",    "symbol": "🇩🇪 SAP"},
-    {"name": "Rheinmetall",    "typ": "aktie",  "id": "RHM.DE",    "symbol": "🛡️ RHM"},
-    {"name": "Airbus",         "typ": "aktie",  "id": "AIR.DE",    "symbol": "✈️ AIR"},
-    {"name": "Zalando",        "typ": "aktie",  "id": "ZAL.DE",    "symbol": "👟 ZAL"},
-    {"name": "Delivery Hero",  "typ": "aktie",  "id": "DHER.DE",   "symbol": "🍔 DHER"},
-    {"name": "Deutsche Bank",  "typ": "aktie",  "id": "DBK.DE",    "symbol": "🏦 DBK"},
-    {"name": "BNP Paribas",    "typ": "aktie",  "id": "BNP.PA",    "symbol": "🏦 BNP"},
-    {"name": "UBS",            "typ": "aktie",  "id": "UBSG.SW",   "symbol": "🏦 UBS"},
-    {"name": "Nikkei ETF",     "typ": "aktie",  "id": "EWJ",       "symbol": "🇯🇵 EWJ"},
-    {"name": "Toyota",         "typ": "aktie",  "id": "7203.T",    "symbol": "🚗 Toyota"},
-    {"name": "Sony",           "typ": "aktie",  "id": "6758.T",    "symbol": "🎮 Sony"},
-    {"name": "China ETF",      "typ": "aktie",  "id": "FXI",       "symbol": "🇨🇳 FXI"},
-    {"name": "Alibaba HK",     "typ": "aktie",  "id": "9988.HK",   "symbol": "🛒 Alibaba"},
-    {"name": "Tencent",        "typ": "aktie",  "id": "0700.HK",   "symbol": "🎯 Tencent"},
-    {"name": "Indien ETF",     "typ": "aktie",  "id": "INDA",      "symbol": "🇮🇳 INDA"},
-    {"name": "Brasilien ETF",  "typ": "aktie",  "id": "EWZ",       "symbol": "🇧🇷 EWZ"},
-    {"name": "EM ETF",         "typ": "aktie",  "id": "VWO",       "symbol": "🌍 VWO"},
-    {"name": "Russell 2000",   "typ": "aktie",  "id": "IWM",       "symbol": "🇺🇸 IWM"},
-    {"name": "Gold",           "typ": "aktie",  "id": "GC=F",      "symbol": "🥇 Gold"},
-    {"name": "Silber",         "typ": "aktie",  "id": "SI=F",      "symbol": "🥈 Silber"},
-    {"name": "Öl",             "typ": "aktie",  "id": "BZ=F",      "symbol": "🛢️ Öl"},
-    {"name": "Kupfer",         "typ": "aktie",  "id": "HG=F",      "symbol": "🔧 Kupfer"},
-    {"name": "Weizen",         "typ": "aktie",  "id": "ZW=F",      "symbol": "🌾 Weizen"},
-    {"name": "Short S&P 500",  "typ": "aktie",  "id": "XSPS.L",   "symbol": "📉 XSPS",          "short": True},
-    {"name": "Short DAX",      "typ": "aktie",  "id": "DXSN.DE",   "symbol": "📉 DXSN",          "short": True},
-    {"name": "Short Nasdaq",   "typ": "aktie",  "id": "QQQS.L",   "symbol": "📉 QQQS",          "short": True},
-    {"name": "Short Krypto",   "typ": "aktie",  "id": "BITI",      "symbol": "📉 Krypto Short",  "short": True},
+    {"name": "Bitcoin",       "typ": "crypto", "id": "bitcoin",    "symbol": "BTC"},
+    {"name": "Ethereum",      "typ": "crypto", "id": "ethereum",   "symbol": "ETH"},
+    {"name": "S&P 500",       "typ": "aktie",  "id": "SPY",        "symbol": "SPY"},
+    {"name": "Apple",         "typ": "aktie",  "id": "AAPL",       "symbol": "AAPL"},
+    {"name": "Nvidia",        "typ": "aktie",  "id": "NVDA",       "symbol": "NVDA"},
+    {"name": "Tesla",         "typ": "aktie",  "id": "TSLA",       "symbol": "TSLA"},
+    {"name": "Microsoft",     "typ": "aktie",  "id": "MSFT",       "symbol": "MSFT"},
+    {"name": "Amazon",        "typ": "aktie",  "id": "AMZN",       "symbol": "AMZN"},
+    {"name": "Meta",          "typ": "aktie",  "id": "META",       "symbol": "META"},
+    {"name": "Google",        "typ": "aktie",  "id": "GOOGL",      "symbol": "GOOGL"},
+    {"name": "DAX ETF",       "typ": "aktie",  "id": "EXS1.DE",    "symbol": "DAX"},
+    {"name": "SAP",           "typ": "aktie",  "id": "SAP.DE",     "symbol": "SAP"},
+    {"name": "Rheinmetall",   "typ": "aktie",  "id": "RHM.DE",     "symbol": "RHM"},
+    {"name": "Airbus",        "typ": "aktie",  "id": "AIR.DE",     "symbol": "AIR"},
+    {"name": "Zalando",       "typ": "aktie",  "id": "ZAL.DE",     "symbol": "ZAL"},
+    {"name": "Delivery Hero", "typ": "aktie",  "id": "DHER.DE",    "symbol": "DHER"},
+    {"name": "Deutsche Bank", "typ": "aktie",  "id": "DBK.DE",     "symbol": "DBK"},
+    {"name": "BNP Paribas",   "typ": "aktie",  "id": "BNP.PA",     "symbol": "BNP"},
+    {"name": "UBS",           "typ": "aktie",  "id": "UBSG.SW",    "symbol": "UBS"},
+    {"name": "Nikkei ETF",    "typ": "aktie",  "id": "EWJ",        "symbol": "EWJ"},
+    {"name": "Toyota",        "typ": "aktie",  "id": "7203.T",     "symbol": "Toyota"},
+    {"name": "Sony",          "typ": "aktie",  "id": "6758.T",     "symbol": "Sony"},
+    {"name": "China ETF",     "typ": "aktie",  "id": "FXI",        "symbol": "FXI"},
+    {"name": "Alibaba HK",    "typ": "aktie",  "id": "9988.HK",    "symbol": "Alibaba"},
+    {"name": "Tencent",       "typ": "aktie",  "id": "0700.HK",    "symbol": "Tencent"},
+    {"name": "Indien ETF",    "typ": "aktie",  "id": "INDA",       "symbol": "INDA"},
+    {"name": "Brasilien ETF", "typ": "aktie",  "id": "EWZ",        "symbol": "EWZ"},
+    {"name": "EM ETF",        "typ": "aktie",  "id": "VWO",        "symbol": "VWO"},
+    {"name": "Russell 2000",  "typ": "aktie",  "id": "IWM",        "symbol": "IWM"},
+    {"name": "Gold",          "typ": "aktie",  "id": "GC=F",       "symbol": "Gold"},
+    {"name": "Silber",        "typ": "aktie",  "id": "SI=F",       "symbol": "Silber"},
+    {"name": "Oel",           "typ": "aktie",  "id": "BZ=F",       "symbol": "Oel"},
+    {"name": "Kupfer",        "typ": "aktie",  "id": "HG=F",       "symbol": "Kupfer"},
+    {"name": "Weizen",        "typ": "aktie",  "id": "ZW=F",       "symbol": "Weizen"},
+    {"name": "Short S&P 500", "typ": "aktie",  "id": "XSPS.L",    "symbol": "XSPS", "short": True},
+    {"name": "Short DAX",     "typ": "aktie",  "id": "DXSN.DE",   "symbol": "DXSN", "short": True},
+    {"name": "Short Nasdaq",  "typ": "aktie",  "id": "QQQS.L",    "symbol": "QQQS", "short": True},
+    {"name": "Short Krypto",  "typ": "aktie",  "id": "BITI",       "symbol": "Krypto Short", "short": True},
 ]
 
 # ── Retry-Wrapper ─────────────────────────────────────────────
 def mit_retry(func, *args, retries=MAX_RETRIES, delay=RETRY_DELAY):
-    """Führt eine Funktion mit Retry-Logik aus."""
     for versuch in range(retries):
         try:
             return func(*args)
         except Exception as e:
-            print(f"  Retry {versuch+1}/{retries} für {func.__name__}: {e}")
+            print(f"  Retry {versuch+1}/{retries} fuer {func.__name__}: {e}")
             if versuch < retries - 1:
                 time.sleep(delay)
     return None
 
-# ── Telegram (mit try/except) ─────────────────────────────────
+# ── Telegram ──────────────────────────────────────────────────
 def send_text(msg):
     if DRY_RUN:
         print(f"[DRY-RUN] Telegram: {msg[:120]}...")
@@ -113,7 +156,7 @@ def send_text(msg):
             "parse_mode": "HTML"
         }, timeout=15)
         if r.status_code != 200:
-            print(f"Telegram Fehler: {r.status_code} – {r.text[:200]}")
+            print(f"Telegram Fehler: {r.status_code} - {r.text[:200]}")
     except Exception as e:
         print(f"Telegram send_text Fehler: {e}")
 
@@ -137,62 +180,34 @@ def schreibe_journal(asset_name, signal, kurs, details, sw, seu):
     try:
         import csv
         from pathlib import Path
-
         journal_file = "journal.csv"
         file_exists = Path(journal_file).exists()
-
         with open(journal_file, "a", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
             if not file_exists:
                 writer.writerow(JOURNAL_HEADER)
-
             writer.writerow([
                 datetime.now().strftime("%d.%m.%Y %H:%M"),
                 asset_name,
                 signal,
                 round(kurs, 2),
-                round(details.get("sma200", 0), 2),
+                round(details.get("sma20", 0), 2),
                 round(details.get("rsi", 0), 1),
                 details.get("punkte", 0),
                 round(details.get("stop_loss", 0), 2),
-                round(details.get("take_profit", 0), 2),
+                round(details.get("trailing_stop", details.get("stop_loss", 0)), 2),
                 sw,
                 seu,
-                "offen",        # Status
-                "",             # Ergebnis
-                "",             # Geschlossen_am
-                "Paper Trading"
+                "offen",
+                "",
+                "",
+                "Paper Trading - Arena Sync"
             ])
         print(f"  Journal CSV: {asset_name} gespeichert")
     except Exception as e:
         print(f"  Journal CSV Fehler: {e}")
 
-    try:
-        sheets_url = os.environ.get("SHEETS_URL")
-        if sheets_url:
-            payload = {
-                "datum": datetime.now().strftime("%d.%m.%Y %H:%M"),
-                "asset": asset_name,
-                "signal": signal,
-                "kurs": round(kurs, 2),
-                "sma200": round(details.get("sma200", 0), 2),
-                "rsi": round(details.get("rsi", 0), 1),
-                "score": details.get("punkte", 0),
-                "stop_loss": round(details.get("stop_loss", 0), 2),
-                "take_profit": round(details.get("take_profit", 0), 2),
-                "sentiment_welt": sw,
-                "sentiment_eu": seu,
-                "status": "offen",
-                "ergebnis": "",
-                "kommentar": "Paper Trading"
-            }
-            r = requests.post(sheets_url, data=json.dumps(payload),
-                            headers={"Content-Type": "application/json"}, timeout=10)
-            print(f"  Journal Sheets: {asset_name} – {r.status_code}")
-    except Exception as e:
-        print(f"  Journal Sheets Fehler: {e}")
-
-# ── Sentiment (mit Caching) ───────────────────────────────────
+# ── Sentiment ─────────────────────────────────────────────────
 _sentiment_cache = {}
 
 def get_sentiment(kat="welt"):
@@ -212,11 +227,11 @@ def get_sentiment(kat="welt"):
     return result
 
 def sentiment_emoji(s):
-    if s > 0.2:  return "😊 Positiv"
-    if s < -0.2: return "😟 Negativ"
-    return "😐 Neutral"
+    if s > 0.2: return "Positiv"
+    if s < -0.2: return "Negativ"
+    return "Neutral"
 
-# ── Daten-Laden (mit Retry) ───────────────────────────────────
+# ── Daten-Laden ───────────────────────────────────────────────
 def _get_crypto_inner(coin_id):
     r = requests.get(
         f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart",
@@ -244,7 +259,7 @@ def _get_aktie_inner(ticker):
     if isinstance(close, pd.DataFrame):
         close = close.iloc[:, 0]
     preise = [float(x) for x in close.values]
-    daten  = [x.to_pydatetime() for x in df.index]
+    daten = [x.to_pydatetime() for x in df.index]
     return preise, daten
 
 def get_aktie(ticker):
@@ -255,7 +270,7 @@ def get_aktie(ticker):
 def sma(p, n):
     return pd.Series(p).rolling(n).mean()
 
-def rsi_val(p, n=14):
+def rsi_val(p, n=RSI_PERIOD):
     s = pd.Series(p)
     d = s.diff()
     g = d.where(d > 0, 0).rolling(n).mean()
@@ -265,57 +280,83 @@ def rsi_val(p, n=14):
         return 100.0
     return float((100 - (100 / (1 + (g / l)))).iloc[-1])
 
-def macd_val(p):
-    s = pd.Series(p)
-    m = s.ewm(span=12).mean() - s.ewm(span=26).mean()
-    return float(m.iloc[-1]), float(m.ewm(span=9).mean().iloc[-1])
-
 def atr_val(p, n=14):
-    """ATR mit echtem True Range (Close-to-Close Proxy)."""
     s = pd.Series(p)
     tr = s.diff().abs()
     tr.iloc[0] = 0
     return float(tr.rolling(n).mean().iloc[-1])
 
-# ── Signal-Berechnung (synchron mit backtest.py) ──────────────
-def berechne_signal(preise, sw=0.0, seu=0.0, kauf_schwelle=8, verk_schwelle=3):
+# ══════════════════════════════════════════════════════════════
+# Score Trader Signal (SYNC MIT arena_backtest.py)
+# Scoring: Bollinger Bands + RSI + SMA20
+# Exit: Trailing Stop-Loss (3x ATR)
+# ══════════════════════════════════════════════════════════════
+def berechne_signal(preise, sw=0.0, seu=0.0, kauf_schwelle=BUY_THRESHOLD, verk_schwelle=SELL_THRESHOLD):
     """
-    Einheitliche Signalberechnung für Bot und Backtest.
-    Gibt (signal, punkte, details) zurück.
+    Score Trader Signalberechnung - IDENTISCH mit arena_backtest.py
+    Scoring basiert auf Bollinger Bands, RSI und SMA20.
     """
-    if len(preise) < 200:
+    if len(preise) < 50:
         return "WARTEN", 0, {}
 
     aktuell = float(preise[-1])
-    s200 = float(sma(preise, 200).iloc[-1])
-    s50  = float(sma(preise, 50).iloc[-1])
-    r    = rsi_val(preise)
-    m, ms = macd_val(preise)
-    a    = atr_val(preise)
-    sentiment = (sw * 0.3) + (seu * 0.2)
+    s = pd.Series(preise)
 
+    # Bollinger Bands (Period 20)
+    bb_mean = float(s.rolling(BB_PERIOD).mean().iloc[-1])
+    bb_std = float(s.rolling(BB_PERIOD).std().iloc[-1])
+    bb_upper = bb_mean + 2 * bb_std
+    bb_lower = bb_mean - 2 * bb_std
+
+    # RSI
+    r = rsi_val(preise, RSI_PERIOD)
+
+    # SMA20
+    sma20 = float(sma(preise, 20).iloc[-1])
+
+    # ATR fuer Trailing Stop
+    a = atr_val(preise)
+
+    # ── Score Berechnung (SYNC mit arena_backtest.py) ─────
     punkte = 0
-    if aktuell > s200: punkte += 3
-    if aktuell > s50:  punkte += 2
-    if m > ms:         punkte += 2
-    if r < 70:         punkte += 1
-    if r > 30:         punkte += 1
-    if sentiment > 0.1: punkte += 2
 
-    bb_m = float(pd.Series(preise).rolling(20).mean().iloc[-1])
-    bb_s = float(pd.Series(preise).rolling(20).std().iloc[-1])
-    if aktuell < (bb_m + 2 * bb_s):
-        punkte += 1
+    # SMA20: Preis ueber SMA20 = bullish (+3), darunter = bearish (-2)
+    if aktuell > sma20:
+        punkte += 3
+    else:
+        punkte -= 2
 
-    sl = aktuell - (a * 3)
-    tp = aktuell + (a * 8)
-    ps = (KAPITAL * MAX_RISIKO) / (aktuell - sl) if aktuell > sl else 0
+    # RSI: Ueberverkauft = Kaufgelegenheit (+3), Ueberkauft = Verkauf (-2)
+    if r < 30:
+        punkte += 3   # Stark ueberverkauft
+    elif r > 70:
+        punkte -= 2   # Stark ueberkauft
+    elif r <= 50:
+        punkte += 1   # Leicht bullish
+
+    # Bollinger Bands: Unter unterem Band = Kaufgelegenheit (+3)
+    if aktuell < bb_lower:
+        punkte += 3   # Unter unterem Band = ueberverkauft
+    elif aktuell > bb_upper:
+        punkte -= 2   # Ueber oberem Band = ueberkauft
+
+    # Trailing Stop-Loss (3x ATR unter aktuellem Kurs)
+    trailing_stop = aktuell - (a * ATR_SL_MULTIPLIER)
+
+    # Position Sizing: Kelly Fraction
+    position_size_pct = KELLY_FRACTION
+    position_size_eur = KAPITAL * position_size_pct
 
     details = {
-        "sma200": s200, "sma50": s50, "rsi": r,
-        "macd": m, "atr": a,
-        "stop_loss": sl, "take_profit": tp,
-        "position_size": ps, "punkte": punkte
+        "sma20": sma20, "rsi": r,
+        "bb_mean": bb_mean, "bb_upper": bb_upper, "bb_lower": bb_lower,
+        "atr": a,
+        "stop_loss": trailing_stop,
+        "trailing_stop": trailing_stop,
+        "position_size_pct": position_size_pct,
+        "position_size_eur": position_size_eur,
+        "punkte": punkte,
+        "kosten_pct": TOTAL_COST * 100,
     }
 
     if punkte >= kauf_schwelle:
@@ -332,28 +373,24 @@ def erstelle_chart(preise, daten, name, signal, details):
     ax1.set_facecolor('#1e1e2e')
 
     ax1.plot(daten[-100:], preise[-100:], color='#89b4fa', linewidth=2, label='Kurs')
-    ax1.plot(daten[-100:], sma(preise, 200).values[-100:],
-             color='#f9e2af', linewidth=2, linestyle='--', label='SMA200')
-    ax1.plot(daten[-100:], sma(preise, 50).values[-100:],
-             color='#a6e3a1', linewidth=1.5, linestyle='--', label='SMA50')
+    ax1.plot(daten[-100:], sma(preise, 20).values[-100:],
+             color='#f9e2af', linewidth=2, linestyle='--', label='SMA20')
 
     s = pd.Series(preise)
-    bb_m = s.rolling(20).mean()
-    bb_s = s.rolling(20).std()
+    bb_m = s.rolling(BB_PERIOD).mean()
+    bb_s = s.rolling(BB_PERIOD).std()
     ax1.fill_between(daten[-100:],
                      (bb_m + 2 * bb_s).values[-100:],
                      (bb_m - 2 * bb_s).values[-100:],
-                     alpha=0.1, color='#cba6f7')
+                     alpha=0.15, color='#cba6f7', label='Bollinger Bands')
 
-    ax1.axhline(y=details["stop_loss"], color='#f38ba8', linestyle=':',
-                linewidth=1.5, label=f'SL: {details["stop_loss"]:.0f}')
-    ax1.axhline(y=details["take_profit"], color='#a6e3a1', linestyle=':',
-                linewidth=1.5, label=f'TP: {details["take_profit"]:.0f}')
+    ax1.axhline(y=details["trailing_stop"], color='#f38ba8', linestyle=':',
+                linewidth=1.5, label=f'Trailing SL: {details["trailing_stop"]:.0f}')
 
     farbe = '#a6e3a1' if signal == "KAUFEN" else \
             '#f38ba8' if signal == "VERKAUFEN" else '#f9e2af'
     ax1.set_title(
-        f"{name} – {signal} (Score: {details['punkte']}/12)",
+        f"{name} - {signal} (Score: {details['punkte']}) | Kelly: {details['position_size_pct']*100:.1f}%",
         color=farbe, fontsize=14, fontweight='bold')
     ax1.tick_params(colors='white')
     ax1.legend(facecolor='#313244', labelcolor='white', fontsize=8)
@@ -364,8 +401,8 @@ def erstelle_chart(preise, daten, name, signal, details):
     ax2.set_facecolor('#1e1e2e')
     s2 = pd.Series(preise)
     d2 = s2.diff()
-    g2 = d2.where(d2 > 0, 0).rolling(14).mean()
-    l2 = -d2.where(d2 < 0, 0).rolling(14).mean()
+    g2 = d2.where(d2 > 0, 0).rolling(RSI_PERIOD).mean()
+    l2 = -d2.where(d2 < 0, 0).rolling(RSI_PERIOD).mean()
     rsi_v = (100 - (100 / (1 + (g2 / l2)))).values[-100:]
     ax2.plot(daten[-100:], rsi_v, color='#cba6f7', linewidth=1.5)
     ax2.axhline(y=70, color='#f38ba8', linestyle='--', linewidth=1)
@@ -386,7 +423,6 @@ def erstelle_chart(preise, daten, name, signal, details):
 
 # ── Health-Check ──────────────────────────────────────────────
 def health_check():
-    """Prüft alle Voraussetzungen vor dem Start."""
     fehler = []
     if not TELEGRAM_TOKEN and not DRY_RUN:
         fehler.append("TELEGRAM_TOKEN fehlt")
@@ -398,16 +434,225 @@ def health_check():
             fehler.append("yfinance liefert keine Daten")
     except Exception as e:
         fehler.append(f"yfinance Fehler: {e}")
-
     if fehler:
         print(f"Health-Check FEHLGESCHLAGEN: {fehler}")
         return False
     print("Health-Check OK")
     return True
 
-# ── Parallelisierte Asset-Analyse ─────────────────────────────
+# ── Trailing Stop Management ──────────────────────────────────
+def aktualisiere_trailing_stops():
+    """
+    Prueft offene Positionen und aktualisiert Trailing Stop-Loss.
+    Der Stop wird nur NACH OBEN bewegt (nie zurueck).
+    Schliesst Position wenn Kurs unter Trailing Stop faellt.
+    """
+    import csv
+    from pathlib import Path
+
+    journal_file = "journal.csv"
+    if not Path(journal_file).exists():
+        return []
+
+    with open(journal_file, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        fieldnames = reader.fieldnames
+        zeilen = list(reader)
+
+    if not zeilen:
+        return []
+
+    geschlossene = []
+    geaendert = False
+    kurs_cache = {}
+
+    for zeile in zeilen:
+        status = zeile.get("Status", "offen").strip()
+        if status != "offen":
+            continue
+
+        asset_name = zeile.get("Asset", "").strip()
+        signal = zeile.get("Signal", "").strip()
+
+        try:
+            einstieg = float(zeile.get("Kurs", "0"))
+            alter_trailing = float(zeile.get("Trailing_Stop", zeile.get("Stop Loss", "0")))
+        except (ValueError, TypeError):
+            continue
+
+        if einstieg == 0 or math.isnan(einstieg):
+            continue
+
+        # Aktuellen Kurs holen
+        if asset_name not in kurs_cache:
+            kurs_cache[asset_name] = hole_aktuellen_kurs(asset_name)
+        aktuell = kurs_cache.get(asset_name)
+        if aktuell is None:
+            continue
+
+        # ATR neu berechnen fuer aktuellen Trailing Stop
+        lookup = _asset_lookup()
+        asset_info = lookup.get(asset_name)
+        if not asset_info:
+            continue
+
+        try:
+            if asset_info["typ"] == "crypto":
+                preise, _ = get_crypto(asset_info["id"])
+            else:
+                preise, _ = get_aktie(asset_info["id"])
+            if not preise or len(preise) < 20:
+                continue
+            current_atr = atr_val(preise)
+        except Exception:
+            continue
+
+        ist_kauf = "KAUFEN" in signal
+        ist_short = asset_info.get("short", False)
+
+        if ist_kauf and not ist_short:
+            # Long Position: Trailing Stop = max(alter_stop, kurs - 3*ATR)
+            neuer_stop = aktuell - (current_atr * ATR_SL_MULTIPLIER)
+            if neuer_stop > alter_trailing:
+                zeile["Trailing_Stop"] = str(round(neuer_stop, 2))
+                geaendert = True
+                print(f"  Trailing Stop {asset_name}: {alter_trailing:.2f} -> {neuer_stop:.2f}")
+
+            # Pruefen ob Stop erreicht
+            effektiver_stop = max(neuer_stop, alter_trailing)
+            if aktuell <= effektiver_stop:
+                ergebnis_pct = ((aktuell - einstieg) / einstieg) * 100
+                ergebnis_pct -= TOTAL_COST * 100  # Gebuehren abziehen
+                zeile["Status"] = "geschlossen"
+                zeile["Ergebnis"] = f"{ergebnis_pct:+.2f}%"
+                zeile["Geschlossen_am"] = datetime.now().strftime("%d.%m.%Y %H:%M")
+                zeile["Kommentar"] = "Trailing Stop erreicht"
+                geaendert = True
+                geschlossene.append({
+                    "asset": asset_name, "signal": signal,
+                    "einstieg": einstieg, "aktuell": aktuell,
+                    "ergebnis": ergebnis_pct, "grund": "Trailing Stop",
+                    "datum": zeile.get("Datum", "")
+                })
+
+        elif ist_kauf and ist_short:
+            # Short-ETF: Stop ueber Kurs
+            neuer_stop = aktuell + (current_atr * ATR_SL_MULTIPLIER)
+            if neuer_stop < alter_trailing or alter_trailing == 0:
+                zeile["Trailing_Stop"] = str(round(neuer_stop, 2))
+                geaendert = True
+
+            effektiver_stop = min(neuer_stop, alter_trailing) if alter_trailing > 0 else neuer_stop
+            if aktuell >= effektiver_stop:
+                ergebnis_pct = ((aktuell - einstieg) / einstieg) * 100
+                ergebnis_pct -= TOTAL_COST * 100
+                zeile["Status"] = "geschlossen"
+                zeile["Ergebnis"] = f"{ergebnis_pct:+.2f}%"
+                zeile["Geschlossen_am"] = datetime.now().strftime("%d.%m.%Y %H:%M")
+                zeile["Kommentar"] = "Trailing Stop erreicht"
+                geaendert = True
+                geschlossene.append({
+                    "asset": asset_name, "signal": signal,
+                    "einstieg": einstieg, "aktuell": aktuell,
+                    "ergebnis": ergebnis_pct, "grund": "Trailing Stop",
+                    "datum": zeile.get("Datum", "")
+                })
+
+    if geaendert:
+        with open(journal_file, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=JOURNAL_HEADER, extrasaction='ignore')
+            writer.writeheader()
+            for zeile in zeilen:
+                writer.writerow(zeile)
+
+    return geschlossene
+
+# ── Portfolio State ───────────────────────────────────────────
+def lade_offene_positionen():
+    """Laedt offene Positionen aus journal.csv fuer Exposure/Sektor-Check."""
+    import csv
+    from pathlib import Path
+    journal_file = "journal.csv"
+    if not Path(journal_file).exists():
+        return []
+    positionen = []
+    try:
+        with open(journal_file, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for z in reader:
+                if z.get("Status", "offen").strip() == "offen":
+                    positionen.append(z)
+    except Exception:
+        pass
+    return positionen
+
+def pruefe_exposure_und_sektor(asset_id):
+    """
+    Prueft ob ein neuer Trade erlaubt ist basierend auf:
+    1. Max Exposure (80%)
+    2. Max Positionen pro Sektor (4)
+    Gibt (erlaubt, grund) zurueck.
+    """
+    offene = lade_offene_positionen()
+    n_offen = len(offene)
+
+    # Exposure Check
+    aktuelle_exposure = n_offen * KELLY_FRACTION
+    if aktuelle_exposure + KELLY_FRACTION > MAX_EXPOSURE:
+        return False, f"Exposure Cap: {aktuelle_exposure*100:.1f}% + {KELLY_FRACTION*100:.1f}% > {MAX_EXPOSURE*100:.0f}%"
+
+    # Sektor Check
+    sektor = ASSET_TO_SECTOR.get(asset_id, "Other")
+    sektor_count = 0
+    lookup = _asset_lookup()
+    for pos in offene:
+        pos_name = pos.get("Asset", "")
+        pos_asset = lookup.get(pos_name, {})
+        pos_id = pos_asset.get("id", "")
+        pos_sektor = ASSET_TO_SECTOR.get(pos_id, "Other")
+        if pos_sektor == sektor:
+            sektor_count += 1
+
+    if sektor_count >= MAX_POSITIONS_PER_SECTOR:
+        return False, f"Sektor '{sektor}' voll: {sektor_count}/{MAX_POSITIONS_PER_SECTOR}"
+
+    return True, "OK"
+
+# ── Hilfsfunktionen ───────────────────────────────────────────
+def _asset_lookup():
+    return {a["name"]: a for a in ASSETS}
+
+def hole_aktuellen_kurs(asset_name):
+    lookup = _asset_lookup()
+    asset = lookup.get(asset_name)
+    if not asset:
+        return None
+    try:
+        if asset["typ"] == "crypto":
+            preise, _ = get_crypto(asset["id"])
+        else:
+            preise, _ = get_aktie(asset["id"])
+        if preise and len(preise) > 0:
+            return float(preise[-1])
+    except Exception as e:
+        print(f"  Kursfehler fuer {asset_name}: {e}")
+    return None
+
+def zaehle_offene_positionen():
+    import csv
+    from pathlib import Path
+    journal_file = "journal.csv"
+    if not Path(journal_file).exists():
+        return 0
+    try:
+        with open(journal_file, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            return sum(1 for z in reader if z.get("Status", "offen").strip() in ("offen", ""))
+    except Exception:
+        return 0
+
+# ── Asset Analyse ─────────────────────────────────────────────
 def analysiere_asset(asset, sw, seu):
-    """Analysiert ein einzelnes Asset (für ThreadPoolExecutor)."""
     try:
         print(f"  Analysiere {asset['name']}...")
         if asset["typ"] == "crypto":
@@ -422,17 +667,16 @@ def analysiere_asset(asset, sw, seu):
         if signal == "WARTEN":
             return None
 
-        # ── FIX: Invertierte Logik für Short-ETFs ────────────
+        # Short-ETF Logik
         if asset.get("short"):
             if signal == "KAUFEN":
                 signal = "VERKAUFEN"
             elif signal == "VERKAUFEN":
                 signal = "KAUFEN"
-            # Stop-Loss und Take-Profit tauschen (Short-Logik)
             aktuell = float(preise[-1])
             atr = details["atr"]
-            details["stop_loss"]   = aktuell + (atr * 3)
-            details["take_profit"] = aktuell - (atr * 8)
+            details["stop_loss"] = aktuell + (atr * ATR_SL_MULTIPLIER)
+            details["trailing_stop"] = details["stop_loss"]
 
         return {
             "asset": asset,
@@ -448,7 +692,6 @@ def analysiere_asset(asset, sw, seu):
 
 # ── Datenfehler-Check ─────────────────────────────────────────
 def pruefe_datenfehler(ergebnisse):
-    """Prüft ob verschiedene Assets identische Kursdaten bekommen haben."""
     warnungen = []
     preis_fingerprints = {}
     for e in ergebnisse:
@@ -458,293 +701,103 @@ def pruefe_datenfehler(ergebnisse):
         name = e["asset"]["name"]
         if fp in preis_fingerprints:
             anderer = preis_fingerprints[fp]
-            warnung = f"⚠️ DATENFEHLER: {name} hat identische Kurse wie {anderer}!"
+            warnung = f"DATENFEHLER: {name} hat identische Kurse wie {anderer}!"
             warnungen.append(warnung)
-            print(warnung)
         else:
             preis_fingerprints[fp] = name
     return warnungen
 
-# ══════════════════════════════════════════════════════════════
-# P&L-Tracking: Automatische Gewinn/Verlust-Berechnung
-# ══════════════════════════════════════════════════════════════
-
-def _asset_lookup():
-    """Erstellt ein Mapping von Asset-Name zu Asset-Dict."""
-    return {a["name"]: a for a in ASSETS}
-
-def hole_aktuellen_kurs(asset_name):
-    """Holt den aktuellen Kurs für ein Asset anhand des Namens."""
-    lookup = _asset_lookup()
-    asset = lookup.get(asset_name)
-    if not asset:
-        print(f"  P&L: Asset '{asset_name}' nicht in ASSETS gefunden")
-        return None
-    try:
-        if asset["typ"] == "crypto":
-            preise, _ = get_crypto(asset["id"])
-        else:
-            preise, _ = get_aktie(asset["id"])
-        if preise and len(preise) > 0:
-            return float(preise[-1])
-    except Exception as e:
-        print(f"  P&L: Kursfehler für {asset_name}: {e}")
-    return None
-
-def pruefe_offene_positionen():
-    """
-    Prüft alle offenen Positionen in journal.csv.
-    Holt aktuelle Kurse und prüft ob SL/TP erreicht wurde.
-    Gibt Liste der geschlossenen Positionen zurück.
-    """
-    import csv
-    from pathlib import Path
-
-    journal_file = "journal.csv"
-    if not Path(journal_file).exists():
-        print("  P&L: Keine journal.csv gefunden")
-        return []
-
-    # CSV einlesen
-    with open(journal_file, "r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        fieldnames = reader.fieldnames
-        zeilen = list(reader)
-
-    if not zeilen:
-        print("  P&L: Journal ist leer")
-        return []
-
-    # Migration: Fehlende Spalten erkennen
-    hat_status = "Status" in (fieldnames or [])
-
-    geschlossene = []
-    geaendert = False
-    kurs_cache = {}  # Kurse pro Asset cachen
-
-    for zeile in zeilen:
-        # Migration: Status-Spalte ergänzen wenn fehlend
-        if not hat_status:
-            zeile.setdefault("Status", "offen")
-            zeile.setdefault("Ergebnis", "")
-            zeile.setdefault("Geschlossen_am", "")
-            geaendert = True
-
-        status = zeile.get("Status", "offen").strip()
-        if not status:
-            status = "offen"
-            zeile["Status"] = "offen"
-
-        # Nur offene Positionen prüfen
-        if status != "offen":
-            continue
-
-        asset_name = zeile.get("Asset", "").strip()
-        signal = zeile.get("Signal", "").strip()
-
-        # Stop-Loss und Take-Profit parsen
-        try:
-            sl = float(zeile.get("Stop Loss", "0"))
-            tp = float(zeile.get("Take Profit", "0"))
-            einstieg = float(zeile.get("Kurs", "0"))
-        except (ValueError, TypeError):
-            continue
-
-        # NaN oder 0 überspringen
-        if sl == 0 or tp == 0 or einstieg == 0:
-            continue
-        if math.isnan(sl) or math.isnan(tp) or math.isnan(einstieg):
-            continue
-
-        # Aktuellen Kurs holen (gecacht)
-        if asset_name not in kurs_cache:
-            kurs_cache[asset_name] = hole_aktuellen_kurs(asset_name)
-        aktuell = kurs_cache.get(asset_name)
-
-        if aktuell is None:
-            continue
-
-        # P&L-Logik
-        ist_kauf = "KAUFEN" in signal
-        ist_verkauf = "VERKAUFEN" in signal
-
-        # Short-ETF erkennen
-        lookup = _asset_lookup()
-        asset_info = lookup.get(asset_name, {})
-        ist_short = asset_info.get("short", False)
-
-        ergebnis_pct = None
-        grund = ""
-
-        if ist_kauf:
-            if ist_short:
-                # Short-ETF KAUFEN: SL über Kurs, TP unter Kurs
-                if aktuell >= sl:
-                    ergebnis_pct = ((aktuell - einstieg) / einstieg) * 100
-                    grund = "Stop-Loss"
-                elif aktuell <= tp:
-                    ergebnis_pct = ((aktuell - einstieg) / einstieg) * 100
-                    grund = "Take-Profit"
-            else:
-                # Normal KAUFEN: Verlust wenn unter SL, Gewinn wenn über TP
-                if aktuell <= sl:
-                    ergebnis_pct = ((aktuell - einstieg) / einstieg) * 100
-                    grund = "Stop-Loss"
-                elif aktuell >= tp:
-                    ergebnis_pct = ((aktuell - einstieg) / einstieg) * 100
-                    grund = "Take-Profit"
-
-        elif ist_verkauf:
-            if ist_short:
-                # Short-ETF VERKAUFEN (= long auf Basiswert)
-                if aktuell <= sl:
-                    ergebnis_pct = ((einstieg - aktuell) / einstieg) * 100
-                    grund = "Stop-Loss"
-                elif aktuell >= tp:
-                    ergebnis_pct = ((einstieg - aktuell) / einstieg) * 100
-                    grund = "Take-Profit"
-            else:
-                # Normal VERKAUFEN: Gewinn wenn Kurs fällt
-                if aktuell >= tp:
-                    ergebnis_pct = ((einstieg - aktuell) / einstieg) * 100
-                    grund = "Take-Profit"
-                elif aktuell <= sl:
-                    ergebnis_pct = ((einstieg - aktuell) / einstieg) * 100
-                    grund = "Stop-Loss"
-
-        if ergebnis_pct is not None:
-            zeile["Status"] = "geschlossen"
-            zeile["Ergebnis"] = f"{ergebnis_pct:+.2f}%"
-            zeile["Geschlossen_am"] = datetime.now().strftime("%d.%m.%Y %H:%M")
-            geaendert = True
-            geschlossene.append({
-                "asset": asset_name,
-                "signal": signal,
-                "einstieg": einstieg,
-                "aktuell": aktuell,
-                "ergebnis": ergebnis_pct,
-                "grund": grund,
-                "datum": zeile.get("Datum", "")
-            })
-            print(f"  P&L: {asset_name} geschlossen – {ergebnis_pct:+.2f}% ({grund})")
-
-    # Zurückschreiben wenn geändert
-    if geaendert:
-        with open(journal_file, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=JOURNAL_HEADER, extrasaction='ignore')
-            writer.writeheader()
-            for zeile in zeilen:
-                writer.writerow(zeile)
-        print(f"  P&L: {len(geschlossene)} Position(en) geschlossen, Journal aktualisiert")
-
-    return geschlossene
-
+# ── P&L Zusammenfassung ──────────────────────────────────────
 def sende_pnl_zusammenfassung(geschlossene):
-    """Sendet eine Telegram-Nachricht mit den geschlossenen Positionen."""
     if not geschlossene:
         return
-
     gesamt_pnl = sum(p["ergebnis"] for p in geschlossene)
     gewinner = [p for p in geschlossene if p["ergebnis"] > 0]
     verlierer = [p for p in geschlossene if p["ergebnis"] <= 0]
 
-    msg = "💰 <b>P&amp;L Update – Geschlossene Positionen</b>\n\n"
-
+    msg = "<b>P&amp;L Update - Geschlossene Positionen</b>\n\n"
     for p in geschlossene:
-        emoji = "✅" if p["ergebnis"] > 0 else "❌"
+        emoji = "+" if p["ergebnis"] > 0 else "-"
         msg += (
             f"{emoji} <b>{p['asset']}</b> ({p['signal']})\n"
-            f"   Einstieg: {p['einstieg']:,.2f} → Aktuell: {p['aktuell']:,.2f}\n"
-            f"   Ergebnis: {p['ergebnis']:+.2f}% ({p['grund']})\n\n"
+            f"  Einstieg: {p['einstieg']:,.2f} -> Aktuell: {p['aktuell']:,.2f}\n"
+            f"  Ergebnis: {p['ergebnis']:+.2f}% ({p['grund']})\n\n"
         )
-
     msg += (
-        f"📊 <b>Gesamt:</b>\n"
-        f"   ✅ {len(gewinner)} Gewinner | ❌ {len(verlierer)} Verlierer\n"
-        f"   💰 Gesamt-P&amp;L: {gesamt_pnl:+.2f}%\n"
+        f"<b>Gesamt:</b>\n"
+        f"  {len(gewinner)} Gewinner | {len(verlierer)} Verlierer\n"
+        f"  Gesamt-P&amp;L: {gesamt_pnl:+.2f}%\n"
     )
-
     send_text(msg)
 
-def zaehle_offene_positionen():
-    """Zählt die aktuell offenen Positionen im Journal."""
-    import csv
-    from pathlib import Path
-
-    journal_file = "journal.csv"
-    if not Path(journal_file).exists():
-        return 0
-
-    try:
-        with open(journal_file, "r", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            return sum(1 for z in reader
-                      if z.get("Status", "offen").strip() in ("offen", ""))
-    except Exception:
-        return 0
-
-# ── Hauptfunktion ─────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════
+# HAUPTFUNKTION
+# ══════════════════════════════════════════════════════════════
 def run_bot():
     start_zeit = time.time()
     modus = "[DRY-RUN] " if DRY_RUN else ""
-    print(f"=== {modus}Profi Trading Bot gestartet ===")
+    print(f"=== {modus}Score Trader Bot (Arena Sync) gestartet ===")
 
-    # Health-Check
     if not health_check():
         print("Bot abgebrochen wegen Health-Check Fehler.")
         return
 
-    # ── P&L-Check: Offene Positionen prüfen ──────────────────
-    print("=== P&L-Check: Prüfe offene Positionen ===")
+    # ── Trailing Stop Update: Offene Positionen pruefen ────
+    print("=== Trailing Stop Update ===")
     geschlossene_positionen = []
     try:
-        geschlossene_positionen = pruefe_offene_positionen()
+        geschlossene_positionen = aktualisiere_trailing_stops()
         if geschlossene_positionen:
             sende_pnl_zusammenfassung(geschlossene_positionen)
+            print(f"  {len(geschlossene_positionen)} Position(en) durch Trailing Stop geschlossen")
         else:
             n_offen = zaehle_offene_positionen()
             if n_offen > 0:
-                send_text(f"📋 <b>P&amp;L-Check:</b> {n_offen} offene Position(en) – noch kein SL/TP erreicht.")
-            else:
-                print("  P&L: Keine offenen Positionen vorhanden")
+                aktuelle_exposure = n_offen * KELLY_FRACTION * 100
+                send_text(f"<b>Trailing Stop Update:</b> {n_offen} offene Position(en), Exposure: {aktuelle_exposure:.1f}%")
     except Exception as e:
-        print(f"  P&L-Check Fehler: {e}")
+        print(f"  Trailing Stop Fehler: {e}")
 
-    # VIX-Prüfung (mit Stopp bei Überschreitung)
+    # VIX-Pruefung
     vix_wert = None
     try:
-        vix_df = yf.download("^VIX", period="1d", interval="1d",
-                             progress=False, auto_adjust=True)
+        vix_df = yf.download("^VIX", period="1d", interval="1d", progress=False, auto_adjust=True)
         vix_close = vix_df["Close"]
         if isinstance(vix_close, pd.DataFrame):
             vix_close = vix_close.iloc[:, 0]
         vix_wert = float(vix_close.iloc[-1])
         print(f"VIX aktuell: {vix_wert:.1f}")
+
         if vix_wert > VIX_LIMIT:
             send_text(
-                f"🚨 <b>NOTBREMSE!</b>\n\n"
-                f"VIX Angst-Index: {vix_wert:.1f} (über {VIX_LIMIT})\n"
-                f"⛔ Kein Handel heute!\n\n📊 Bot wird beendet."
+                f"<b>NOTBREMSE!</b>\n\n"
+                f"VIX: {vix_wert:.1f} (ueber {VIX_LIMIT})\n"
+                f"Kein Handel heute!\n\nBot wird beendet."
             )
             return
         else:
-            send_text(f"✅ VIX: {vix_wert:.1f} – Markt stabil, Analyse startet...")
+            send_text(f"VIX: {vix_wert:.1f} - Markt stabil, Analyse startet...")
     except Exception as e:
         print(f"VIX Fehler: {e}")
 
-    # Sentiment (wird gecacht)
+    # Sentiment
     heute = datetime.now().strftime("%d.%m.%Y %H:%M")
-    sw  = get_sentiment("welt")
+    sw = get_sentiment("welt")
     seu = get_sentiment("europa")
 
+    n_offen = zaehle_offene_positionen()
+    aktuelle_exposure = n_offen * KELLY_FRACTION * 100
+
     send_text(
-        f"📊 <b>{modus}Trading Bot – {heute}</b>\n\n"
-        f"🌍 Weltstimmung: {sentiment_emoji(sw)} ({sw})\n"
-        f"🇪🇺 EU-Stimmung: {sentiment_emoji(seu)} ({seu})\n\n"
-        f"🔍 Scanne {len(ASSETS)} Assets (parallel)..."
+        f"<b>{modus}Score Trader - {heute}</b>\n\n"
+        f"Weltstimmung: {sentiment_emoji(sw)} ({sw})\n"
+        f"EU-Stimmung: {sentiment_emoji(seu)} ({seu})\n"
+        f"Offene Positionen: {n_offen} ({aktuelle_exposure:.1f}% Exposure)\n"
+        f"Max Exposure: {MAX_EXPOSURE*100:.0f}% | Kelly: {KELLY_FRACTION*100:.1f}%\n\n"
+        f"Scanne {len(ASSETS)} Assets..."
     )
 
-    # Parallele Analyse mit ThreadPoolExecutor
+    # Parallele Analyse
     ergebnisse = []
     with ThreadPoolExecutor(max_workers=6) as executor:
         futures = {
@@ -756,47 +809,73 @@ def run_bot():
             if result:
                 ergebnisse.append(result)
 
-    # ── FIX: Datenfehler-Check ───────────────────────────────
+    # Datenfehler-Check
     datenfehler = pruefe_datenfehler(ergebnisse)
     if datenfehler:
-        send_text(
-            "🚨 <b>Datenfehler erkannt!</b>\n\n" +
-            "\n".join(datenfehler) +
-            "\n\n⚠️ Betroffene Signale mit Vorsicht behandeln!"
-        )
+        send_text("<b>Datenfehler erkannt!</b>\n\n" + "\n".join(datenfehler))
 
     # Sortieren & Top-Signale
-    kaufen = sorted(
+    kaufen_raw = sorted(
         [e for e in ergebnisse if e["signal"] == "KAUFEN"],
         key=lambda x: -x["punkte"]
-    )[:5]
+    )
+
+    # ── Exposure Cap & Sector Filter anwenden ─────────────
+    kaufen = []
+    exposure_blocked = 0
+    sector_blocked = 0
+
+    for e in kaufen_raw:
+        asset_id = e["asset"]["id"]
+        erlaubt, grund = pruefe_exposure_und_sektor(asset_id)
+        if erlaubt:
+            kaufen.append(e)
+            if len(kaufen) >= 5:
+                break
+        else:
+            if "Exposure" in grund:
+                exposure_blocked += 1
+            else:
+                sector_blocked += 1
+            print(f"  Trade geblockt: {e['asset']['name']} - {grund}")
+
     verkaufen = sorted(
         [e for e in ergebnisse if e["signal"] == "VERKAUFEN"],
         key=lambda x: x["punkte"]
     )[:3]
-    top = kaufen + verkaufen
 
+    # Risk Management Status
+    if exposure_blocked > 0 or sector_blocked > 0:
+        send_text(
+            f"<b>Risk Management:</b>\n"
+            f"  Exposure Cap: {exposure_blocked} Trade(s) geblockt\n"
+            f"  Sector Filter: {sector_blocked} Trade(s) geblockt"
+        )
+
+    top = kaufen + verkaufen
     if not top:
-        send_text("🟡 Heute keine klaren Signale – Markt abwarten.")
+        send_text("Heute keine klaren Signale - Markt abwarten.")
     else:
-        send_text(f"🏆 <b>Top {len(top)} Signale heute:</b>")
+        send_text(f"<b>Top {len(top)} Signale heute:</b>")
         for e in top:
-            asset   = e["asset"]
+            asset = e["asset"]
             details = e["details"]
             aktuell = e["preise"][-1]
-            signal_text = "🟢 KAUFEN" if e["signal"] == "KAUFEN" else "🔴 VERKAUFEN"
+            signal_text = "KAUFEN" if e["signal"] == "KAUFEN" else "VERKAUFEN"
             short_hinweis = " (Short-ETF)" if asset.get("short") else ""
 
             nachricht = (
-                f"{asset['symbol']} <b>{asset['name']}</b>{short_hinweis}\n"
-                f"💶 Kurs: {aktuell:,.2f}\n"
-                f"Signal: {signal_text} (Score: {e['punkte']}/12)\n"
-                f"SMA200: {details['sma200']:,.2f}\n"
-                f"RSI: {details['rsi']:.1f}\n"
-                f"🛑 Stop Loss: {details['stop_loss']:,.2f}\n"
-                f"🎯 Take Profit: {details['take_profit']:,.2f}\n"
-                f"⚠️ Paper Trading"
+                f"<b>{asset['symbol']} {asset['name']}</b>{short_hinweis}\n"
+                f"Kurs: {aktuell:,.2f}\n"
+                f"Signal: {signal_text} (Score: {e['punkte']})\n"
+                f"SMA20: {details['sma20']:,.2f} | RSI: {details['rsi']:.1f}\n"
+                f"BB: [{details['bb_lower']:,.2f} - {details['bb_upper']:,.2f}]\n"
+                f"Trailing SL: {details['trailing_stop']:,.2f}\n"
+                f"Position: {details['position_size_pct']*100:.1f}% = {details['position_size_eur']:,.0f} EUR\n"
+                f"Kosten: {details['kosten_pct']:.2f}% pro Trade\n"
+                f"Paper Trading (Arena Sync)"
             )
+
             try:
                 chart = erstelle_chart(
                     e["preise"], e["daten"],
@@ -814,28 +893,30 @@ def run_bot():
     # Zusammenfassung
     laufzeit = round(time.time() - start_zeit, 1)
     n_halten = len([e for e in ergebnisse if e["signal"] == "HALTEN"])
-    n_offen  = zaehle_offene_positionen()
+    n_offen_neu = zaehle_offene_positionen()
+    exposure_neu = n_offen_neu * KELLY_FRACTION * 100
 
     zusammenfassung = (
-        f"✅ <b>{modus}Analyse abgeschlossen!</b>\n\n"
-        f"📊 {len(ergebnisse)} Assets analysiert\n"
-        f"🟢 {len(kaufen)} Kaufsignale\n"
-        f"🔴 {len(verkaufen)} Verkaufssignale\n"
-        f"🟡 {n_halten} Halten\n"
-        f"📋 {n_offen} offene Positionen\n"
+        f"<b>{modus}Analyse abgeschlossen!</b>\n\n"
+        f"{len(ergebnisse)} Assets analysiert\n"
+        f"{len(kaufen)} Kaufsignale (nach Filter)\n"
+        f"{len(verkaufen)} Verkaufssignale\n"
+        f"{n_halten} Halten\n"
+        f"{n_offen_neu} offene Positionen ({exposure_neu:.1f}% Exposure)\n"
     )
     if geschlossene_positionen:
-        zusammenfassung += f"💰 {len(geschlossene_positionen)} Position(en) heute geschlossen\n"
-    zusammenfassung += f"⏱️ Laufzeit: {laufzeit}s\n"
+        zusammenfassung += f"{len(geschlossene_positionen)} durch Trailing Stop geschlossen\n"
+    if exposure_blocked > 0:
+        zusammenfassung += f"{exposure_blocked} durch Exposure Cap geblockt\n"
+    if sector_blocked > 0:
+        zusammenfassung += f"{sector_blocked} durch Sector Filter geblockt\n"
+    zusammenfassung += f"Laufzeit: {laufzeit}s\n"
     if vix_wert:
-        zusammenfassung += f"📈 VIX: {vix_wert:.1f}\n"
-    if datenfehler:
-        zusammenfassung += f"⚠️ {len(datenfehler)} Datenfehler erkannt!\n"
-    zusammenfassung += "⚠️ Nur Paper Trading!"
+        zusammenfassung += f"VIX: {vix_wert:.1f}\n"
+    zusammenfassung += "Paper Trading (Arena Sync v2)"
 
     send_text(zusammenfassung)
     print(f"=== Bot fertig ({laufzeit}s) ===")
-
 
 if __name__ == "__main__":
     run_bot()
