@@ -230,6 +230,12 @@ def strat_score_trader(date_range=None, bb_period=20, rsi_period=14,
                         rm_sector_skips += 1
                         continue
 
+                    # --- Max Exposure Cap (v4) ---
+                    current_exposure = len(positions) * KELLY_FRACTION
+                    if current_exposure + KELLY_FRACTION > MAX_EXPOSURE:
+                        rm_exposure_caps += 1
+                        continue
+
                     atr = atr_ind[a].loc[d]
                     n_pos = max(len(positions) + 1, 1)
                     prev *= (1 - TOTAL_COST / n_pos)   # Fee + Spread + Slippage (anteilig)
@@ -254,7 +260,6 @@ def strat_score_trader(date_range=None, bb_period=20, rsi_period=14,
             raw_exposure = KELLY_FRACTION * n_pos
             if raw_exposure > MAX_EXPOSURE:
                 position_size = MAX_EXPOSURE / n_pos
-                rm_exposure_caps += 1
             else:
                 position_size = KELLY_FRACTION
             r = sum(ret.loc[d, a] * position_size for a in positions)
@@ -296,7 +301,7 @@ def strat_score_trader(date_range=None, bb_period=20, rsi_period=14,
         ),
         "max_exposure_cap%": MAX_EXPOSURE * 100,
         "kelly_fraction%": KELLY_FRACTION * 100,
-        "exposure_cap_triggered_days": rm_exposure_caps,
+        "exposure_cap_triggers": rm_exposure_caps,
         "sector_filter_skips": rm_sector_skips,
         "sector_distribution": rm_sector_distribution,
         "max_positions_per_sector": MAX_POSITIONS_PER_SECTOR,
