@@ -17,4 +17,4 @@ jobs:
           git config user.email "bot@arena.local"
           git add arena_backtest_results.json arena_backtest_dashboard.html
           git diff --cached --quiet || git commit -m "Arena Backtest \$(date +%Y-%m-%d)"
-          git push
+                    git pull --rebase origin main && git push || (sleep 5 && git pull --rebase origin main && git push)
