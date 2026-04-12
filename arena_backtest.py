@@ -3,15 +3,19 @@
 (inkl. Trading 212 Gebuehren + Spread + Slippage).
 
 Enhancements v2:
-  1. Per-Asset Performance Analysis for Score Trader
-  2. Out-of-Sample Test (7yr train / 3yr test)
-  3. Slippage Modelling (0.10% on top of fees)
-  4. Parameter Sensitivity Test for Score Trader
+1. Per-Asset Performance Analysis for Score Trader
+2. Out-of-Sample Test (7yr train / 3yr test)
+3. Slippage Modelling (0.10% on top of fees)
+4. Parameter Sensitivity Test for Score Trader
 
 Enhancements v3:
-  5. Walk-Forward Analysis (rolling 3yr train / 1yr test)
-  6. Monte Carlo Simulation (bootstrap drawdown analysis)
-  7. Kelly Criterion (position sizing)
+5. Walk-Forward Analysis (rolling 3yr train / 1yr test)
+6. Monte Carlo Simulation (bootstrap drawdown analysis)
+7. Kelly Criterion (position sizing)
+
+Enhancements v4:
+8. Max-Exposure Rule (80% portfolio cap)
+9. Sector Correlation Filter (max 4 positions per sector)
 """
 
 import json, datetime as dt, numpy as np, pandas as pd, yfinance as yf, pathlib, textwrap
@@ -20,7 +24,32 @@ import json, datetime as dt, numpy as np, pandas as pd, yfinance as yf, pathlib,
 TRADING_FEE  = 0.0015   # 0.15% FX-Fee pro Trade (Trading 212, EUR->USD)
 SPREAD_COST  = 0.0005   # 0.05% Spread-Simulation pro Trade
 SLIPPAGE_COST = 0.001   # 0.10% Slippage pro Trade (NEW)
-TOTAL_COST   = TRADING_FEE + SPREAD_COST + SLIPPAGE_COST  # 0.30% total
+TOTAL_COST = TRADING_FEE + SPREAD_COST + SLIPPAGE_COST  # 0.30% total
+
+# -- Risk Management Constants -----------------------------------------------
+MAX_EXPOSURE = 0.80          # Maximum 80% of portfolio in risk at any time
+KELLY_FRACTION = 0.0694      # Half Kelly
+
+SECTORS = {
+    "Tech":          ["AAPL", "MSFT", "GOOGL", "NVDA", "META", "XLK", "ARKK", "QQQ"],
+    "Finance":       ["JPM", "V", "BAC", "XLF"],
+    "Consumer":      ["AMZN", "TSLA", "HD", "PG"],
+    "Health":        ["UNH", "JNJ"],
+    "Broad_ETF":     ["SPY", "IWM", "DIA", "VTI"],
+    "International": ["EFA", "EEM"],
+    "Energy":        ["XLE", "USO"],
+    "Telecom":       ["XLC"],
+    "Crypto":        ["IBIT", "BITO", "COIN", "MSTR"],
+    "Commodities":   ["GLD", "SLV", "DBA"],
+    "Bonds":         ["TLT", "LQD", "BND"],
+}
+MAX_POSITIONS_PER_SECTOR = 4
+
+# Build reverse lookup: asset -> sector
+ASSET_TO_SECTOR = {}
+for sector, tickers in SECTORS.items():
+    for t in tickers:
+        ASSET_TO_SECTOR[t] = sector
 
 # -- Assets ------------------------------------------------------------------
 ASSETS = [
@@ -29,16 +58,17 @@ ASSETS = [
     "HYG","LQD","BND","UNG","USO","DBA","MSTR","NVDA", "AAPL","MSFT","TSLA",
     "IBIT","BITO","COIN","XLC"
 ]
+
 BENCH = "SPY"; VIX = "^VIX"; RF = 0.045; REBAL_DAYS = 5
-end   = dt.date.today(); start = end - dt.timedelta(days=10*365+30)
+end = dt.date.today(); start = end - dt.timedelta(days=10*365+30)
 
 # -- Daten laden ------------------------------------------------------------
 print("Downloading data ...")
 tickers = list(set(ASSETS + [VIX]))
 raw = yf.download(tickers, start=str(start), end=str(end),
-                   group_by="ticker", auto_adjust=True)
+                  group_by="ticker", auto_adjust=True)
 close = pd.DataFrame({t: raw[t]["Close"] for t in tickers
-                       if t in raw.columns.get_level_values(0)}).dropna(how="all").ffill()
+                      if t in raw.columns.get_level_values(0)}).dropna(how="all").ffill()
 ret   = close[ASSETS].pct_change().fillna(0)
 spy   = close[BENCH]; sma200 = spy.rolling(200).mean()
 risk_off = spy < sma200   # True = Cash
@@ -95,9 +125,9 @@ def strat_momentum():
                 if set(mom) != set(held):
                     if held:
                         prev *= (1 - TOTAL_COST)   # Fee + Spread + Slippage: Verkauf
-                    prev *= (1 - TOTAL_COST)       # Fee + Spread + Slippage: Kauf
+                    prev *= (1 - TOTAL_COST)        # Fee + Spread + Slippage: Kauf
                     trades += len(mom)
-                held = mom
+                    held = mom
         if held:
             r = ret.loc[d, held].mean()
         else:
@@ -106,9 +136,15 @@ def strat_momentum():
     eq = pd.Series(vals[1:], index=dates)
     return eq, kpi(eq, trades)
 
+
 def strat_score_trader(date_range=None, bb_period=20, rsi_period=14,
-                        atr_sl_mult=3.0, track_per_asset=False):
+                       atr_sl_mult=3.0, track_per_asset=False):
     """Score Trader with configurable parameters.
+
+    Enhancements v4:
+    - Max-Exposure Rule: total exposure capped at MAX_EXPOSURE (80%).
+      Each position sized at KELLY_FRACTION (6.94%), scaled down if needed.
+    - Sector Correlation Filter: max MAX_POSITIONS_PER_SECTOR (4) per sector.
 
     Args:
         date_range: tuple (start_idx, end_idx) to slice dates, or None for all
@@ -118,23 +154,30 @@ def strat_score_trader(date_range=None, bb_period=20, rsi_period=14,
         track_per_asset: if True, collect per-asset statistics
     """
     use_dates = dates[date_range[0]:date_range[1]] if date_range else dates
-
-    vals = [10000.0]; prev = 10000.0; positions = {}; trades = 0
+    vals  = [10000.0]; prev = 10000.0; positions = {}; trades = 0
 
     # Precompute indicators with configurable periods
     atr_ind = {}; rsi_ind = {}
     for a in ASSETS:
         h = close[a]
         delta = h.diff()
-        gain  = delta.clip(lower=0).rolling(rsi_period).mean()
-        loss  = (-delta.clip(upper=0)).rolling(rsi_period).mean()
+        gain = delta.clip(lower=0).rolling(rsi_period).mean()
+        loss = (-delta.clip(upper=0)).rolling(rsi_period).mean()
         rsi_ind[a] = 100 - 100/(1 + gain/(loss+1e-9))
         atr_ind[a] = h.diff().abs().rolling(rsi_period).mean()
 
     # Per-asset tracking
     asset_stats = {a: {"trades": 0, "wins": 0, "returns": [],
-                        "holding_days": []} for a in ASSETS} if track_per_asset else None
+                       "holding_days": []} for a in ASSETS} if track_per_asset else None
     asset_entry_day = {}   # ticker -> index of entry day
+
+    # Risk management tracking (v4)
+    rm_max_positions = 0
+    rm_exposure_sum = 0.0
+    rm_exposure_count = 0
+    rm_sector_skips = 0
+    rm_exposure_caps = 0
+    rm_sector_distribution = {s: 0 for s in SECTORS}   # total entries per sector
 
     for i, d in enumerate(use_dates):
         # -- Check exits
@@ -172,29 +215,63 @@ def strat_score_trader(date_range=None, bb_period=20, rsi_period=14,
                 bb_mid = sma_bb
                 bb_std = close[a].loc[:d].rolling(bb_period).std().iloc[-1]
                 bb_low = bb_mid - 2*bb_std
-                score  = 0
-                if p > sma_bb:        score += 3
+                score = 0
+                if p > sma_bb:          score += 3
                 if p < bb_mid + 0.5*bb_std: score += 3
                 if rsi_ind[a].loc[d] < 55:  score += 2
                 if score >= 8:
-                    atr   = atr_ind[a].loc[d]
+                    # --- Sector Correlation Filter (v4) ---
+                    sector = ASSET_TO_SECTOR.get(a, "Other")
+                    sector_count = sum(
+                        1 for pos_ticker in positions
+                        if ASSET_TO_SECTOR.get(pos_ticker, "Other") == sector
+                    )
+                    if sector_count >= MAX_POSITIONS_PER_SECTOR:
+                        rm_sector_skips += 1
+                        continue
+
+                    atr = atr_ind[a].loc[d]
                     n_pos = max(len(positions) + 1, 1)
                     prev *= (1 - TOTAL_COST / n_pos)   # Fee + Spread + Slippage (anteilig)
                     positions[a] = (p, p - atr_sl_mult*atr, atr, p)
                     trades += 1
+
+                    # Track sector distribution
+                    if sector in rm_sector_distribution:
+                        rm_sector_distribution[sector] += 1
+                    else:
+                        rm_sector_distribution[sector] = 1
+
                     if track_per_asset:
-                        asset_stats[a]["trades"] += 1  # entry counted
+                        asset_stats[a]["trades"] += 1   # entry counted
                         asset_entry_day[a] = i
             except:
                 pass
 
-        if positions:
-            r = np.mean([ret.loc[d, a] for a in positions])
+        # -- Position sizing with Max-Exposure cap (v4) ---
+        n_pos = len(positions)
+        if n_pos > 0:
+            raw_exposure = KELLY_FRACTION * n_pos
+            if raw_exposure > MAX_EXPOSURE:
+                position_size = MAX_EXPOSURE / n_pos
+                rm_exposure_caps += 1
+            else:
+                position_size = KELLY_FRACTION
+            r = sum(ret.loc[d, a] * position_size for a in positions)
+
+            # Track risk management stats
+            actual_exposure = position_size * n_pos
+            rm_exposure_sum += actual_exposure
+            rm_exposure_count += 1
+            rm_max_positions = max(rm_max_positions, n_pos)
         else:
             r = 0.0
+            rm_exposure_sum += 0.0
+            rm_exposure_count += 1
+
         prev *= (1 + r); vals.append(prev)
 
-    eq  = pd.Series(vals[1:], index=use_dates)
+    eq = pd.Series(vals[1:], index=use_dates)
     win = sum(1 for v1, v2 in zip(vals[:-1], vals[1:]) if v2 > v1)
     wr  = round(win / len(use_dates) * 100, 1)
     k   = kpi(eq, trades); k["WinRate%"] = wr
@@ -203,28 +280,46 @@ def strat_score_trader(date_range=None, bb_period=20, rsi_period=14,
     if track_per_asset:
         for a in list(positions):
             entry = positions[a][0]
-            p     = close[a].iloc[-1]
-            pnl   = (p - entry) / entry
+            p = close[a].iloc[-1]
+            pnl = (p - entry) / entry
             asset_stats[a]["returns"].append(pnl)
             if pnl > 0:
                 asset_stats[a]["wins"] += 1
             if a in asset_entry_day:
                 asset_stats[a]["holding_days"].append(len(use_dates) - asset_entry_day[a])
 
-    return eq, k, asset_stats
+    # Build risk management summary (v4)
+    risk_management = {
+        "max_simultaneous_positions": rm_max_positions,
+        "average_exposure%": round(
+            (rm_exposure_sum / rm_exposure_count * 100) if rm_exposure_count > 0 else 0.0, 2
+        ),
+        "max_exposure_cap%": MAX_EXPOSURE * 100,
+        "kelly_fraction%": KELLY_FRACTION * 100,
+        "exposure_cap_triggered_days": rm_exposure_caps,
+        "sector_filter_skips": rm_sector_skips,
+        "sector_distribution": rm_sector_distribution,
+        "max_positions_per_sector": MAX_POSITIONS_PER_SECTOR,
+    }
+
+    return eq, k, asset_stats, risk_management
 
 
 def strat_adaptiv():
     """Adaptiv: VIX-basierter Moduswechsel (Momentum/Crash Guard/Cash) mit Hysterese."""
     vix_close = close[VIX] if VIX in close.columns else pd.Series(20, index=close.index)
     vals = [10000.0]; prev = 10000.0; trades = 0; modus = "momentum"
+
     for i, d in enumerate(dates):
         vix = vix_close.loc[d] if d in vix_close.index else 20
         # Modus bestimmen mit Hysterese
         modus_alt = modus
-        if vix > 30:    modus = "cash"
-        elif vix > 20:  modus = "crash_guard"
-        elif vix < 18 or modus_alt == "momentum": modus = "momentum"
+        if vix > 30:
+            modus = "cash"
+        elif vix > 20:
+            modus = "crash_guard"
+        elif vix < 18 or modus_alt == "momentum":
+            modus = "momentum"
         # else: bleibe im aktuellen Modus (Hysterese)
 
         if modus != modus_alt:
@@ -238,7 +333,7 @@ def strat_adaptiv():
                 r = ret.loc[d, BENCH]
             else:
                 r = 0.0
-        else:  # momentum
+        else:   # momentum
             if i % REBAL_DAYS == 0:
                 mom = close[ASSETS].loc[:d].pct_change(63).iloc[-1].nlargest(10).index.tolist()
                 prev *= (1 - TOTAL_COST)   # Fee + Spread + Slippage: Rebalancing
@@ -247,6 +342,7 @@ def strat_adaptiv():
                 r = ret.loc[d, mom].mean()
             else:
                 r = 0.0
+
         prev *= (1 + r); vals.append(prev)
     eq = pd.Series(vals[1:], index=dates)
     return eq, kpi(eq, trades)
@@ -262,10 +358,10 @@ def strat_ensemble():
     for a in ASSETS:
         h = close[a]
         delta = h.diff()
-        gain  = delta.clip(lower=0).rolling(14).mean()
-        loss  = (-delta.clip(upper=0)).rolling(14).mean()
-        rsi14[a]     = 100 - 100/(1 + gain/(loss+1e-9))
-        atr14[a]     = h.diff().abs().rolling(14).mean()
+        gain = delta.clip(lower=0).rolling(14).mean()
+        loss = (-delta.clip(upper=0)).rolling(14).mean()
+        rsi14[a] = 100 - 100/(1 + gain/(loss+1e-9))
+        atr14[a] = h.diff().abs().rolling(14).mean()
         sma20_all[a] = h.rolling(20).mean()
         sma200_all[a]= h.rolling(200).mean()
         mom63[a]     = h.pct_change(63)
@@ -273,7 +369,7 @@ def strat_ensemble():
     for i, d in enumerate(dates):
         for a in list(positions.keys()):
             try:
-                p   = close[a].loc[d]
+                p = close[a].loc[d]
                 pos = positions[a]
                 if p <= pos[1] or p >= pos[2]:
                     prev *= (1 - TOTAL_COST)   # Fee + Spread + Slippage
@@ -292,14 +388,13 @@ def strat_ensemble():
                     p = close[a].loc[d]
                 except:
                     continue
-
                 signals = 0; total_checks = 0
-                s20     = sma20_all[a].loc[d]
+                s20 = sma20_all[a].loc[d]
                 rsi_val = rsi14[a].loc[d]
-                score   = 0
-                if not np.isnan(s20) and p > s20:    score += 2
+                score = 0
+                if not np.isnan(s20) and p > s20: score += 2
                 if not np.isnan(rsi_val):
-                    if rsi_val < 35:   score += 2
+                    if rsi_val < 35: score += 2
                     elif rsi_val < 50: score += 1
                 if score >= 3: signals += 1
                 total_checks += 1
@@ -330,12 +425,12 @@ def strat_ensemble():
         else:
             r = 0.0
         prev *= (1 + r); vals.append(prev)
-
-    eq  = pd.Series(vals[1:], index=dates)
+    eq = pd.Series(vals[1:], index=dates)
     win = sum(1 for v1, v2 in zip(vals[:-1], vals[1:]) if v2 > v1)
     wr  = round(win / len(dates) * 100, 1)
     k   = kpi(eq, trades); k["WinRate%"] = wr
     return eq, k
+
 
 # ============================================================================
 # ENHANCEMENT 1: Per-Asset Performance Analysis for Score Trader
@@ -343,23 +438,24 @@ def strat_ensemble():
 def run_score_trader_per_asset():
     """Run Score Trader with per-asset tracking enabled."""
     print("  Running Score Trader per-asset analysis ...")
-    eq, k, asset_stats = strat_score_trader(track_per_asset=True)
+    eq, k, asset_stats, risk_mgmt = strat_score_trader(track_per_asset=True)
 
     per_asset = {}
     for a in ASSETS:
         s = asset_stats[a]
-        n_trades  = s["trades"]
-        returns   = s["returns"]
-        wins      = s["wins"]
-        holdings  = s["holding_days"]
+        n_trades = s["trades"]
+        returns  = s["returns"]
+        wins     = s["wins"]
+        holdings = s["holding_days"]
         per_asset[a] = {
-            "n_trades":          n_trades,
-            "total_return%":     round(sum(returns) * 100, 2) if returns else 0.0,
-            "avg_return%":       round(np.mean(returns) * 100, 2) if returns else 0.0,
-            "win_rate%":         round(wins / max(n_trades, 1) * 100, 1),
-            "avg_holding_days":  round(np.mean(holdings), 1) if holdings else 0.0,
+            "n_trades":        n_trades,
+            "total_return%":   round(sum(returns) * 100, 2) if returns else 0.0,
+            "avg_return%":     round(np.mean(returns) * 100, 2) if returns else 0.0,
+            "win_rate%":       round(wins / max(n_trades, 1) * 100, 1),
+            "avg_holding_days": round(np.mean(holdings), 1) if holdings else 0.0,
         }
-    return eq, k, per_asset
+    return eq, k, per_asset, risk_mgmt
+
 
 # ============================================================================
 # ENHANCEMENT 2: Out-of-Sample Test
@@ -376,10 +472,10 @@ def run_out_of_sample():
     test_end    = total_days
 
     # Train period
-    eq_train, k_train, _ = strat_score_trader(
+    eq_train, k_train, _, _ = strat_score_trader(
         date_range=(train_start, train_end), track_per_asset=False)
     # Test period
-    eq_test, k_test, _ = strat_score_trader(
+    eq_test, k_test, _, _ = strat_score_trader(
         date_range=(test_start, test_end), track_per_asset=False)
 
     oos = {
@@ -400,32 +496,30 @@ def run_out_of_sample():
     }
     return oos
 
+
 # ============================================================================
 # ENHANCEMENT 4: Parameter Sensitivity Test
 # ============================================================================
 def run_parameter_sensitivity():
     """Run Score Trader with varied parameters to check robustness."""
     print("  Running Parameter Sensitivity test ...")
-    bb_periods    = [18, 20, 22]
-    rsi_periods   = [12, 14, 16]
-    atr_mults     = [2.5, 3.0, 3.5]
+
+    bb_periods  = [18, 20, 22]
+    rsi_periods = [12, 14, 16]
+    atr_mults   = [2.5, 3.0, 3.5]
 
     results = []
     for bb in bb_periods:
         for rsi_p in rsi_periods:
             for atr_m in atr_mults:
-                eq, k, _ = strat_score_trader(
-                    bb_period=bb, rsi_period=rsi_p,
-                    atr_sl_mult=atr_m, track_per_asset=False)
+                eq, k, _, _ = strat_score_trader(
+                    bb_period=bb, rsi_period=rsi_p, atr_sl_mult=atr_m,
+                    track_per_asset=False)
                 results.append({
-                    "bb_period":      bb,
-                    "rsi_period":     rsi_p,
-                    "atr_sl_mult":    atr_m,
-                    "Return%":        k["Return%"],
-                    "Sharpe":         k["Sharpe"],
-                    "MaxDD%":         k["MaxDD%"],
-                    "Trades":         k["Trades"],
-                    "WinRate%":       k["WinRate%"],
+                    "bb_period": bb, "rsi_period": rsi_p, "atr_sl_mult": atr_m,
+                    "Return%": k["Return%"], "Sharpe": k["Sharpe"],
+                    "MaxDD%": k["MaxDD%"], "Trades": k["Trades"],
+                    "WinRate%": k["WinRate%"],
                 })
 
     # Summary statistics
@@ -445,8 +539,6 @@ def run_parameter_sensitivity():
     return {"grid_results": results, "summary": summary}
 
 
-
-
 # ============================================================================
 # ENHANCEMENT 5: Walk-Forward Analysis
 # ============================================================================
@@ -454,21 +546,24 @@ def walk_forward_analysis():
     """Rolling 3yr train / 1yr test windows for Score Trader.
 
     Splits the full date range into overlapping windows:
-      - Window 0: years 0-3 train, year 3-4 test
-      - Window 1: years 1-4 train, year 4-5 test
-      - etc.
+    - Window 0: years 0-3 train, year 3-4 test
+    - Window 1: years 1-4 train, year 4-5 test
+    - etc.
+
     Runs Score Trader on each train period to validate, then measures on test.
     Reports consistency of performance across windows.
     """
     print("  Running Walk-Forward Analysis ...")
+
     total_days = len(dates)
     trading_days_per_year = 252
-    train_len = 3 * trading_days_per_year   # 3 years
-    test_len  = 1 * trading_days_per_year   # 1 year
-    window_step = 1 * trading_days_per_year # slide by 1 year
+    train_len   = 3 * trading_days_per_year   # 3 years
+    test_len    = 1 * trading_days_per_year    # 1 year
+    window_step = 1 * trading_days_per_year    # slide by 1 year
 
     windows = []
     start_idx = 0
+
     while start_idx + train_len + test_len <= total_days:
         train_start = start_idx
         train_end   = start_idx + train_len
@@ -476,19 +571,19 @@ def walk_forward_analysis():
         test_end    = min(train_end + test_len, total_days)
 
         # Run Score Trader on train window
-        eq_train, k_train, _ = strat_score_trader(
+        eq_train, k_train, _, _ = strat_score_trader(
             date_range=(train_start, train_end), track_per_asset=False)
 
         # Run Score Trader on test window
-        eq_test, k_test, _ = strat_score_trader(
+        eq_test, k_test, _, _ = strat_score_trader(
             date_range=(test_start, test_end), track_per_asset=False)
 
         windows.append({
-            "window":       len(windows) + 1,
-            "train_start":  str(dates[train_start]),
-            "train_end":    str(dates[train_end - 1]),
-            "test_start":   str(dates[test_start]),
-            "test_end":     str(dates[test_end - 1]),
+            "window": len(windows) + 1,
+            "train_start": str(dates[train_start]),
+            "train_end":   str(dates[train_end - 1]),
+            "test_start":  str(dates[test_start]),
+            "test_end":    str(dates[test_end - 1]),
             "train_return%": k_train["Return%"],
             "test_return%":  k_test["Return%"],
             "train_sharpe":  k_train["Sharpe"],
@@ -498,7 +593,6 @@ def walk_forward_analysis():
             "train_trades":  k_train["Trades"],
             "test_trades":   k_test["Trades"],
         })
-
         start_idx += window_step
 
     # Aggregate statistics across all windows
@@ -512,14 +606,14 @@ def walk_forward_analysis():
         profitable_tests = sum(1 for r in test_returns if r > 0)
 
         summary = {
-            "n_windows":            len(windows),
-            "train_return_mean%":   round(np.mean(train_returns), 2),
-            "train_return_std%":    round(np.std(train_returns), 2),
-            "test_return_mean%":    round(np.mean(test_returns), 2),
-            "test_return_std%":     round(np.std(test_returns), 2),
+            "n_windows": len(windows),
+            "train_return_mean%":  round(np.mean(train_returns), 2),
+            "train_return_std%":   round(np.std(train_returns), 2),
+            "test_return_mean%":   round(np.mean(test_returns), 2),
+            "test_return_std%":    round(np.std(test_returns), 2),
             "test_profitable_pct%": round(profitable_tests / len(windows) * 100, 1),
-            "train_sharpe_mean":    round(np.mean(train_sharpes), 2),
-            "test_sharpe_mean":     round(np.mean(test_sharpes), 2),
+            "train_sharpe_mean":   round(np.mean(train_sharpes), 2),
+            "test_sharpe_mean":    round(np.mean(test_sharpes), 2),
             "avg_return_degradation%": round(
                 np.mean(train_returns) - np.mean(test_returns), 2),
         }
@@ -535,23 +629,25 @@ def walk_forward_analysis():
 def monte_carlo_simulation(n_sims=1000):
     """Bootstrap shuffle of daily returns from Score Trader.
 
-    Randomly reshuffles the daily return sequence 1000 times to build
-    a distribution of possible outcomes. For each simulation:
-      - Compute total return and max drawdown
+    Randomly reshuffles the daily return sequence 1000 times to build a
+    distribution of possible outcomes. For each simulation:
+    - Compute total return and max drawdown
+
     Reports median, 5th, and 95th percentile for drawdowns and returns,
     plus probability of experiencing >20% and >30% drawdowns.
+
     Uses TOTAL_COST (0.30%) applied proportionally in the base equity curve.
     """
     print("  Running Monte Carlo Simulation (n={}) ...".format(n_sims))
 
     # Get the Score Trader equity curve and extract daily returns
-    eq_st, _, _ = strat_score_trader(track_per_asset=False)
+    eq_st, _, _, _ = strat_score_trader(track_per_asset=False)
     daily_returns = eq_st.pct_change().dropna().values.copy()
     n_days = len(daily_returns)
 
-    sim_total_returns = []
-    sim_max_drawdowns = []
-    sim_final_equity  = []
+    sim_total_returns  = []
+    sim_max_drawdowns  = []
+    sim_final_equity   = []
 
     rng = np.random.RandomState(42)   # reproducible
 
@@ -574,7 +670,7 @@ def monte_carlo_simulation(n_sims=1000):
 
         # Max drawdown
         running_max = np.maximum.accumulate(equity)
-        drawdowns = (equity - running_max) / running_max
+        drawdowns   = (equity - running_max) / running_max
         sim_max_drawdowns.append(drawdowns.min())
 
     sim_total_returns = np.array(sim_total_returns)
@@ -582,8 +678,8 @@ def monte_carlo_simulation(n_sims=1000):
     sim_final_equity  = np.array(sim_final_equity)
 
     result = {
-        "n_simulations":     n_sims,
-        "n_days_per_sim":    n_days,
+        "n_simulations": n_sims,
+        "n_days_per_sim": n_days,
         "total_return": {
             "median%":       round(np.median(sim_total_returns) * 100, 2),
             "percentile_5%": round(np.percentile(sim_total_returns, 5) * 100, 2),
@@ -598,12 +694,9 @@ def monte_carlo_simulation(n_sims=1000):
             "mean%":         round(np.mean(sim_max_drawdowns) * 100, 2),
         },
         "drawdown_probabilities": {
-            "prob_gt_20%":   round(
-                np.mean(sim_max_drawdowns < -0.20) * 100, 1),
-            "prob_gt_30%":   round(
-                np.mean(sim_max_drawdowns < -0.30) * 100, 1),
-            "prob_gt_40%":   round(
-                np.mean(sim_max_drawdowns < -0.40) * 100, 1),
+            "prob_gt_20%": round( np.mean(sim_max_drawdowns < -0.20) * 100, 1),
+            "prob_gt_30%": round( np.mean(sim_max_drawdowns < -0.30) * 100, 1),
+            "prob_gt_40%": round( np.mean(sim_max_drawdowns < -0.40) * 100, 1),
         },
         "final_equity": {
             "median":        round(float(np.median(sim_final_equity)), 2),
@@ -620,20 +713,21 @@ def monte_carlo_simulation(n_sims=1000):
 def kelly_criterion():
     """Compute Kelly fraction and position sizing for Score Trader.
 
-    Uses actual trade-level win rate and average win/loss from per-asset
-    analysis. Calculates:
-      - Full Kelly fraction (f*)
-      - Half Kelly and Quarter Kelly (conservative sizing)
-      - Theoretical annual return estimates at each Kelly fraction
-      - Risk of ruin estimate
+    Uses actual trade-level win rate and average win/loss from per-asset analysis.
+    Calculates:
+    - Full Kelly fraction (f*)
+    - Half Kelly and Quarter Kelly (conservative sizing)
+    - Theoretical annual return estimates at each Kelly fraction
+    - Risk of ruin estimate
 
     Formula: f* = (win_rate * avg_win - (1 - win_rate) * avg_loss) / avg_win
+
     Uses TOTAL_COST (0.30%) deducted from each trade's P&L.
     """
     print("  Running Kelly Criterion analysis ...")
 
     # Run Score Trader with per-asset tracking to get trade-level data
-    eq_st, k_st, asset_stats = strat_score_trader(track_per_asset=True)
+    eq_st, k_st, asset_stats, _ = strat_score_trader(track_per_asset=True)
 
     # Collect all individual trade returns across all assets
     all_returns = []
@@ -648,15 +742,16 @@ def kelly_criterion():
         return {"error": "No trades found for Kelly calculation"}
 
     all_returns = np.array(all_returns)
-    wins  = all_returns[all_returns > 0]
+    wins   = all_returns[all_returns > 0]
     losses = all_returns[all_returns <= 0]
 
-    n_trades  = len(all_returns)
-    n_wins    = len(wins)
-    n_losses  = len(losses)
-    win_rate  = n_wins / n_trades if n_trades > 0 else 0.0
-    avg_win   = float(np.mean(wins))  if len(wins)  > 0 else 0.0
-    avg_loss  = float(np.mean(np.abs(losses))) if len(losses) > 0 else 0.001
+    n_trades = len(all_returns)
+    n_wins   = len(wins)
+    n_losses = len(losses)
+
+    win_rate = n_wins / n_trades if n_trades > 0 else 0.0
+    avg_win  = float(np.mean(wins))  if len(wins) > 0  else 0.0
+    avg_loss = float(np.mean(np.abs(losses))) if len(losses) > 0 else 0.001
 
     # Kelly formula: f* = (p * b - q) / b
     # where p = win_rate, q = 1 - win_rate, b = avg_win / avg_loss
@@ -687,8 +782,8 @@ def kelly_criterion():
     trades_per_year = k_st["Trades"] / total_period_years if total_period_years > 0 else 50
 
     # Annual growth estimates at each Kelly level
-    g_full    = growth_rate(max(kelly_full, 0), win_rate, b)
-    g_half    = growth_rate(max(kelly_half, 0), win_rate, b)
+    g_full    = growth_rate(max(kelly_full, 0),    win_rate, b)
+    g_half    = growth_rate(max(kelly_half, 0),    win_rate, b)
     g_quarter = growth_rate(max(kelly_quarter, 0), win_rate, b)
 
     annual_g_full    = g_full * trades_per_year
@@ -708,33 +803,33 @@ def kelly_criterion():
 
     result = {
         "trade_statistics": {
-            "total_trades":     n_trades,
-            "wins":             n_wins,
-            "losses":           n_losses,
-            "win_rate%":        round(win_rate * 100, 2),
-            "avg_win%":         round(avg_win * 100, 2),
-            "avg_loss%":        round(avg_loss * 100, 2),
-            "win_loss_ratio":   round(b, 3),
-            "expectancy%":      round((win_rate * avg_win - (1 - win_rate) * avg_loss) * 100, 3),
+            "total_trades": n_trades,
+            "wins": n_wins,
+            "losses": n_losses,
+            "win_rate%": round(win_rate * 100, 2),
+            "avg_win%": round(avg_win * 100, 2),
+            "avg_loss%": round(avg_loss * 100, 2),
+            "win_loss_ratio": round(b, 3),
+            "expectancy%": round((win_rate * avg_win - (1 - win_rate) * avg_loss) * 100, 3),
             "max_consecutive_losses": max_consecutive_losses,
         },
         "kelly_fractions": {
-            "full_kelly%":      round(kelly_full * 100, 2),
-            "half_kelly%":      round(kelly_half * 100, 2),
-            "quarter_kelly%":   round(kelly_quarter * 100, 2),
+            "full_kelly%":    round(kelly_full * 100, 2),
+            "half_kelly%":    round(kelly_half * 100, 2),
+            "quarter_kelly%": round(kelly_quarter * 100, 2),
         },
         "theoretical_annual_growth": {
-            "full_kelly%":      round(annual_g_full * 100, 2),
-            "half_kelly%":      round(annual_g_half * 100, 2),
-            "quarter_kelly%":   round(annual_g_quarter * 100, 2),
+            "full_kelly%":    round(annual_g_full * 100, 2),
+            "half_kelly%":    round(annual_g_half * 100, 2),
+            "quarter_kelly%": round(annual_g_quarter * 100, 2),
         },
         "position_sizing": {
-            "recommended":      "half_kelly",
+            "recommended": "half_kelly",
             "recommended_pct%": round(kelly_half * 100, 2),
-            "rationale":        ("Half Kelly balances growth vs. drawdown risk. "
-                                 "Full Kelly is mathematically optimal but assumes "
-                                 "perfect edge estimation and infinite time horizon."),
-            "trades_per_year":  round(trades_per_year, 1),
+            "rationale": ("Half Kelly balances growth vs. drawdown risk. "
+                         "Full Kelly is mathematically optimal but assumes "
+                         "perfect edge estimation and infinite time horizon."),
+            "trades_per_year": round(trades_per_year, 1),
         },
         "cost_assumptions": {
             "total_cost_per_trade%": round(TOTAL_COST * 100, 2),
@@ -746,11 +841,11 @@ def kelly_criterion():
 
 # -- Run all strategies ----------------------------------------------------
 strategies = [
-    ("Buy & Hold",    strat_buyhold),
-    ("Crash Guard",   strat_crash_guard),
-    ("Momentum",      strat_momentum),
-    ("Adaptiv",       strat_adaptiv),
-    ("Ensemble",      strat_ensemble),
+    ("Buy & Hold",   strat_buyhold),
+    ("Crash Guard",  strat_crash_guard),
+    ("Momentum",     strat_momentum),
+    ("Adaptiv",      strat_adaptiv),
+    ("Ensemble",     strat_ensemble),
 ]
 
 results = {}
@@ -759,11 +854,12 @@ for name, func in strategies:
     eq, k = func()
     results[name] = k
 
-# Score Trader with per-asset tracking (Enhancement 1)
+# Score Trader with per-asset tracking (Enhancement 1) + risk management (v4)
 print("  Running Score Trader ...")
-eq_st, k_st, per_asset_data = run_score_trader_per_asset()
+eq_st, k_st, per_asset_data, risk_mgmt_data = run_score_trader_per_asset()
 results["Score Trader"] = k_st
 results["score_trader_per_asset"] = per_asset_data
+results["risk_management"] = risk_mgmt_data
 
 # Out-of-Sample test (Enhancement 2)
 results["out_of_sample"] = run_out_of_sample()
@@ -782,8 +878,8 @@ results["kelly_criterion"] = kelly_criterion()
 
 # Meta
 results["_meta"] = {
-    "generated":   str(dt.date.today()),
-    "assets":      len(ASSETS),
+    "generated":  str(dt.date.today()),
+    "assets":     len(ASSETS),
     "period_days": len(dates),
     "fees": ("Trading 212: 0.15% FX-Fee + 0.05% Spread + 0.10% Slippage "
              "= 0.30% pro Trade (EUR->USD)"),
@@ -795,6 +891,8 @@ results["_meta"] = {
         "walk-forward analysis (3yr train / 1yr test rolling windows)",
         "Monte Carlo simulation (1000 bootstrap reshuffles)",
         "Kelly criterion (position sizing + growth estimates)",
+        "max-exposure rule (80% portfolio cap with Half Kelly sizing)",
+        "sector correlation filter (max 4 positions per sector)",
     ],
 }
 
