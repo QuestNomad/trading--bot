@@ -3,7 +3,7 @@
   "letztes_update": "2026-04-13",
   "bots": {
     "Momentum": {
-      "kapital": 0.0,
+      "kapital": 0,
       "positionen": {
         "INTC": 153.42129415740314,
         "AMD": 40.51371359161032,
@@ -34,8 +34,8 @@
         },
         {
           "datum": "2026-04-13",
-          "wert": 100000.0,
-          "cash": 0.0,
+          "wert": 100000,
+          "cash": 0,
           "positionen_anzahl": 10,
           "trades_gesamt": 10
         }
@@ -50,14 +50,14 @@
       "history": [
         {
           "datum": "2026-04-10",
-          "wert": 100000.0,
+          "wert": 100000,
           "cash": 0,
           "positionen_anzahl": 1,
           "trades_gesamt": 1
         },
         {
           "datum": "2026-04-10",
-          "wert": 100000.0,
+          "wert": 100000,
           "cash": 0,
           "positionen_anzahl": 1,
           "trades_gesamt": 1
@@ -71,37 +71,8 @@
         }
       ]
     },
-    "Score_Trader": {
-      "kapital": 100000,
-      "positionen": {},
-      "trades": 0,
-      "history": [
-        {
-          "datum": "2026-04-10",
-          "wert": 100000,
-          "cash": 100000,
-          "positionen_anzahl": 0,
-          "trades_gesamt": 0
-        },
-        {
-          "datum": "2026-04-10",
-          "wert": 100000,
-          "cash": 100000,
-          "positionen_anzahl": 0,
-          "trades_gesamt": 0
-        },
-        {
-          "datum": "2026-04-13",
-          "wert": 100000,
-          "cash": 100000,
-          "positionen_anzahl": 0,
-          "trades_gesamt": 0
-        }
-      ],
-      "meta": {}
-    },
     "Buy_Hold": {
-      "kapital": 0.0,
+      "kapital": 0,
       "positionen": {
         "SPY": 3.87304456813844,
         "QQQ": 4.306509754736122,
@@ -146,22 +117,22 @@
       "history": [
         {
           "datum": "2026-04-10",
-          "wert": 100000.0,
-          "cash": 0.0,
+          "wert": 100000,
+          "cash": 0,
           "positionen_anzahl": 38,
           "trades_gesamt": 38
         },
         {
           "datum": "2026-04-10",
-          "wert": 100000.0,
-          "cash": 0.0,
+          "wert": 100000,
+          "cash": 0,
           "positionen_anzahl": 38,
           "trades_gesamt": 38
         },
         {
           "datum": "2026-04-13",
           "wert": 101450.88,
-          "cash": 0.0,
+          "cash": 0,
           "positionen_anzahl": 38,
           "trades_gesamt": 38
         }
@@ -194,6 +165,42 @@
           "trades_gesamt": 0
         }
       ]
+    },
+    "Kronos": {
+      "kapital": 100000,
+      "positionen": {},
+      "trades": 0,
+      "history": [
+        {
+          "datum": "2026-04-10",
+          "wert": 100000,
+          "cash": 100000,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 0
+        },
+        {
+          "datum": "2026-04-10",
+          "wert": 100000,
+          "cash": 100000,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 0
+        },
+        {
+          "datum": "2026-04-13",
+          "wert": 100000,
+          "cash": 100000,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 0
+        }
+      ],
+      "meta": {}
+    },
+    "Athena": {
+      "kapital": 100000,
+      "positionen": {},
+      "trades": 0,
+      "history": [],
+      "meta": {}
     }
   }
 }
