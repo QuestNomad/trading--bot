@@ -2,14 +2,24 @@
 """
 Paper Trading Module for Score Trader Strategy.
 
-Simulates trades without real money using the same signal logic as bot.py.
-Tracks a virtual portfolio, logs all buy/sell signals, records P&L,
-and persists state to paper_portfolio.json across runs.
+Simulates trades without real money using the same signal logic as
+arena_backtest.py.  Tracks a virtual portfolio, logs all buy/sell signals,
+records P&L, and persists state to paper_portfolio.json across runs.
 
 Trading 212 fee model:
   TRADING_FEE  = 0.0015  (0.15% FX fee)
   SPREAD_COST  = 0.0005  (0.05% spread)
   SLIPPAGE_COST = 0.001  (0.10% slippage)
+
+Signal scoring (arena_backtest aligned):
+  BB(20) below lower band â +3, above upper â -2
+  RSI(14) < 30 â +3, > 70 â -2, â¤ 50 â +1
+  SMA(20) above â +3, below â -2
+  Buy threshold: 5  (max score = +9)
+
+Exit: trailing stop at 3ÃATR(14), no fixed TP/SL.
+Sizing: Kelly fraction 0.0694 of portfolio per trade.
+Risk: max 80 % exposure, max 4 positions per sector.
 
 Can be run daily via GitHub Actions.
 """
@@ -41,11 +51,14 @@ try:
     ALERTS_AVAILABLE = True
 except ImportError:
     ALERTS_AVAILABLE = False
-    print("Warning: alerts.py not found â Telegram alerts disabled.")
+    print("Warning: alerts.py not found â Telegram alerts disabled.")
 
-# ââ Configuration ââââââââââââââââââââââââââââââââââââââââââââââ
+# ââ Configuration ââââââââââââââââââââââââââââââââââââââââââââ
 STARTING_CAPITAL = 10_000.0
-MAX_RISK_PER_TRADE = 0.01       # 1% of capital per trade
+
+# Kelly sizing
+KELLY_FRACTION = 0.0694
+
 MAX_OPEN_POSITIONS = 10
 PORTFOLIO_FILE = "paper_portfolio.json"
 
@@ -55,10 +68,13 @@ SPREAD_COST = 0.0005
 SLIPPAGE_COST = 0.001
 TOTAL_COST = TRADING_FEE + SPREAD_COST + SLIPPAGE_COST  # 0.30%
 
-# Score Trader thresholds (synced with bot.py)
-BUY_THRESHOLD = 8
-SELL_THRESHOLD = 3
+# Score Trader thresholds (arena_backtest aligned)
+BUY_THRESHOLD = 5
 VIX_LIMIT = 30
+
+# Risk management
+MAX_EXPOSURE = 0.80
+MAX_POSITIONS_PER_SECTOR = 4
 
 # Drawdown alert threshold
 DRAWDOWN_ALERT_PCT = 5.0
@@ -71,7 +87,28 @@ log = logging.getLogger(__name__)
 analyzer = SentimentIntensityAnalyzer()
 _yf_lock = threading.Lock()
 
-# ââ Assets (same as bot.py) ââââââââââââââââââââââââââââââââââââ
+# ââ Sector mapping âââââââââââââââââââââââââââââââââââââââââââ
+SECTORS = {
+    "Technology": ["AAPL", "MSFT", "NVDA", "GOOG", "AMZN"],
+    "Finance": ["JPM", "V", "BRK-B"],
+    "Healthcare": ["JNJ", "UNH", "PFE"],
+    "Energy": ["XOM", "CVX"],
+    "Consumer": ["WMT", "PG", "KO", "MCD", "NKE", "DIS"],
+    "Industrial": ["CAT", "BA", "HON"],
+    "Semiconductor": ["TSM", "ASML"],
+    "ETF/Index": ["SPY", "QQQ", "IWM", "EFA", "GLD", "TLT"],
+    "Crypto": ["BTC-USD", "ETH-USD"],
+    "Short/Inverse": ["SH", "PSQ", "DOG"],
+    "Commodity": ["USO", "SLV"],
+}
+
+# Build reverse mapping: symbol â sector
+ASSET_TO_SECTOR: dict[str, str] = {}
+for _sector, _symbols in SECTORS.items():
+    for _sym in _symbols:
+        ASSET_TO_SECTOR[_sym] = _sector
+
+# ââ Assets (same as bot.py) ââââââââââââââââââââââââââââââââââ
 ASSETS = [
     {"name": "Bitcoin",        "typ": "crypto", "id": "bitcoin",    "symbol": "BTC"},
     {"name": "Ethereum",       "typ": "crypto", "id": "ethereum",   "symbol": "ETH"},
@@ -107,10 +144,10 @@ ASSETS = [
     {"name": "Oil",            "typ": "aktie",  "id": "BZ=F",       "symbol": "Oil"},
     {"name": "Kupfer",         "typ": "aktie",  "id": "HG=F",       "symbol": "Kupfer"},
     {"name": "Weizen",         "typ": "aktie",  "id": "ZW=F",       "symbol": "Weizen"},
-    {"name": "Short S&P 500",  "typ": "aktie",  "id": "XSPS.L",     "symbol": "XSPS",  "short": True},
-    {"name": "Short DAX",      "typ": "aktie",  "id": "DXSN.DE",    "symbol": "DXSN",  "short": True},
-    {"name": "Short Nasdaq",   "typ": "aktie",  "id": "QQQS.L",     "symbol": "QQQS",  "short": True},
-    {"name": "Short Krypto",   "typ": "aktie",  "id": "BITI",       "symbol": "BITI",  "short": True},
+    {"name": "Short S&P 500",  "typ": "aktie",  "id": "XSPS.L",    "symbol": "XSPS", "short": True},
+    {"name": "Short DAX",      "typ": "aktie",  "id": "DXSN.DE",   "symbol": "DXSN", "short": True},
+    {"name": "Short Nasdaq",   "typ": "aktie",  "id": "QQQS.L",    "symbol": "QQQS", "short": True},
+    {"name": "Short Krypto",   "typ": "aktie",  "id": "BITI",       "symbol": "BITI", "short": True},
 ]
 
 NEWS_FEEDS = {
@@ -125,12 +162,13 @@ NEWS_FEEDS = {
 }
 
 
-# ââ Data Loading âââââââââââââââââââââââââââââââââââââââââââââââ
+# ââ Data Loading âââââââââââââââââââââââââââââââââââââââââââââ
 
 def get_crypto_prices(coin_id: str):
     """Fetch ~300 days of daily crypto prices from CoinGecko."""
     try:
         import requests
+
         r = requests.get(
             f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart",
             params={"vs_currency": "eur", "days": "300", "interval": "daily"},
@@ -150,7 +188,10 @@ def get_stock_prices(ticker: str):
     """Fetch ~300 days of daily stock prices via yfinance."""
     try:
         with _yf_lock:
-            df = yf.download(ticker, period="300d", interval="1d", progress=False, auto_adjust=True)
+            df = yf.download(
+                ticker, period="300d", interval="1d",
+                progress=False, auto_adjust=True,
+            )
         if df.empty or len(df) < 50:
             return None
         close = df["Close"]
@@ -177,7 +218,7 @@ def get_current_price(asset: dict) -> float | None:
     return None
 
 
-# ââ Technical Indicators (synced with bot.py) ââââââââââââââââââ
+# ââ Technical Indicators âââââââââââââââââââââââââââââââââââââ
 
 def sma(prices, n):
     return pd.Series(prices).rolling(n).mean()
@@ -194,12 +235,6 @@ def rsi_val(prices, n=14):
     return float((100 - (100 / (1 + (g / l)))).iloc[-1])
 
 
-def macd_val(prices):
-    s = pd.Series(prices)
-    m = s.ewm(span=12).mean() - s.ewm(span=26).mean()
-    return float(m.iloc[-1]), float(m.ewm(span=9).mean().iloc[-1])
-
-
 def atr_val(prices, n=14):
     s = pd.Series(prices)
     tr = s.diff().abs()
@@ -207,69 +242,134 @@ def atr_val(prices, n=14):
     return float(tr.rolling(n).mean().iloc[-1])
 
 
-# ââ Score Trader Signal (synced with bot.py berechne_signal) âââ
+def bollinger_bands(prices, n=20, k=2):
+    """Return (middle, upper, lower) Bollinger Bands."""
+    s = pd.Series(prices)
+    middle = s.rolling(n).mean()
+    std = s.rolling(n).std()
+    upper = middle + k * std
+    lower = middle - k * std
+    return float(middle.iloc[-1]), float(upper.iloc[-1]), float(lower.iloc[-1])
+
+
+# ââ Score Trader Signal (arena_backtest aligned) âââââââââââââ
 
 def compute_signal(prices, sw=0.0, seu=0.0):
     """
-    Compute Score Trader signal. Identical logic to bot.py berechne_signal().
+    Compute Score Trader signal aligned with arena_backtest.py.
+
+    Scoring:
+      BB(20) below lower band â +3, above upper â -2
+      RSI(14) < 30 â +3, > 70 â -2, â¤ 50 â +1
+      SMA(20) above â +3, below â -2
+      Buy threshold: 5  (max possible = +9)
+
+    Sentiment infrastructure is kept but NOT included in the score.
+
     Returns (signal, score, details).
     """
-    if len(prices) < 200:
+    if len(prices) < 50:
         return "WAIT", 0, {}
 
     current = float(prices[-1])
-    s200 = float(sma(prices, 200).iloc[-1])
-    s50 = float(sma(prices, 50).iloc[-1])
+
+    # Indicators
     r = rsi_val(prices)
-    m, ms = macd_val(prices)
     a = atr_val(prices)
+    sma20 = float(sma(prices, 20).iloc[-1])
+    bb_mid, bb_upper, bb_lower = bollinger_bands(prices, 20, 2)
+
+    # Sentiment (computed but not scored)
     sentiment = (sw * 0.3) + (seu * 0.2)
 
     score = 0
-    if current > s200:
+
+    # Bollinger Band score
+    if current < bb_lower:
         score += 3
-    if current > s50:
-        score += 2
-    if m > ms:
-        score += 2
-    if r < 70:
-        score += 1
-    if r > 30:
-        score += 1
-    if sentiment > 0.1:
-        score += 2
+    elif current > bb_upper:
+        score -= 2
 
-    bb_m = float(pd.Series(prices).rolling(20).mean().iloc[-1])
-    bb_s = float(pd.Series(prices).rolling(20).std().iloc[-1])
-    if current < (bb_m + 2 * bb_s):
+    # RSI score
+    if r < 30:
+        score += 3
+    elif r > 70:
+        score -= 2
+    elif r <= 50:
         score += 1
 
-    sl = current - (a * 3)
-    tp = current + (a * 8)
-    ps = (STARTING_CAPITAL * MAX_RISK_PER_TRADE) / (current - sl) if current > sl else 0
+    # SMA(20) score
+    if current > sma20:
+        score += 3
+    else:
+        score -= 2
+
+    # Trailing stop initial level
+    trailing_stop_long = current - (a * 3)
+    trailing_stop_short = current + (a * 3)
 
     details = {
-        "sma200": s200,
-        "sma50": s50,
+        "sma20": sma20,
         "rsi": r,
-        "macd": m,
         "atr": a,
-        "stop_loss": sl,
-        "take_profit": tp,
-        "position_size": ps,
+        "bb_mid": bb_mid,
+        "bb_upper": bb_upper,
+        "bb_lower": bb_lower,
+        "trailing_stop": trailing_stop_long,
         "score": score,
+        "sentiment": sentiment,
     }
 
     if score >= BUY_THRESHOLD:
         return "BUY", score, details
-    if score <= SELL_THRESHOLD:
+
+    # Sell when score is very negative (all three bearish = -6)
+    if score <= -2:
         return "SELL", score, details
+
     return "HOLD", score, details
 
 
-# ââ Sentiment (same as bot.py) âââââââââââââââââââââââââââââââââ
+# ââ Trailing Stop Management âââââââââââââââââââââââââââââââââ
+
+def aktualisiere_trailing_stops(portfolio: dict, price_cache: dict):
+    """
+    Update trailing stops for every open position.
+
+    Long:  new_stop = price - 3ÃATR;  trailing = max(old, new)
+    Short: new_stop = price + 3ÃATR;  trailing = min(old, new)
+
+    Requires price_cache to contain current prices AND
+    a second pass to compute ATR from full price history.
+    We store ATR in position on entry so we can also use
+    the live ATR from the latest price series when available.
+    """
+    for asset_id, pos in portfolio["positions"].items():
+        price = price_cache.get(asset_id)
+        if price is None:
+            continue
+
+        atr = pos.get("atr", 0)
+        if atr <= 0:
+            continue
+
+        old_stop = pos.get("trailing_stop", 0)
+        is_short = pos.get("is_short", False)
+
+        if is_short:
+            new_stop = price + (3 * atr)
+            # For shorts, a lower stop is tighter (better), so use min
+            pos["trailing_stop"] = min(old_stop, new_stop) if old_stop > 0 else new_stop
+        else:
+            new_stop = price - (3 * atr)
+            # For longs, a higher stop is tighter (better), so use max
+            pos["trailing_stop"] = max(old_stop, new_stop)
+
+
+# ââ Sentiment (same as bot.py) âââââââââââââââââââââââââââââââ
 
 _sentiment_cache = {}
+
 
 def get_sentiment(category="welt"):
     if category in _sentiment_cache:
@@ -288,16 +388,39 @@ def get_sentiment(category="welt"):
     return result
 
 
-# ââ Portfolio State Management âââââââââââââââââââââââââââââââââ
+# ââ Risk Checks ââââââââââââââââââââââââââââââââââââââââââââââ
+
+def check_exposure(portfolio: dict, price_cache: dict, trade_value: float) -> bool:
+    """Return True if adding *trade_value* keeps total exposure â¤ MAX_EXPOSURE."""
+    portfolio_value = calculate_portfolio_value(portfolio, price_cache)
+    if portfolio_value <= 0:
+        return False
+    current_exposure = calculate_positions_value(portfolio, price_cache) / portfolio_value
+    added_exposure = trade_value / portfolio_value
+    return (current_exposure + added_exposure) <= MAX_EXPOSURE
+
+
+def count_sector_positions(portfolio: dict, symbol: str) -> int:
+    """Count how many open positions share the same sector as *symbol*."""
+    sector = ASSET_TO_SECTOR.get(symbol, "Other")
+    count = 0
+    for _aid, pos in portfolio["positions"].items():
+        pos_symbol = pos.get("symbol", "")
+        if ASSET_TO_SECTOR.get(pos_symbol, "Other") == sector:
+            count += 1
+    return count
+
+
+# ââ Portfolio State Management âââââââââââââââââââââââââââââââ
 
 def default_portfolio() -> dict:
     """Return a fresh portfolio state."""
     return {
         "capital": STARTING_CAPITAL,
         "cash": STARTING_CAPITAL,
-        "positions": {},       # asset_id -> {name, entry_price, quantity, stop_loss, take_profit, entry_date, signal}
+        "positions": {},       # asset_id -> position dict
         "trade_history": [],   # list of completed trades
-        "daily_snapshots": [], # list of {date, portfolio_value, cash, positions_value}
+        "daily_snapshots": [], # list of daily snapshot dicts
         "peak_value": STARTING_CAPITAL,
         "total_fees_paid": 0.0,
         "created_at": datetime.now().isoformat(),
@@ -327,7 +450,7 @@ def save_portfolio(portfolio: dict):
     log.info(f"Portfolio saved to {PORTFOLIO_FILE}")
 
 
-# ââ Portfolio Calculations âââââââââââââââââââââââââââââââââââââ
+# ââ Portfolio Calculations âââââââââââââââââââââââââââââââââââ
 
 def calculate_positions_value(portfolio: dict, price_cache: dict) -> float:
     """Calculate total value of all open positions using cached prices."""
@@ -337,7 +460,6 @@ def calculate_positions_value(portfolio: dict, price_cache: dict) -> float:
         if price is not None:
             total += price * pos["quantity"]
         else:
-            # Fallback: use entry price
             total += pos["entry_price"] * pos["quantity"]
     return total
 
@@ -353,41 +475,45 @@ def apply_fee(amount: float) -> tuple[float, float]:
     return amount - fee, fee
 
 
-# ââ Trade Execution (Paper) ââââââââââââââââââââââââââââââââââââ
+# ââ Trade Execution (Paper) ââââââââââââââââââââââââââââââââââ
 
-def execute_buy(portfolio: dict, asset: dict, price: float, details: dict) -> bool:
-    """Execute a paper BUY order."""
+def execute_buy(portfolio: dict, asset: dict, price: float,
+                details: dict, price_cache: dict) -> bool:
+    """Execute a paper BUY order with Kelly sizing and risk checks."""
     asset_id = asset["id"]
+    symbol = asset.get("symbol", asset_id)
 
     # Skip if already holding
     if asset_id in portfolio["positions"]:
-        log.info(f"  Already holding {asset['name']} â skip BUY.")
+        log.info(f"  Already holding {asset['name']} â skip BUY.")
         return False
 
     # Skip if max positions reached
     if len(portfolio["positions"]) >= MAX_OPEN_POSITIONS:
-        log.info(f"  Max positions ({MAX_OPEN_POSITIONS}) reached â skip BUY {asset['name']}.")
+        log.info(f"  Max positions ({MAX_OPEN_POSITIONS}) reached â skip BUY {asset['name']}.")
         return False
 
-    # Calculate position size based on risk
-    sl = details["stop_loss"]
-    risk_per_share = price - sl
-    if risk_per_share <= 0:
-        log.warning(f"  Invalid risk for {asset['name']} (SL >= price) â skip.")
+    # Sector limit check
+    if count_sector_positions(portfolio, symbol) >= MAX_POSITIONS_PER_SECTOR:
+        sector = ASSET_TO_SECTOR.get(symbol, "Other")
+        log.info(f"  Sector '{sector}' already has {MAX_POSITIONS_PER_SECTOR} positions â skip BUY {asset['name']}.")
         return False
 
-    max_risk_amount = portfolio["cash"] * MAX_RISK_PER_TRADE
-    quantity = max_risk_amount / risk_per_share
-    trade_value = quantity * price
-
-    # Don't spend more than 20% of cash on one trade
-    max_trade = portfolio["cash"] * 0.20
-    if trade_value > max_trade:
-        quantity = max_trade / price
-        trade_value = quantity * price
+    # Kelly position sizing
+    portfolio_value = calculate_portfolio_value(portfolio, price_cache)
+    trade_value = (portfolio_value * KELLY_FRACTION)
+    quantity = trade_value / price
 
     if trade_value < 10:  # minimum trade value
-        log.info(f"  Trade value too small for {asset['name']} â skip.")
+        log.info(f"  Trade value too small for {asset['name']} â skip.")
+        return False
+
+    # Exposure check
+    if not check_exposure(portfolio, price_cache, trade_value):
+        log.info(
+            f"  Adding {asset['name']} would exceed {MAX_EXPOSURE*100:.0f}% "
+            f"max exposure â skip BUY."
+        )
         return False
 
     # Apply fees
@@ -395,33 +521,46 @@ def execute_buy(portfolio: dict, asset: dict, price: float, details: dict) -> bo
     total_cost = trade_value + fee
 
     if total_cost > portfolio["cash"]:
-        log.info(f"  Insufficient cash for {asset['name']} (need ${total_cost:.2f}, have ${portfolio['cash']:.2f}).")
+        log.info(
+            f"  Insufficient cash for {asset['name']} "
+            f"(need ${total_cost:.2f}, have ${portfolio['cash']:.2f})."
+        )
         return False
+
+    # Trailing stop initial value
+    atr = details.get("atr", 0)
+    is_short = asset.get("short", False)
+    if is_short:
+        trailing_stop = price + (3 * atr) if atr > 0 else price * 1.05
+    else:
+        trailing_stop = price - (3 * atr) if atr > 0 else price * 0.95
 
     # Execute
     portfolio["cash"] -= total_cost
     portfolio["total_fees_paid"] += fee
     portfolio["positions"][asset_id] = {
         "name": asset["name"],
-        "symbol": asset.get("symbol", asset_id),
+        "symbol": symbol,
         "entry_price": price,
         "quantity": quantity,
-        "stop_loss": sl,
-        "take_profit": details["take_profit"],
+        "trailing_stop": trailing_stop,
+        "atr": atr,
         "entry_date": datetime.now().isoformat(),
         "signal": "BUY",
         "score": details["score"],
-        "is_short": asset.get("short", False),
+        "is_short": is_short,
     }
 
     log.info(
         f"  BUY {asset['name']}: {quantity:.4f} @ ${price:,.2f} "
-        f"(cost ${total_cost:,.2f}, fee ${fee:.2f})"
+        f"(cost ${total_cost:,.2f}, fee ${fee:.2f}, "
+        f"trailing_stop ${trailing_stop:,.2f})"
     )
     return True
 
 
-def execute_sell(portfolio: dict, asset_id: str, price: float, reason: str) -> dict | None:
+def execute_sell(portfolio: dict, asset_id: str, price: float,
+                 reason: str) -> dict | None:
     """Execute a paper SELL (close position). Returns trade record or None."""
     if asset_id not in portfolio["positions"]:
         return None
@@ -452,7 +591,6 @@ def execute_sell(portfolio: dict, asset_id: str, price: float, reason: str) -> d
         "fee_paid": round(fee, 2),
         "reason": reason,
     }
-
     portfolio["trade_history"].append(trade_record)
     del portfolio["positions"][asset_id]
 
@@ -463,13 +601,93 @@ def execute_sell(portfolio: dict, asset_id: str, price: float, reason: str) -> d
     return trade_record
 
 
-# ââ Main Paper Trading Logic âââââââââââââââââââââââââââââââââââ
+# ââ Journal CSV ââââââââââââââââââââââââââââââââââââââââââââââ
+
+def append_journal_csv(trade_record: dict):
+    """Append a closed trade to the journal CSV file."""
+    csv_path = Path("paper_journal.csv")
+    header_needed = not csv_path.exists()
+    try:
+        with open(csv_path, "a", encoding="utf-8") as f:
+            if header_needed:
+                f.write(
+                    "asset,asset_id,signal,entry_price,exit_price,quantity,"
+                    "entry_date,exit_date,pnl,pnl_pct,fee_paid,reason\n"
+                )
+            f.write(
+                f"{trade_record['asset']},{trade_record['asset_id']},"
+                f"{trade_record['signal']},{trade_record['entry_price']:.4f},"
+                f"{trade_record['exit_price']:.4f},{trade_record['quantity']:.6f},"
+                f"{trade_record['entry_date']},{trade_record['exit_date']},"
+                f"{trade_record['pnl']:.2f},{trade_record['pnl_pct']:.2f},"
+                f"{trade_record['fee_paid']:.2f},{trade_record['reason']}\n"
+            )
+    except Exception as exc:
+        log.warning(f"Journal CSV write error: {exc}")
+
+
+# ââ Health Check âââââââââââââââââââââââââââââââââââââââââââââ
+
+def health_check(portfolio: dict, price_cache: dict) -> dict:
+    """Return a quick health-check dict for monitoring."""
+    pv = calculate_portfolio_value(portfolio, price_cache)
+    peak = portfolio.get("peak_value", STARTING_CAPITAL)
+    dd = ((peak - pv) / peak) * 100 if peak > 0 else 0.0
+    total_trades = len(portfolio.get("trade_history", []))
+    wins = sum(1 for t in portfolio.get("trade_history", []) if t["pnl"] > 0)
+    return {
+        "portfolio_value": round(pv, 2),
+        "cash": round(portfolio["cash"], 2),
+        "open_positions": len(portfolio["positions"]),
+        "total_trades": total_trades,
+        "win_rate_pct": round((wins / total_trades) * 100, 1) if total_trades else 0.0,
+        "drawdown_pct": round(dd, 2),
+        "peak_value": round(peak, 2),
+        "fees_paid": round(portfolio["total_fees_paid"], 2),
+        "last_run": portfolio.get("last_run"),
+    }
+
+
+# ââ Charts (equity curve PNG) ââââââââââââââââââââââââââââââââ
+
+def save_equity_chart(portfolio: dict):
+    """Save a simple equity-curve PNG from daily snapshots."""
+    snapshots = portfolio.get("daily_snapshots", [])
+    if len(snapshots) < 2:
+        return
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        dates = [s["date"] for s in snapshots]
+        values = [s["portfolio_value"] for s in snapshots]
+
+        fig, ax = plt.subplots(figsize=(10, 4))
+        ax.plot(dates, values, linewidth=1.5, color="#2563eb")
+        ax.axhline(STARTING_CAPITAL, linestyle="--", color="gray", linewidth=0.8)
+        ax.set_title("Paper Trading â Equity Curve")
+        ax.set_ylabel("Portfolio Value ($)")
+        ax.tick_params(axis="x", rotation=45)
+        # Show only every Nth label to avoid clutter
+        n = max(1, len(dates) // 20)
+        ax.set_xticks(range(0, len(dates), n))
+        ax.set_xticklabels([dates[i] for i in range(0, len(dates), n)])
+        fig.tight_layout()
+        fig.savefig("paper_equity.png", dpi=120)
+        plt.close(fig)
+        log.info("Equity chart saved to paper_equity.png")
+    except Exception as exc:
+        log.warning(f"Chart generation error: {exc}")
+
+
+# ââ Main Paper Trading Logic ââââââââââââââââââââââââââââââââ
 
 def run_paper_trading():
-    """Main paper trading loop â meant to be run once daily."""
+    """Main paper trading loop â meant to be run once daily."""
     start_time = time.time()
     today = datetime.now().strftime("%Y-%m-%d %H:%M")
-    log.info(f"=== Paper Trading Started â {today} ===")
+    log.info(f"=== Paper Trading Started â {today} ===")
 
     # Load portfolio
     portfolio = load_portfolio()
@@ -482,14 +700,17 @@ def run_paper_trading():
     # VIX check
     vix_value = None
     try:
-        vix_df = yf.download("^VIX", period="1d", interval="1d", progress=False, auto_adjust=True)
+        vix_df = yf.download(
+            "^VIX", period="1d", interval="1d",
+            progress=False, auto_adjust=True,
+        )
         vix_close = vix_df["Close"]
         if isinstance(vix_close, pd.DataFrame):
             vix_close = vix_close.iloc[:, 0]
         vix_value = float(vix_close.iloc[-1])
         log.info(f"VIX: {vix_value:.1f}")
         if vix_value > VIX_LIMIT:
-            msg = f"VIX at {vix_value:.1f} (>{VIX_LIMIT}) â no new trades today."
+            msg = f"VIX at {vix_value:.1f} (>{VIX_LIMIT}) â no new trades today."
             log.warning(msg)
             if ALERTS_AVAILABLE:
                 send_custom_alert(f"ð¨ <b>Paper Trading:</b> {msg}")
@@ -499,59 +720,71 @@ def run_paper_trading():
     # Sentiment
     sw = get_sentiment("welt")
     seu = get_sentiment("europa")
-    log.info(f"Sentiment â World: {sw}, EU: {seu}")
+    log.info(f"Sentiment â World: {sw}, EU: {seu}")
 
-    # Phase 1: Check existing positions (SL/TP exits)
-    trades_today = []
-    price_cache = {}
+    # Build price cache and fetch full series for ATR updates
+    price_cache: dict[str, float] = {}
+    price_series_cache: dict[str, list] = {}
     asset_lookup = {a["id"]: a for a in ASSETS}
 
+    # Pre-fetch prices for existing positions (needed for trailing stop updates)
     for asset_id in list(portfolio["positions"].keys()):
-        pos = portfolio["positions"][asset_id]
         asset = asset_lookup.get(asset_id)
         if not asset:
             continue
+        prices = get_prices(asset)
+        if prices and len(prices) > 0:
+            price_cache[asset_id] = float(prices[-1])
+            price_series_cache[asset_id] = prices
+            # Update ATR in position from latest data
+            if len(prices) >= 14:
+                portfolio["positions"][asset_id]["atr"] = atr_val(prices)
 
-        price = get_current_price(asset)
+    # Phase 1: Update trailing stops with latest prices
+    aktualisiere_trailing_stops(portfolio, price_cache)
+
+    # Phase 2: Check trailing-stop exits
+    trades_today = []
+    for asset_id in list(portfolio["positions"].keys()):
+        pos = portfolio["positions"][asset_id]
+        price = price_cache.get(asset_id)
         if price is None:
             continue
-        price_cache[asset_id] = price
 
         is_short = pos.get("is_short", False)
-        sl = pos["stop_loss"]
-        tp = pos["take_profit"]
+        trailing_stop = pos.get("trailing_stop", 0)
 
-        # Check stop-loss / take-profit
-        hit_sl = False
-        hit_tp = False
-
+        # Check trailing stop hit
         if is_short:
-            hit_sl = price >= sl
-            hit_tp = price <= tp
+            if price >= trailing_stop and trailing_stop > 0:
+                trade = execute_sell(portfolio, asset_id, price, "Trailing-Stop")
+                if trade:
+                    trades_today.append(trade)
+                    append_journal_csv(trade)
         else:
-            hit_sl = price <= sl
-            hit_tp = price >= tp
+            if price <= trailing_stop and trailing_stop > 0:
+                trade = execute_sell(portfolio, asset_id, price, "Trailing-Stop")
+                if trade:
+                    trades_today.append(trade)
+                    append_journal_csv(trade)
 
-        if hit_sl:
-            trade = execute_sell(portfolio, asset_id, price, "Stop-Loss")
-            if trade:
-                trades_today.append(trade)
-        elif hit_tp:
-            trade = execute_sell(portfolio, asset_id, price, "Take-Profit")
-            if trade:
-                trades_today.append(trade)
-
-    # Phase 2: Scan for new signals (only if VIX allows)
+    # Phase 3: Scan for new signals (only if VIX allows)
     new_signals = []
     if vix_value is None or vix_value <= VIX_LIMIT:
         for asset in ASSETS:
             try:
-                prices = get_prices(asset)
-                if prices is None or len(prices) < 200:
+                # Use cached series if available, otherwise fetch
+                asset_id = asset["id"]
+                if asset_id in price_series_cache:
+                    prices = price_series_cache[asset_id]
+                else:
+                    prices = get_prices(asset)
+
+                if prices is None or len(prices) < 50:
                     continue
 
                 current_price = float(prices[-1])
-                price_cache[asset["id"]] = current_price
+                price_cache[asset_id] = current_price
 
                 signal, score, details = compute_signal(prices, sw, seu)
 
@@ -564,13 +797,14 @@ def run_paper_trading():
                         signal = "SELL"
                     elif signal == "SELL":
                         signal = "BUY"
-                    # Swap SL/TP for shorts
-                    a = details["atr"]
-                    details["stop_loss"] = current_price + (a * 3)
-                    details["take_profit"] = current_price - (a * 8)
+                    # Mirror trailing stop for shorts
+                    a = details.get("atr", 0)
+                    details["trailing_stop"] = current_price + (3 * a)
 
                 if signal == "BUY":
-                    success = execute_buy(portfolio, asset, current_price, details)
+                    success = execute_buy(
+                        portfolio, asset, current_price, details, price_cache,
+                    )
                     if success:
                         new_signals.append({
                             "asset": asset,
@@ -579,6 +813,7 @@ def run_paper_trading():
                             "score": score,
                             "details": details,
                         })
+
                         # Send trade alert
                         if ALERTS_AVAILABLE:
                             send_trade_alert(
@@ -586,26 +821,30 @@ def run_paper_trading():
                                 signal="KAUFEN",
                                 price=current_price,
                                 score=score,
-                                stop_loss=details["stop_loss"],
-                                take_profit=details["take_profit"],
+                                stop_loss=details.get("trailing_stop", 0),
+                                take_profit=0,
                                 rsi=details.get("rsi", 0),
                                 atr=details.get("atr", 0),
-                                position_size=details.get("position_size", 0),
+                                position_size=0,
                                 is_paper=True,
                             )
 
-                elif signal == "SELL" and asset["id"] in portfolio["positions"]:
-                    trade = execute_sell(portfolio, asset["id"], current_price, "Signal-SELL")
+                elif signal == "SELL" and asset_id in portfolio["positions"]:
+                    trade = execute_sell(
+                        portfolio, asset_id, current_price, "Signal-SELL",
+                    )
                     if trade:
                         trades_today.append(trade)
+                        append_journal_csv(trade)
+
                         if ALERTS_AVAILABLE:
                             send_trade_alert(
                                 asset_name=asset["name"],
                                 signal="VERKAUFEN",
                                 price=current_price,
                                 score=score,
-                                stop_loss=details["stop_loss"],
-                                take_profit=details["take_profit"],
+                                stop_loss=details.get("trailing_stop", 0),
+                                take_profit=0,
                                 rsi=details.get("rsi", 0),
                                 atr=details.get("atr", 0),
                                 is_paper=True,
@@ -614,7 +853,7 @@ def run_paper_trading():
             except Exception as exc:
                 log.error(f"Error analyzing {asset['name']}: {exc}")
 
-    # Phase 3: Calculate portfolio value and snapshots
+    # Phase 4: Calculate portfolio value and snapshots
     portfolio_value = calculate_portfolio_value(portfolio, price_cache)
 
     # Update peak and check drawdown
@@ -648,16 +887,19 @@ def run_paper_trading():
     }
     portfolio["daily_snapshots"].append(snapshot)
 
-    # Phase 4: Compare with backtest expectations
+    # Phase 5: Compare with backtest expectations
     backtest_comparison = compare_with_backtest(portfolio)
 
-    # Phase 5: Print daily summary
+    # Phase 6: Health check
+    hc = health_check(portfolio, price_cache)
+    log.info(f"Health check: {json.dumps(hc)}")
+
+    # Phase 7: Print daily summary
     total_pnl = portfolio_value - STARTING_CAPITAL
     total_pnl_pct = (total_pnl / STARTING_CAPITAL) * 100
 
     winners_today = [t for t in trades_today if t["pnl"] > 0]
     losers_today = [t for t in trades_today if t["pnl"] <= 0]
-
     daily_pnl = sum(t["pnl"] for t in trades_today)
 
     # Top positions for summary
@@ -699,13 +941,16 @@ def run_paper_trading():
             is_paper=True,
         )
 
+    # Save equity chart
+    save_equity_chart(portfolio)
+
     # Save portfolio
     save_portfolio(portfolio)
 
     log.info(f"=== Paper Trading Complete ({time.time() - start_time:.1f}s) ===")
 
 
-# ââ Backtest Comparison ââââââââââââââââââââââââââââââââââââââââ
+# ââ Backtest Comparison ââââââââââââââââââââââââââââââââââââââ
 
 def compare_with_backtest(portfolio: dict) -> dict | None:
     """
@@ -714,7 +959,7 @@ def compare_with_backtest(portfolio: dict) -> dict | None:
     """
     backtest_file = Path("arena_backtest_results.json")
     if not backtest_file.exists():
-        log.info("No arena_backtest_results.json found â skipping comparison.")
+        log.info("No arena_backtest_results.json found â skipping comparison.")
         return None
 
     try:
@@ -751,7 +996,8 @@ def compare_with_backtest(portfolio: dict) -> dict | None:
 
         log.info(
             f"Backtest comparison: BT WinRate={bt_winrate}%, "
-            f"Paper WinRate={paper_winrate:.1f}% ({total_trades} trades over {n_days} days)"
+            f"Paper WinRate={paper_winrate:.1f}% "
+            f"({total_trades} trades over {n_days} days)"
         )
         return comparison
 
@@ -760,16 +1006,26 @@ def compare_with_backtest(portfolio: dict) -> dict | None:
         return None
 
 
-# ââ Console Summary ââââââââââââââââââââââââââââââââââââââââââââ
+# ââ Console Summary ââââââââââââââââââââââââââââââââââââââââââ
 
 def print_daily_summary(
-    portfolio_value, total_pnl, total_pnl_pct, daily_pnl,
-    open_positions, trades_today, winners, losers,
-    drawdown_pct, top_positions, backtest_comparison, runtime, vix,
+    portfolio_value,
+    total_pnl,
+    total_pnl_pct,
+    daily_pnl,
+    open_positions,
+    trades_today,
+    winners,
+    losers,
+    drawdown_pct,
+    top_positions,
+    backtest_comparison,
+    runtime,
+    vix,
 ):
     """Print a formatted daily summary to console."""
     print("\n" + "=" * 60)
-    print("  PAPER TRADING â DAILY SUMMARY")
+    print("  PAPER TRADING â DAILY SUMMARY")
     print("=" * 60)
     print(f"  Date:             {datetime.now().strftime('%Y-%m-%d %H:%M')}")
     print(f"  Portfolio Value:  ${portfolio_value:,.2f}")
@@ -781,6 +1037,8 @@ def print_daily_summary(
         print(f"  VIX:              {vix:.1f}")
     print(f"  Open Positions:   {open_positions}")
     print(f"  Trades Today:     {trades_today} (W:{winners} / L:{losers})")
+    print(f"  Kelly Fraction:   {KELLY_FRACTION}")
+    print(f"  Max Exposure:     {MAX_EXPOSURE*100:.0f}%")
 
     if top_positions:
         print("\n  Top Positions:")
@@ -790,16 +1048,16 @@ def print_daily_summary(
 
     if backtest_comparison:
         print("\n  Backtest Comparison:")
-        print(f"    BT WinRate:   {backtest_comparison['backtest_winrate_pct']}%")
-        print(f"    Paper WinRate: {backtest_comparison['paper_winrate_pct']}%")
-        print(f"    Paper Trades:  {backtest_comparison['paper_trades']}")
-        print(f"    Days Running:  {backtest_comparison['paper_days_running']}")
+        print(f"    BT WinRate:     {backtest_comparison['backtest_winrate_pct']}%")
+        print(f"    Paper WinRate:  {backtest_comparison['paper_winrate_pct']}%")
+        print(f"    Paper Trades:   {backtest_comparison['paper_trades']}")
+        print(f"    Days Running:   {backtest_comparison['paper_days_running']}")
 
     print(f"\n  Runtime: {runtime:.1f}s")
     print("=" * 60 + "\n")
 
 
-# ââ Entry Point ââââââââââââââââââââââââââââââââââââââââââââââââ
+# ââ Entry Point ââââââââââââââââââââââââââââââââââââââââââââââ
 
 if __name__ == "__main__":
     run_paper_trading()
