@@ -3,7 +3,7 @@ Datum,Asset,Signal,Kurs,SMA200,RSI,Score,Stop Loss,Take Profit,Sentiment Welt,Se
 02.04.2026 20:32,Bitcoin,🔴 VERKAUFEN,58084.67,77171.2,41.5,3,56181.1,61891.8,-0.12,-0.248,geschlossen,+7.01%,10.04.2026 22:59,Paper Trading
 02.04.2026 21:16,Apple,🟢 KAUFEN,255.92,248.8,59.4,8,251.52,264.72,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:16,Nikkei ETF,🟢 KAUFEN,85.29,79.79,55.0,8,82.54,90.79,-0.123,-0.236,offen,,,Paper Trading
-02.04.2026 21:16,EM ETF,🟢 KAUFEN,53.82,52.95,49.1,8,52.28,56.91,-0.123,-0.236,offen,,,Paper Trading
+02.04.2026 21:16,EM ETF,🟢 KAUFEN,53.82,52.95,49.1,8,52.28,56.91,-0.123,-0.236,geschlossen,+6.24%,13.04.2026 23:29,Paper Trading
 02.04.2026 21:16,Gold,🟢 KAUFEN,4702.7,4116.38,38.2,8,4491.24,5125.61,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:16,Silber,🟢 KAUFEN,73.17,57.86,37.4,8,68.78,81.96,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:16,SAP,🔴 VERKAUFEN,148.9,213.32,22.7,2,144.31,158.07,-0.123,-0.236,offen,,,Paper Trading
@@ -11,7 +11,7 @@ Datum,Asset,Signal,Kurs,SMA200,RSI,Score,Stop Loss,Take Profit,Sentiment Welt,Se
 02.04.2026 21:16,Tesla,🔴 VERKAUFEN,360.59,396.92,38.6,3,341.35,399.07,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:28,Apple,🟢 KAUFEN,255.92,248.8,59.4,8,251.52,264.72,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:28,Nikkei ETF,🟢 KAUFEN,85.29,79.79,55.0,8,82.54,90.79,-0.123,-0.236,offen,,,Paper Trading
-02.04.2026 21:28,EM ETF,🟢 KAUFEN,53.82,52.95,49.1,8,52.28,56.91,-0.123,-0.236,offen,,,Paper Trading
+02.04.2026 21:28,EM ETF,🟢 KAUFEN,53.82,52.95,49.1,8,52.28,56.91,-0.123,-0.236,geschlossen,+6.24%,13.04.2026 23:29,Paper Trading
 02.04.2026 21:28,Gold,🟢 KAUFEN,4702.7,4116.38,38.2,8,4491.24,5125.61,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:28,Silber,🟢 KAUFEN,73.17,57.86,37.4,8,68.78,81.96,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:28,SAP,🔴 VERKAUFEN,148.9,213.32,22.7,2,144.31,158.07,-0.123,-0.236,offen,,,Paper Trading
@@ -19,7 +19,7 @@ Datum,Asset,Signal,Kurs,SMA200,RSI,Score,Stop Loss,Take Profit,Sentiment Welt,Se
 02.04.2026 21:28,Tesla,🔴 VERKAUFEN,360.59,396.92,38.6,3,341.35,399.07,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:36,Apple,🟢 KAUFEN,255.92,248.8,59.4,8,251.52,264.72,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:36,Nikkei ETF,🟢 KAUFEN,85.29,79.79,55.0,8,82.54,90.79,-0.123,-0.236,offen,,,Paper Trading
-02.04.2026 21:36,EM ETF,🟢 KAUFEN,53.82,52.95,49.1,8,52.28,56.91,-0.123,-0.236,offen,,,Paper Trading
+02.04.2026 21:36,EM ETF,🟢 KAUFEN,53.82,52.95,49.1,8,52.28,56.91,-0.123,-0.236,geschlossen,+6.24%,13.04.2026 23:29,Paper Trading
 02.04.2026 21:36,Gold,🟢 KAUFEN,4702.7,4116.38,38.2,8,4491.24,5125.61,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:36,Silber,🟢 KAUFEN,73.17,57.86,37.4,8,68.78,81.96,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:36,SAP,🔴 VERKAUFEN,148.9,213.32,22.7,2,144.31,158.07,-0.123,-0.236,offen,,,Paper Trading
@@ -27,7 +27,7 @@ Datum,Asset,Signal,Kurs,SMA200,RSI,Score,Stop Loss,Take Profit,Sentiment Welt,Se
 02.04.2026 21:36,Tesla,🔴 VERKAUFEN,360.59,396.92,38.6,3,341.35,399.07,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:45,Apple,🟢 KAUFEN,255.92,248.8,59.4,8,251.52,264.72,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:45,Nikkei ETF,🟢 KAUFEN,85.29,79.79,55.0,8,82.54,90.79,-0.123,-0.236,offen,,,Paper Trading
-02.04.2026 21:45,EM ETF,🟢 KAUFEN,53.82,52.95,49.1,8,52.28,56.91,-0.123,-0.236,offen,,,Paper Trading
+02.04.2026 21:45,EM ETF,🟢 KAUFEN,53.82,52.95,49.1,8,52.28,56.91,-0.123,-0.236,geschlossen,+6.24%,13.04.2026 23:29,Paper Trading
 02.04.2026 21:45,Gold,🟢 KAUFEN,4702.7,4116.38,38.2,8,4491.24,5125.61,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:45,Silber,🟢 KAUFEN,73.17,57.86,37.4,8,68.78,81.96,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:45,SAP,🔴 VERKAUFEN,148.9,213.32,22.7,2,144.31,158.07,-0.123,-0.236,offen,,,Paper Trading
@@ -35,7 +35,7 @@ Datum,Asset,Signal,Kurs,SMA200,RSI,Score,Stop Loss,Take Profit,Sentiment Welt,Se
 02.04.2026 21:45,Tesla,🔴 VERKAUFEN,360.59,396.92,38.6,3,341.35,399.07,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:49,Apple,🟢 KAUFEN,255.92,248.8,59.4,8,251.52,264.72,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:50,Nikkei ETF,🟢 KAUFEN,85.29,79.79,55.0,8,82.54,90.79,-0.123,-0.236,offen,,,Paper Trading
-02.04.2026 21:50,EM ETF,🟢 KAUFEN,53.82,52.95,49.1,8,52.28,56.91,-0.123,-0.236,offen,,,Paper Trading
+02.04.2026 21:50,EM ETF,🟢 KAUFEN,53.82,52.95,49.1,8,52.28,56.91,-0.123,-0.236,geschlossen,+6.24%,13.04.2026 23:29,Paper Trading
 02.04.2026 21:50,Gold,🟢 KAUFEN,4702.7,4116.38,38.2,8,4491.24,5125.61,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:50,Silber,🟢 KAUFEN,73.17,57.86,37.4,8,68.78,81.96,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:50,SAP,🔴 VERKAUFEN,148.9,213.32,22.7,2,144.31,158.07,-0.123,-0.236,offen,,,Paper Trading
@@ -43,7 +43,7 @@ Datum,Asset,Signal,Kurs,SMA200,RSI,Score,Stop Loss,Take Profit,Sentiment Welt,Se
 02.04.2026 21:50,Tesla,🔴 VERKAUFEN,360.59,396.92,38.6,3,341.35,399.07,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:57,Apple,🟢 KAUFEN,255.92,248.8,59.4,8,251.52,264.72,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:57,Nikkei ETF,🟢 KAUFEN,85.29,79.79,55.0,8,82.54,90.79,-0.123,-0.236,offen,,,Paper Trading
-02.04.2026 21:57,EM ETF,🟢 KAUFEN,53.82,52.95,49.1,8,52.28,56.91,-0.123,-0.236,offen,,,Paper Trading
+02.04.2026 21:57,EM ETF,🟢 KAUFEN,53.82,52.95,49.1,8,52.28,56.91,-0.123,-0.236,geschlossen,+6.24%,13.04.2026 23:29,Paper Trading
 02.04.2026 21:57,Gold,🟢 KAUFEN,4702.7,4116.38,38.2,8,4491.24,5125.61,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:57,Silber,🟢 KAUFEN,73.17,57.86,37.4,8,68.78,81.96,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 21:58,SAP,🔴 VERKAUFEN,148.9,213.32,22.7,2,144.31,158.07,-0.123,-0.236,offen,,,Paper Trading
@@ -52,7 +52,7 @@ Datum,Asset,Signal,Kurs,SMA200,RSI,Score,Stop Loss,Take Profit,Sentiment Welt,Se
 02.04.2026 22:07,Brasilien ETF,🟢 KAUFEN,38.35,31.43,66.1,10,37.08,40.89,-0.123,-0.236,geschlossen,+7.77%,10.04.2026 22:59,Paper Trading
 02.04.2026 22:07,Apple,🟢 KAUFEN,255.92,248.8,59.4,8,251.52,264.72,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 22:07,Nikkei ETF,🟢 KAUFEN,85.29,79.79,55.0,8,82.54,90.79,-0.123,-0.236,offen,,,Paper Trading
-02.04.2026 22:07,EM ETF,🟢 KAUFEN,53.82,52.95,49.1,8,52.28,56.91,-0.123,-0.236,offen,,,Paper Trading
+02.04.2026 22:07,EM ETF,🟢 KAUFEN,53.82,52.95,49.1,8,52.28,56.91,-0.123,-0.236,geschlossen,+6.24%,13.04.2026 23:29,Paper Trading
 02.04.2026 22:07,Gold,🟢 KAUFEN,4702.7,4116.38,38.2,8,4491.24,5125.61,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 22:07,SAP,🔴 VERKAUFEN,nan,nan,22.6,1,nan,nan,-0.123,-0.236,offen,,,Paper Trading
 02.04.2026 22:07,Zalando,🔴 VERKAUFEN,nan,nan,29.8,1,nan,nan,-0.123,-0.236,offen,,,Paper Trading
@@ -60,7 +60,7 @@ Datum,Asset,Signal,Kurs,SMA200,RSI,Score,Stop Loss,Take Profit,Sentiment Welt,Se
 02.04.2026 23:16,Brasilien ETF,🟢 KAUFEN,38.35,31.43,66.1,10,37.08,40.89,-0.248,-0.236,geschlossen,+7.77%,10.04.2026 22:59,Paper Trading
 02.04.2026 23:16,Apple,🟢 KAUFEN,255.92,248.8,59.4,8,251.52,264.72,-0.248,-0.236,offen,,,Paper Trading
 02.04.2026 23:16,Nikkei ETF,🟢 KAUFEN,85.29,79.79,55.0,8,82.54,90.79,-0.248,-0.236,offen,,,Paper Trading
-02.04.2026 23:16,EM ETF,🟢 KAUFEN,53.82,52.95,49.1,8,52.28,56.91,-0.248,-0.236,offen,,,Paper Trading
+02.04.2026 23:16,EM ETF,🟢 KAUFEN,53.82,52.95,49.1,8,52.28,56.91,-0.248,-0.236,geschlossen,+6.24%,13.04.2026 23:29,Paper Trading
 02.04.2026 23:16,Gold,🟢 KAUFEN,4702.7,4116.38,38.2,8,4491.24,5125.61,-0.248,-0.236,offen,,,Paper Trading
 02.04.2026 23:16,SAP,🔴 VERKAUFEN,nan,nan,22.6,1,nan,nan,-0.248,-0.236,offen,,,Paper Trading
 02.04.2026 23:16,Zalando,🔴 VERKAUFEN,nan,nan,29.8,1,nan,nan,-0.248,-0.236,offen,,,Paper Trading
@@ -68,7 +68,7 @@ Datum,Asset,Signal,Kurs,SMA200,RSI,Score,Stop Loss,Take Profit,Sentiment Welt,Se
 02.04.2026 23:45,Brasilien ETF,🟢 KAUFEN,38.35,31.43,66.1,10,37.08,40.89,-0.248,-0.248,geschlossen,+7.77%,10.04.2026 22:59,Paper Trading
 02.04.2026 23:45,Apple,🟢 KAUFEN,255.92,248.8,59.4,8,251.52,264.72,-0.248,-0.248,offen,,,Paper Trading
 02.04.2026 23:45,Nikkei ETF,🟢 KAUFEN,85.29,79.79,55.0,8,82.54,90.79,-0.248,-0.248,offen,,,Paper Trading
-02.04.2026 23:45,EM ETF,🟢 KAUFEN,53.82,52.95,49.1,8,52.28,56.91,-0.248,-0.248,offen,,,Paper Trading
+02.04.2026 23:45,EM ETF,🟢 KAUFEN,53.82,52.95,49.1,8,52.28,56.91,-0.248,-0.248,geschlossen,+6.24%,13.04.2026 23:29,Paper Trading
 02.04.2026 23:45,Gold,🟢 KAUFEN,4702.7,4116.38,38.2,8,4491.24,5125.61,-0.248,-0.248,offen,,,Paper Trading
 02.04.2026 23:46,SAP,🔴 VERKAUFEN,nan,nan,22.6,1,nan,nan,-0.248,-0.248,offen,,,Paper Trading
 02.04.2026 23:46,Zalando,🔴 VERKAUFEN,nan,nan,29.8,1,nan,nan,-0.248,-0.248,offen,,,Paper Trading
@@ -169,3 +169,11 @@ Datum,Asset,Signal,Kurs,SMA200,RSI,Score,Stop Loss,Take Profit,Sentiment Welt,Se
 10.04.2026 22:59,SAP,🔴 VERKAUFEN,nan,nan,25.9,1,nan,nan,-0.107,-0.527,offen,,,Paper Trading
 10.04.2026 22:59,Tesla,🔴 VERKAUFEN,348.95,397.35,42.0,3,323.59,416.58,-0.107,-0.527,offen,,,Paper Trading
 10.04.2026 22:59,UBS,🔴 VERKAUFEN,nan,nan,75.6,3,nan,nan,-0.107,-0.527,offen,,,Paper Trading
+13.04.2026 23:29,S&P 500,🟢 KAUFEN,686.1,661.39,67.9,10,667.73,735.08,-0.164,-0.401,offen,,,Paper Trading
+13.04.2026 23:29,Nvidia,🟢 KAUFEN,189.31,180.9,66.4,10,180.4,213.06,-0.164,-0.401,offen,,,Paper Trading
+13.04.2026 23:30,Google,🟢 KAUFEN,321.31,269.01,61.6,10,303.5,368.79,-0.164,-0.401,offen,,,Paper Trading
+13.04.2026 23:30,Nikkei ETF,🟢 KAUFEN,88.35,80.32,64.1,10,84.7,98.09,-0.164,-0.401,offen,,,Paper Trading
+13.04.2026 23:30,EM ETF,🟢 KAUFEN,57.18,53.21,68.6,10,55.23,62.38,-0.164,-0.401,offen,,,Paper Trading
+13.04.2026 23:30,SAP,🔴 VERKAUFEN,nan,nan,30.2,2,nan,nan,-0.164,-0.401,offen,,,Paper Trading
+13.04.2026 23:30,Tesla,🔴 VERKAUFEN,352.42,397.48,37.0,3,329.08,414.67,-0.164,-0.401,offen,,,Paper Trading
+13.04.2026 23:30,Deutsche Bank,🔴 VERKAUFEN,nan,nan,73.0,3,nan,nan,-0.164,-0.401,offen,,,Paper Trading
