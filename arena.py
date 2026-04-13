@@ -1,11 +1,12 @@
 """
-Bot Arena - 6 Trading-Strategien im direkten Vergleich
+Bot Arena - 7 Trading-Strategien im direkten Vergleich
 Laeuft taeglich via GitHub Actions (Mo-Fr nach Marktschluss)
 
 Bots:
   1. Momentum     - Top-10 nach 63-Tage-Rendite, woechentlich rebalanced
   2. Crash Guard  - Buy & Hold SPY mit SMA200-Schutz
-  3. Score Trader - SMA20/BB/RSI/ATR Score-System (kauf_schwelle=8)
+  3. Kronos      - SMA20/BB/RSI/ATR Score-System (kauf_schwelle=8, original)
+    4. Athena      - Erweitertes 6-Komponenten Score-System (V2, kauf_schwelle=8)
   4. Buy & Hold   - Gleichgewichtet alle 38 Assets
   5. Adaptiv      - Wechselt zwischen Momentum, Crash Guard und Cash je nach VIX
 """
@@ -84,10 +85,13 @@ def berechne_indikatoren(close: pd.DataFrame) -> dict:
     # SMA
     ind["sma20"] = close.rolling(20).mean()
     ind["sma200_spy"] = close["SPY"].rolling(200).mean() if "SPY" in close.columns else pd.Series(dtype=float)
+    ind["sma200"] = close.rolling(200).mean()  # SMA200 fuer alle Assets (Athena)
 
     # Bollinger Bands (20, 2)
     bb_mid = ind["sma20"]
     bb_std = close.rolling(20).std()
+    ind["bb_mid"] = bb_mid
+    ind["bb_std"] = bb_std
     ind["bb_upper"] = bb_mid + 2 * bb_std
     ind["bb_lower"] = bb_mid - 2 * bb_std
 
@@ -274,7 +278,7 @@ def bot_crash_guard(state: dict, close: pd.DataFrame, ind: dict, heute: str):
 
 
 # ---------------------------------------------------------------------------
-# Bot 3: Score Trader
+# Bot 3: Kronos (ehemals Score Trader)
 # ---------------------------------------------------------------------------
 
 def berechne_score(symbol: str, kurs: float, ind: dict) -> int:
@@ -319,12 +323,12 @@ def berechne_score(symbol: str, kurs: float, ind: dict) -> int:
     return score
 
 
-def bot_score_trader(state: dict, close: pd.DataFrame, ind: dict, heute: str):
+def bot_kronos(state: dict, close: pd.DataFrame, ind: dict, heute: str):
     """
     Score-basiertes Trading mit SMA20, BB, RSI, ATR.
     Kaufe wenn Score >= 8. SL 3xATR, Trailing Stop 3xATR.
     """
-    bot = state["bots"]["Score_Trader"]
+    bot = state["bots"]["Kronos"]
     kurse = ind["aktuell"]
     kauf_schwelle = 8
 
@@ -348,7 +352,7 @@ def bot_score_trader(state: dict, close: pd.DataFrame, ind: dict, heute: str):
         effective_sl = max(sl, trailing_stop)
 
         if kurs <= effective_sl:
-            logger.info(f"Score Trader: {symbol} TRAILING-STOP bei {kurs:.2f} (SL={effective_sl:.2f}, High={new_high:.2f})")
+            logger.info(f"Kronos: {symbol} TRAILING-STOP bei {kurs:.2f} (SL={effective_sl:.2f}, High={new_high:.2f})")
             verkaufe(bot, symbol, kurs)
             if symbol in bot["meta"]:
                 del bot["meta"][symbol]
@@ -381,12 +385,140 @@ def bot_score_trader(state: dict, close: pd.DataFrame, ind: dict, heute: str):
             if betrag > 50:
                 if kaufe(bot, symbol, betrag, kurs):
                     bot["meta"][symbol] = {"sl": round(sl, 2), "atr": round(atr, 4), "high": round(kurs, 2), "score": score}
-                    logger.info(f"Score Trader: KAUF {symbol} Score={score} SL={sl:.2f} ATR={atr:.2f}")
+                    logger.info(f"Kronos: KAUF {symbol} Score={score} SL={sl:.2f} ATR={atr:.2f}")
 
 
 # ---------------------------------------------------------------------------
 # Bot 4: Buy & Hold
 # ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# Bot 4: Athena (Erweitertes Score-System V2)
+# ---------------------------------------------------------------------------
+
+def berechne_score_athena(symbol: str, kurs: float, ind: dict, close: pd.DataFrame) -> int:
+    """
+    Erweitertes 6-Komponenten Scoring (V2).
+    Kern: Backtest-Logik (arena_backtest.py, +863% Return)
+    Erweiterung: SMA200, MACD, Momentum-Trend
+    Max Score: 14
+    """
+    score = 0
+
+    # 1. TREND: Kurs ueber SMA20 (+3)
+    sma20 = ind["sma20"][symbol].iloc[-1] if symbol in ind["sma20"].columns else np.nan
+    if not np.isnan(sma20) and kurs > sma20:
+        score += 3
+
+    # 2. PULLBACK: Kurs nahe/unter Mitte des BB (+3)
+    bb_mid_val = ind["bb_mid"][symbol].iloc[-1] if symbol in ind["bb_mid"].columns else np.nan
+    bb_std_val = ind["bb_std"][symbol].iloc[-1] if symbol in ind["bb_std"].columns else np.nan
+    if not np.isnan(bb_mid_val) and not np.isnan(bb_std_val):
+        if kurs < bb_mid_val + 0.5 * bb_std_val:
+            score += 3
+
+    # 3. RSI: Nicht ueberkauft (+2)
+    rsi = ind["rsi"][symbol].iloc[-1] if symbol in ind["rsi"].columns else np.nan
+    if not np.isnan(rsi) and rsi < 55:
+        score += 2
+
+    # 4. LANGFRIST-TREND: Kurs ueber SMA200 (+2)
+    sma200 = ind["sma200"][symbol].iloc[-1] if symbol in ind["sma200"].columns else np.nan
+    if not np.isnan(sma200) and kurs > sma200:
+        score += 2
+
+    # 5. MOMENTUM: MACD-Histogramm positiv (+2)
+    if symbol in close.columns and len(close[symbol].dropna()) >= 35:
+        ema12 = close[symbol].ewm(span=12, adjust=False).mean()
+        ema26 = close[symbol].ewm(span=26, adjust=False).mean()
+        macd_line = ema12 - ema26
+        signal_line = macd_line.ewm(span=9, adjust=False).mean()
+        macd_hist = (macd_line - signal_line).iloc[-1]
+        if not np.isnan(macd_hist) and macd_hist > 0:
+            score += 2
+
+    # 6. MOMENTUM-TREND: 63-Tage-Rendite positiv (+2)
+    mom = ind["momentum_63"][symbol].iloc[-1] if symbol in ind["momentum_63"].columns else np.nan
+    if not np.isnan(mom) and mom > 0.0:
+        score += 2
+
+    return score
+
+
+def bot_athena(state: dict, close: pd.DataFrame, ind: dict, heute: str):
+    """
+    Athena - Goettin der Strategie.
+    Erweitertes 6-Komponenten Scoring (V2).
+    Kaufe wenn Score >= 8 (von max 14). SL 3xATR, Trailing Stop.
+    """
+    bot = state["bots"]["Athena"]
+    kurse = ind["aktuell"]
+    kauf_schwelle = 8
+
+    # Trailing Stops pruefen
+    for symbol in list(bot["positionen"].keys()):
+        pos = bot["positionen"][symbol]
+        kurs = kurse.get(symbol, 0)
+        if not kurs or np.isnan(kurs) or kurs <= 0:
+            continue
+
+        atr = ind["atr"][symbol].iloc[-1] if symbol in ind["atr"].columns else 0
+        if np.isnan(atr) or atr <= 0:
+            continue
+
+        new_high = max(pos.get("high", pos["kauf_kurs"]), kurs)
+        pos["high"] = new_high
+        effective_sl = new_high - 3 * atr
+
+        if kurs <= effective_sl:
+            erloes = pos["stueck"] * kurs * (1 - SPREAD_COST)
+            bot["kapital"] += erloes
+            bot["trades"] += 1
+            logger.info(f"Athena: {symbol} TRAILING-STOP bei {kurs:.2f} (SL={effective_sl:.2f}, High={new_high:.2f})")
+            del bot["positionen"][symbol]
+
+    # Kaufsignale pruefen
+    for symbol in ASSETS:
+        if symbol in bot["positionen"]:
+            continue
+
+        kurs = kurse.get(symbol, 0)
+        if not kurs or np.isnan(kurs) or kurs <= 0:
+            continue
+
+        atr = ind["atr"][symbol].iloc[-1] if symbol in ind["atr"].columns else 0
+        if np.isnan(atr) or atr <= 0:
+            continue
+
+        score = berechne_score_athena(symbol, kurs, ind, close)
+
+        if score >= kauf_schwelle:
+            invest = bot["kapital"] * 0.05
+            if invest < kurs:
+                continue
+            stueck = int(invest / kurs)
+            if stueck == 0:
+                continue
+            kosten = stueck * kurs * (1 + SPREAD_COST)
+            if kosten > bot["kapital"]:
+                continue
+
+            bot["kapital"] -= kosten
+            sl = kurs - 3 * atr
+            bot["positionen"][symbol] = {
+                "kauf_kurs": round(kurs, 2),
+                "stueck": stueck,
+                "sl": round(sl, 2),
+                "high": round(kurs, 2),
+                "datum": heute,
+                "score": score,
+            }
+            bot["trades"] += 1
+            if "meta" not in bot:
+                bot["meta"] = {}
+            bot["meta"][symbol] = {"score": score, "datum": heute}
+            logger.info(f"Athena: KAUF {symbol} Score={score} SL={sl:.2f} ATR={atr:.2f}")
 
 def bot_buy_hold(state: dict, close: pd.DataFrame, ind: dict, heute: str):
     """
@@ -657,8 +789,8 @@ def lade_arena_state() -> dict:
         with open(ARENA_FILE, "r") as f:
             data = json.load(f)
         # Sicherstellen dass meta-Feld existiert
-        if "meta" not in data["bots"].get("Score_Trader", {}):
-            data["bots"]["Score_Trader"]["meta"] = {}
+        if "meta" not in data["bots"].get("Kronos", {}):
+            data["bots"]["Kronos"]["meta"] = {}
         return data
 
     logger.info("Kein bestehender State gefunden \u2013 initialisiere neue Arena")
@@ -668,7 +800,8 @@ def lade_arena_state() -> dict:
         "bots": {
             "Momentum": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": []},
             "Crash_Guard": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": []},
-            "Score_Trader": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": [], "meta": {}},
+            "Kronos": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": [], "meta": {}},
+            "Athena": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": [], "meta": {}},
             "Buy_Hold": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": []},
             "Adaptiv": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": [], "modus": "momentum"},
             "Ensemble": {"kapital": STARTKAPITAL, "positionen": {}, "trades": 0, "history": [], "meta": {}},
@@ -718,7 +851,8 @@ def main():
     bot_funktionen = [
         ("Momentum", bot_momentum),
         ("Crash_Guard", bot_crash_guard),
-        ("Score_Trader", bot_score_trader),
+        ("Kronos", bot_kronos),
+        ("Athena", bot_athena),
         ("Buy_Hold", bot_buy_hold),
         ("Adaptiv", bot_adaptiv),
         ("Ensemble", bot_ensemble),
