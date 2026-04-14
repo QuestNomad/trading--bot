@@ -250,8 +250,8 @@ def _get_aktie_inner(ticker):
         if len(close) < 50:
             return None, None
             preise = [float(x) for x in close.values]
-                    daten = [x.to_pydatetime() for x in df.index]
-                    return preise, daten
+            daten = [x.to_pydatetime() for x in df.index]
+            return preise, daten
 def get_aktie(ticker):
     result = mit_retry(_get_aktie_inner, ticker)
     return result if result else (None, None)
