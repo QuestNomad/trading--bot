@@ -1,11 +1,22 @@
 {
   "start_datum": "2026-04-10",
-  "letztes_update": "2026-04-10",
+  "letztes_update": "2026-04-13",
   "bots": {
     "Momentum": {
-      "kapital": 100000,
-      "positionen": {},
-      "trades": 0,
+      "kapital": 0.0,
+      "positionen": {
+        "INTC": 153.42129415740314,
+        "AMD": 40.51371359161032,
+        "JNJ": 42.023868372236215,
+        "NFLX": 96.93679376703042,
+        "TXN": 46.14461580079912,
+        "PEP": 64.15190971746378,
+        "CSCO": 121.43291056820786,
+        "AVGO": 26.333113890717577,
+        "KO": 130.87291611999825,
+        "WMT": 80.27615015251133
+      },
+      "trades": 10,
       "history": [
         {
           "datum": "2026-04-10",
@@ -20,7 +31,13 @@
           "cash": 100000,
           "positionen_anzahl": 0,
           "trades_gesamt": 0
-
+        },
+        {
+          "datum": "2026-04-13",
+          "wert": 100000.0,
+          "cash": 0.0,
+          "positionen_anzahl": 10,
+          "trades_gesamt": 10
         }
       ]
     },
@@ -44,7 +61,13 @@
           "cash": 0,
           "positionen_anzahl": 1,
           "trades_gesamt": 1
-
+        },
+        {
+          "datum": "2026-04-13",
+          "wert": 100977.24,
+          "cash": 0,
+          "positionen_anzahl": 1,
+          "trades_gesamt": 1
         }
       ]
     },
@@ -66,7 +89,13 @@
           "cash": 100000,
           "positionen_anzahl": 0,
           "trades_gesamt": 0
-
+        },
+        {
+          "datum": "2026-04-13",
+          "wert": 100000,
+          "cash": 100000,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 0
         }
       ],
       "meta": {}
@@ -128,7 +157,13 @@
           "cash": 0.0,
           "positionen_anzahl": 38,
           "trades_gesamt": 38
-
+        },
+        {
+          "datum": "2026-04-13",
+          "wert": 101450.88,
+          "cash": 0.0,
+          "positionen_anzahl": 38,
+          "trades_gesamt": 38
         }
       ]
     },
@@ -150,7 +185,13 @@
           "cash": 100000,
           "positionen_anzahl": 0,
           "trades_gesamt": 0
-
+        },
+        {
+          "datum": "2026-04-13",
+          "wert": 100000,
+          "cash": 100000,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 0
         }
       ]
     }
