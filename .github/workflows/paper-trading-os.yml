@@ -1,0 +1,53 @@
+name: Paper Trading OS Bot
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry-Run Mode (no Telegram messages)'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
+  schedule:
+    - cron: '0 6,14,22 * * 1-5'
+
+permissions:
+  contents: write
+
+jobs:
+  run-os-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: |
+          pip install --upgrade pip
+          pip install yfinance pandas numpy requests beautifulsoup4 vaderSentiment feedparser
+
+      - name: Run OS Bot
+        env:
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python paper_trading_os.py
+
+      - name: Commit state
+        if: ${{ inputs.dry_run != 'true' }}
+        run: |
+          git config user.name "Trading Bot"
+          git config user.email "bot@questnomad.local"
+          git add paper_portfolio_os.json journal_os.csv 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -m "OS-Bot Update $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            git push
+          else
+            echo "No changes to commit."
+          fi
