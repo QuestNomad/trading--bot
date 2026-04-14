@@ -1,6 +1,6 @@
 {
   "capital": 10000.0,
-  "cash": NaN,
+  "cash": 2344.79,
   "positions": {
     "SPY": {
       "name": "S&P 500",
@@ -121,28 +121,28 @@
       "asset_id": "BNP.PA",
       "signal": "BUY",
       "entry_price": 90.33000183105469,
-      "exit_price": NaN,
+      "exit_price": 90.33000183105469,
       "quantity": 6.907017837059758,
       "entry_date": "2026-04-12T00:39:06.661319",
       "exit_date": "2026-04-13T22:53:25.497444",
-      "pnl": NaN,
-      "pnl_pct": NaN,
-      "fee_paid": NaN,
-      "reason": "Signal-SELL"
+      "pnl": 0.0,
+      "pnl_pct": 0.0,
+      "fee_paid": 0.0,
+      "reason": "Signal-SELL [REPAIRED-NaN]"
     },
     {
       "asset": "UBS",
       "asset_id": "UBSG.SW",
       "signal": "BUY",
       "entry_price": 32.720001220703125,
-      "exit_price": NaN,
+      "exit_price": 32.720001220703125,
       "quantity": 17.254229125024906,
       "entry_date": "2026-04-12T00:39:06.829244",
       "exit_date": "2026-04-13T22:53:26.071613",
-      "pnl": NaN,
-      "pnl_pct": NaN,
-      "fee_paid": NaN,
-      "reason": "Signal-SELL"
+      "pnl": 0.0,
+      "pnl_pct": 0.0,
+      "fee_paid": 0.0,
+      "reason": "Signal-SELL [REPAIRED-NaN]"
     }
   ],
   "daily_snapshots": [
@@ -161,20 +161,21 @@
     },
     {
       "date": "2026-04-13",
-      "portfolio_value": NaN,
-      "cash": NaN,
-      "positions_value": NaN,
+      "portfolio_value": 9977.038764228913,
+      "cash": 2344.79,
+      "positions_value": 7632.25,
       "num_positions": 8,
       "peak_value": 10000.0,
-      "drawdown_pct": NaN,
+      "drawdown_pct": 0.0,
       "trades_today": 2,
       "vix": 19.1200008392334,
       "sentiment_world": -0.164,
-      "sentiment_eu": -0.401
+      "sentiment_eu": -0.401,
+      "_note": "repaired after NaN-bug"
     }
   ],
   "peak_value": 10000.0,
-  "total_fees_paid": NaN,
+  "total_fees_paid": 22.9,
   "created_at": "2026-04-12T00:39:02.101705",
   "last_run": "2026-04-13T22:53:31.382420"
 }
