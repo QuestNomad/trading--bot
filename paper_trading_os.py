@@ -71,8 +71,13 @@ KNOCK_OUT_BUFFER_PCT = 2.0
 DRY_RUN = os.environ.get("DRY_RUN", "false").lower() == "true"
 
 logging.basicConfig(level=logging.INFO,
-                    format="%(asctime)s [paper-os] %(message)s")
-log = logging.getLogger(__name__)
+                    format="%(asctime)s [%(name)s] %(message)s",
+                    force=True)
+# Sub-Logger explizit auf INFO setzen, damit os_selector/os_quotes Logs sichtbar sind
+for name in ["os_selector", "os_quotes", "paper_trading_os", "__main__"]:
+    logging.getLogger(name).setLevel(logging.INFO)
+log = logging.getLogger("paper-os")
+log.info(f"Universum: {len(all_assets())} Underlyings geladen")
 
 ASSETS = all_assets()
 ASSET_LOOKUP = build_lookup()
@@ -104,15 +109,24 @@ def get_prices(asset):
 
 
 def get_vix():
-    try:
-        with _yf_lock:
-            df = yf.download("^VIX", period="5d", interval="1d",
-                             progress=False, auto_adjust=True)
-        if df.empty: return None
-        v = float(df["Close"].dropna().iloc[-1])
-        return v if math.isfinite(v) else None
-    except Exception:
-        return None
+    """Hole VIX. Mehrere Ticker-Versuche, bei Fehler 0.0 (= kein Risk-Off)."""
+    for ticker in ["^VIX", "VIX", "VIXY"]:
+        try:
+            with _yf_lock:
+                df = yf.download(ticker, period="30d", interval="1d",
+                                 progress=False, auto_adjust=True)
+            if df.empty: continue
+            close = df["Close"].dropna()
+            if len(close) == 0: continue
+            v = float(close.iloc[-1])
+            if math.isfinite(v) and v > 0:
+                log.info(f"VIX from {ticker}: {v:.2f}")
+                return v
+        except Exception as exc:
+            log.debug(f"VIX fetch {ticker} failed: {exc}")
+            continue
+    log.warning("VIX unavailable - assuming neutral (0)")
+    return 0.0
 
 
 def sma(prices, n): return pd.Series(prices).rolling(n).mean()
@@ -339,22 +353,36 @@ def main():
 
     # Phase 3: Neue Signale
     new_signals = 0
+    stats = {"scanned": 0, "no_data": 0, "buy_signal": 0, "sell_signal": 0,
+             "wait": 0, "buy_executed": 0, "sell_executed": 0}
     if vix is None or vix <= VIX_LIMIT:
         for asset in ASSETS:
             asset_id = asset["id"]
             if asset_id in portfolio["positions"]: continue
+            stats["scanned"] += 1
             prices = series_cache.get(asset_id) or get_prices(asset)
-            if not prices or len(prices) < 50: continue
+            if not prices or len(prices) < 50:
+                stats["no_data"] += 1
+                continue
             current = float(prices[-1])
-            if not math.isfinite(current) or current <= 0: continue
+            if not math.isfinite(current) or current <= 0:
+                stats["no_data"] += 1
+                continue
             spot_cache[asset_id] = current
             sig, sc, det = compute_signal(prices)
             if sig == "BUY":
+                stats["buy_signal"] += 1
                 if execute_buy(portfolio, asset, current, det, spot_cache, "LONG"):
                     new_signals += 1
+                    stats["buy_executed"] += 1
             elif sig == "SELL":
+                stats["sell_signal"] += 1
                 if execute_buy(portfolio, asset, current, det, spot_cache, "SHORT"):
                     new_signals += 1
+                    stats["sell_executed"] += 1
+            else:
+                stats["wait"] += 1
+    log.info(f"Scan-Stats: {stats}")
 
     # Phase 4: Snapshot
     pv = calculate_portfolio_value(portfolio, spot_cache)
