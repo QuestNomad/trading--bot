@@ -1,0 +1,28 @@
+name: Backtest OS Bot
+on:
+  workflow_dispatch:
+    inputs:
+      lookback_days:
+        description: 'Lookback Tage'
+        required: false
+        default: '365'
+      buy_threshold:
+        description: 'BUY-Schwelle'
+        required: false
+        default: '5'
+
+jobs:
+  run-backtest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: pip install yfinance pandas numpy
+      - name: Run backtest
+        env:
+          LOOKBACK_DAYS: ${{ inputs.lookback_days || '365' }}
+          BUY_THRESHOLD: ${{ inputs.buy_threshold || '5' }}
+        run: python backtest_os.py
