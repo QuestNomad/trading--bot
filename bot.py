@@ -237,9 +237,18 @@ def get_crypto(coin_id):
 
 def _get_aktie_inner(ticker):
     with _yf_lock:
-        df = yf.download(ticker, period="300d", interval="1d", progress=False, auto_adjust=True)
-    if df.empty or len(df) < 50:
-        return None, None
+df = yf.download(ticker, period="1y", interval="1d", progress=False, auto_adjust=True)
+if df.empty or len(df) < 50:
+    time.sleep(2)
+    df = yf.download(ticker, period="2y", interval="1d", progress=False, auto_adjust=True)
+if df.empty or len(df) < 50:
+    return None, None
+close = df["Close"]
+if isinstance(close, pd.DataFrame):
+    close = close.iloc[:, 0]
+close = close.dropna()
+if len(close) < 50:
+    return None, None
     close = df["Close"]
     if isinstance(close, pd.DataFrame):
         close = close.iloc[:, 0]
