@@ -39,14 +39,12 @@ NEWS_FEEDS = {
     ]
 }
 
-# ── Journal-Header (erweitert für P&L) ──────────────────────────
 JOURNAL_HEADER = [
     "Datum", "Asset", "Signal", "Kurs", "SMA200", "RSI", "Score",
     "Stop Loss", "Take Profit", "Sentiment Welt", "Sentiment EU",
     "Status", "Ergebnis", "Geschlossen_am", "Kommentar"
 ]
 
-# ── 38 eindeutige Assets ────────────────────────────────────────
 ASSETS = [
     {"name": "Bitcoin",        "typ": "crypto", "id": "bitcoin",   "symbol": "₿ BTC"},
     {"name": "Ethereum",       "typ": "crypto", "id": "ethereum",  "symbol": "Ξ ETH"},
@@ -88,9 +86,7 @@ ASSETS = [
     {"name": "Short Krypto",   "typ": "aktie",  "id": "BITI",      "symbol": "📉 Krypto Short",  "short": True},
 ]
 
-# ── Retry-Wrapper ─────────────────────────────────────────────
 def mit_retry(func, *args, retries=MAX_RETRIES, delay=RETRY_DELAY):
-    """Führt eine Funktion mit Retry-Logik aus."""
     for versuch in range(retries):
         try:
             return func(*args)
@@ -100,7 +96,6 @@ def mit_retry(func, *args, retries=MAX_RETRIES, delay=RETRY_DELAY):
                 time.sleep(delay)
     return None
 
-# ── Telegram (mit try/except) ─────────────────────────────────
 def send_text(msg):
     if DRY_RUN:
         print(f"[DRY-RUN] Telegram: {msg[:120]}...")
@@ -132,7 +127,6 @@ def send_photo(img, caption):
     except Exception as e:
         print(f"Telegram send_photo Fehler: {e}")
 
-# ── Journal ───────────────────────────────────────────────────
 def schreibe_journal(asset_name, signal, kurs, details, sw, seu):
     try:
         import csv
@@ -158,9 +152,9 @@ def schreibe_journal(asset_name, signal, kurs, details, sw, seu):
                 round(details.get("take_profit", 0), 2),
                 sw,
                 seu,
-                "offen",        # Status
-                "",             # Ergebnis
-                "",             # Geschlossen_am
+                "offen",
+                "",
+                "",
                 "Paper Trading"
             ])
         print(f"  Journal CSV: {asset_name} gespeichert")
@@ -192,7 +186,6 @@ def schreibe_journal(asset_name, signal, kurs, details, sw, seu):
     except Exception as e:
         print(f"  Journal Sheets Fehler: {e}")
 
-# ── Sentiment (mit Caching) ───────────────────────────────────
 _sentiment_cache = {}
 
 def get_sentiment(kat="welt"):
@@ -216,7 +209,6 @@ def sentiment_emoji(s):
     if s < -0.2: return "😟 Negativ"
     return "😐 Neutral"
 
-# ── Daten-Laden (mit Retry) ───────────────────────────────────
 def _get_crypto_inner(coin_id):
     r = requests.get(
         f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart",
@@ -237,30 +229,26 @@ def get_crypto(coin_id):
 
 def _get_aktie_inner(ticker):
     with _yf_lock:
-    df = yf.download(ticker, period="1y", interval="1d", progress=False, auto_adjust=True)
-if df.empty or len(df) < 50:
-    time.sleep(2)
-    df = yf.download(ticker, period="2y", interval="1d", progress=False, auto_adjust=True)
-if df.empty or len(df) < 50:
-    return None, None
-close = df["Close"]
-if isinstance(close, pd.DataFrame):
-    close = close.iloc[:, 0]
-close = close.dropna()
-if len(close) < 50:
-    return None, None
-    close = df["Close"]
-    if isinstance(close, pd.DataFrame):
-        close = close.iloc[:, 0]
-    preise = [float(x) for x in close.values]
-    daten  = [x.to_pydatetime() for x in df.index]
-    return preise, daten
+        df = yf.download(ticker, period="1y", interval="1d", progress=False, auto_adjust=True)
+        if df.empty or len(df) < 50:
+            time.sleep(2)
+            df = yf.download(ticker, period="2y", interval="1d", progress=False, auto_adjust=True)
+        if df.empty or len(df) < 50:
+            return None, None
+        close = df["Close"]
+        if isinstance(close, pd.DataFrame):
+            close = close.iloc[:, 0]
+        close = close.dropna()
+        if len(close) < 50:
+            return None, None
+        preise = [float(x) for x in close.values]
+        daten  = [x.to_pydatetime() for x in df.index]
+        return preise, daten
 
 def get_aktie(ticker):
     result = mit_retry(_get_aktie_inner, ticker)
     return result if result else (None, None)
 
-# ── Technische Indikatoren ────────────────────────────────────
 def sma(p, n):
     return pd.Series(p).rolling(n).mean()
 
@@ -280,18 +268,12 @@ def macd_val(p):
     return float(m.iloc[-1]), float(m.ewm(span=9).mean().iloc[-1])
 
 def atr_val(p, n=14):
-    """ATR mit echtem True Range (Close-to-Close Proxy)."""
     s = pd.Series(p)
     tr = s.diff().abs()
     tr.iloc[0] = 0
     return float(tr.rolling(n).mean().iloc[-1])
 
-# ── Signal-Berechnung (synchron mit backtest.py) ──────────────
 def berechne_signal(preise, sw=0.0, seu=0.0, kauf_schwelle=8, verk_schwelle=3):
-    """
-    Einheitliche Signalberechnung für Bot und Backtest.
-    Gibt (signal, punkte, details) zurück.
-    """
     if len(preise) < 200:
         return "WARTEN", 0, {}
 
@@ -333,7 +315,6 @@ def berechne_signal(preise, sw=0.0, seu=0.0, kauf_schwelle=8, verk_schwelle=3):
         return "VERKAUFEN", punkte, details
     return "HALTEN", punkte, details
 
-# ── Chart ─────────────────────────────────────────────────────
 def erstelle_chart(preise, daten, name, signal, details):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8),
                                     gridspec_kw={'height_ratios': [3, 1]})
@@ -393,9 +374,7 @@ def erstelle_chart(preise, daten, name, signal, details):
     plt.close()
     return buf
 
-# ── Health-Check ──────────────────────────────────────────────
 def health_check():
-    """Prüft alle Voraussetzungen vor dem Start."""
     fehler = []
     if not TELEGRAM_TOKEN and not DRY_RUN:
         fehler.append("TELEGRAM_TOKEN fehlt")
@@ -414,9 +393,7 @@ def health_check():
     print("Health-Check OK")
     return True
 
-# ── Parallelisierte Asset-Analyse ─────────────────────────────
 def analysiere_asset(asset, sw, seu):
-    """Analysiert ein einzelnes Asset (für ThreadPoolExecutor)."""
     try:
         print(f"  Analysiere {asset['name']}...")
         if asset["typ"] == "crypto":
@@ -431,13 +408,11 @@ def analysiere_asset(asset, sw, seu):
         if signal == "WARTEN":
             return None
 
-        # ── FIX: Invertierte Logik für Short-ETFs ────────────
         if asset.get("short"):
             if signal == "KAUFEN":
                 signal = "VERKAUFEN"
             elif signal == "VERKAUFEN":
                 signal = "KAUFEN"
-            # Stop-Loss und Take-Profit tauschen (Short-Logik)
             aktuell = float(preise[-1])
             atr = details["atr"]
             details["stop_loss"]   = aktuell + (atr * 3)
@@ -455,9 +430,7 @@ def analysiere_asset(asset, sw, seu):
         print(f"  Fehler bei {asset['name']}: {e}")
         return None
 
-# ── Datenfehler-Check ─────────────────────────────────────────
 def pruefe_datenfehler(ergebnisse):
-    """Prüft ob verschiedene Assets identische Kursdaten bekommen haben."""
     warnungen = []
     preis_fingerprints = {}
     for e in ergebnisse:
@@ -474,16 +447,10 @@ def pruefe_datenfehler(ergebnisse):
             preis_fingerprints[fp] = name
     return warnungen
 
-# ══════════════════════════════════════════════════════════════
-# P&L-Tracking: Automatische Gewinn/Verlust-Berechnung
-# ══════════════════════════════════════════════════════════════
-
 def _asset_lookup():
-    """Erstellt ein Mapping von Asset-Name zu Asset-Dict."""
     return {a["name"]: a for a in ASSETS}
 
 def hole_aktuellen_kurs(asset_name):
-    """Holt den aktuellen Kurs für ein Asset anhand des Namens."""
     lookup = _asset_lookup()
     asset = lookup.get(asset_name)
     if not asset:
@@ -501,11 +468,6 @@ def hole_aktuellen_kurs(asset_name):
     return None
 
 def pruefe_offene_positionen():
-    """
-    Prüft alle offenen Positionen in journal.csv.
-    Holt aktuelle Kurse und prüft ob SL/TP erreicht wurde.
-    Gibt Liste der geschlossenen Positionen zurück.
-    """
     import csv
     from pathlib import Path
 
@@ -514,7 +476,6 @@ def pruefe_offene_positionen():
         print("  P&L: Keine journal.csv gefunden")
         return []
 
-    # CSV einlesen
     with open(journal_file, "r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         fieldnames = reader.fieldnames
@@ -524,19 +485,17 @@ def pruefe_offene_positionen():
         print("  P&L: Journal ist leer")
         return []
 
-    # Migration: Fehlende Spalten erkennen
     hat_status = "Status" in (fieldnames or [])
 
     geschlossene = []
     geaendert = False
-    kurs_cache = {}  # Kurse pro Asset cachen
+    kurs_cache = {}
 
     for zeile in zeilen:
-        # Migration: Status-Spalte ergänzen wenn fehlend
         if not hat_status:
             zeile.setdefault("Status", "offen")
             zeile.setdefault("Ergebnis", "")
-            zeile.setdefault("Geschlossen_am", "")
+            zeile.setdefault("Gestchlossen_am", "")
             geaendert = True
 
         status = zeile.get("Status", "offen").strip()
@@ -544,14 +503,12 @@ def pruefe_offene_positionen():
             status = "offen"
             zeile["Status"] = "offen"
 
-        # Nur offene Positionen prüfen
         if status != "offen":
             continue
 
         asset_name = zeile.get("Asset", "").strip()
         signal = zeile.get("Signal", "").strip()
 
-        # Stop-Loss und Take-Profit parsen
         try:
             sl = float(zeile.get("Stop Loss", "0"))
             tp = float(zeile.get("Take Profit", "0"))
@@ -559,13 +516,11 @@ def pruefe_offene_positionen():
         except (ValueError, TypeError):
             continue
 
-        # NaN oder 0 überspringen
         if sl == 0 or tp == 0 or einstieg == 0:
             continue
         if math.isnan(sl) or math.isnan(tp) or math.isnan(einstieg):
             continue
 
-        # Aktuellen Kurs holen (gecacht)
         if asset_name not in kurs_cache:
             kurs_cache[asset_name] = hole_aktuellen_kurs(asset_name)
         aktuell = kurs_cache.get(asset_name)
@@ -573,11 +528,9 @@ def pruefe_offene_positionen():
         if aktuell is None:
             continue
 
-        # P&L-Logik
         ist_kauf = "KAUFEN" in signal
         ist_verkauf = "VERKAUFEN" in signal
 
-        # Short-ETF erkennen
         lookup = _asset_lookup()
         asset_info = lookup.get(asset_name, {})
         ist_short = asset_info.get("short", False)
@@ -587,7 +540,6 @@ def pruefe_offene_positionen():
 
         if ist_kauf:
             if ist_short:
-                # Short-ETF KAUFEN: SL über Kurs, TP unter Kurs
                 if aktuell >= sl:
                     ergebnis_pct = ((aktuell - einstieg) / einstieg) * 100
                     grund = "Stop-Loss"
@@ -595,7 +547,6 @@ def pruefe_offene_positionen():
                     ergebnis_pct = ((aktuell - einstieg) / einstieg) * 100
                     grund = "Take-Profit"
             else:
-                # Normal KAUFEN: Verlust wenn unter SL, Gewinn wenn über TP
                 if aktuell <= sl:
                     ergebnis_pct = ((aktuell - einstieg) / einstieg) * 100
                     grund = "Stop-Loss"
@@ -605,7 +556,6 @@ def pruefe_offene_positionen():
 
         elif ist_verkauf:
             if ist_short:
-                # Short-ETF VERKAUFEN (= long auf Basiswert)
                 if aktuell <= sl:
                     ergebnis_pct = ((einstieg - aktuell) / einstieg) * 100
                     grund = "Stop-Loss"
@@ -613,7 +563,6 @@ def pruefe_offene_positionen():
                     ergebnis_pct = ((einstieg - aktuell) / einstieg) * 100
                     grund = "Take-Profit"
             else:
-                # Normal VERKAUFEN: Gewinn wenn Kurs fällt
                 if aktuell >= tp:
                     ergebnis_pct = ((einstieg - aktuell) / einstieg) * 100
                     grund = "Take-Profit"
@@ -623,7 +572,7 @@ def pruefe_offene_positionen():
 
         if ergebnis_pct is not None:
             zeile["Status"] = "geschlossen"
-            zeile["Ergebnis"] = f"{ergebnis_pct:+.2f}%"
+            zeile["Ergebnis"] = f"{mergebnis_pct:+.2f}%"
             zeile["Geschlossen_am"] = datetime.now().strftime("%d.%m.%Y %H:%M")
             geaendert = True
             geschlossene.append({
@@ -633,11 +582,10 @@ def pruefe_offene_positionen():
                 "aktuell": aktuell,
                 "ergebnis": ergebnis_pct,
                 "grund": grund,
-                "datum": zeile.get("Datum", "")
+                "datum": row.get("Datum", "")
             })
             print(f"  P&L: {asset_name} geschlossen – {ergebnis_pct:+.2f}% ({grund})")
 
-    # Zurückschreiben wenn geändert
     if geaendert:
         with open(journal_file, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=JOURNAL_HEADER, extrasaction='ignore')
@@ -649,7 +597,6 @@ def pruefe_offene_positionen():
     return geschlossene
 
 def sende_pnl_zusammenfassung(geschlossene):
-    """Sendet eine Telegram-Nachricht mit den geschlossenen Positionen."""
     if not geschlossene:
         return
 
@@ -676,7 +623,6 @@ def sende_pnl_zusammenfassung(geschlossene):
     send_text(msg)
 
 def zaehle_offene_positionen():
-    """Zählt die aktuell offenen Positionen im Journal."""
     import csv
     from pathlib import Path
 
@@ -692,18 +638,15 @@ def zaehle_offene_positionen():
     except Exception:
         return 0
 
-# ── Hauptfunktion ─────────────────────────────────────────────
 def run_bot():
     start_zeit = time.time()
     modus = "[DRY-RUN] " if DRY_RUN else ""
     print(f"=== {modus}Profi Trading Bot gestartet ===")
 
-    # Health-Check
     if not health_check():
         print("Bot abgebrochen wegen Health-Check Fehler.")
         return
 
-    # ── P&L-Check: Offene Positionen prüfen ──────────────────
     print("=== P&L-Check: Prüfe offene Positionen ===")
     geschlossene_positionen = []
     try:
@@ -719,7 +662,6 @@ def run_bot():
     except Exception as e:
         print(f"  P&L-Check Fehler: {e}")
 
-    # VIX-Prüfung (mit Stopp bei Überschreitung)
     vix_wert = None
     try:
         vix_df = yf.download("^VIX", period="1d", interval="1d",
@@ -741,7 +683,6 @@ def run_bot():
     except Exception as e:
         print(f"VIX Fehler: {e}")
 
-    # Sentiment (wird gecacht)
     heute = datetime.now().strftime("%d.%m.%Y %H:%M")
     sw  = get_sentiment("welt")
     seu = get_sentiment("europa")
@@ -753,7 +694,6 @@ def run_bot():
         f"🔍 Scanne {len(ASSETS)} Assets (parallel)..."
     )
 
-    # Parallele Analyse mit ThreadPoolExecutor
     ergebnisse = []
     with ThreadPoolExecutor(max_workers=6) as executor:
         futures = {
@@ -765,7 +705,6 @@ def run_bot():
             if result:
                 ergebnisse.append(result)
 
-    # ── FIX: Datenfehler-Check ───────────────────────────────
     datenfehler = pruefe_datenfehler(ergebnisse)
     if datenfehler:
         send_text(
@@ -774,7 +713,6 @@ def run_bot():
             "\n\n⚠️ Betroffene Signale mit Vorsicht behandeln!"
         )
 
-    # Sortieren & Top-Signale
     kaufen = sorted(
         [e for e in ergebnisse if e["signal"] == "KAUFEN"],
         key=lambda x: -x["punkte"]
@@ -820,7 +758,6 @@ def run_bot():
                 asset["name"], signal_text, aktuell, details, sw, seu
             )
 
-    # Zusammenfassung
     laufzeit = round(time.time() - start_zeit, 1)
     n_halten = len([e for e in ergebnisse if e["signal"] == "HALTEN"])
     n_offen  = zaehle_offene_positionen()
@@ -848,3 +785,4 @@ def run_bot():
 
 if __name__ == "__main__":
     run_bot()
+
