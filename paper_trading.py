@@ -197,7 +197,14 @@ def get_stock_prices(ticker: str):
         close = df["Close"]
         if isinstance(close, pd.DataFrame):
             close = close.iloc[:, 0]
-        return [float(x) for x in close.values]
+        close = close.dropna()
+        if len(close) < 50:
+            return None
+        prices = [float(x) for x in close.values
+                  if math.isfinite(float(x)) and float(x) > 0]
+        if len(prices) < 50:
+            return None
+        return prices
     except Exception as exc:
         log.warning(f"yfinance error for {ticker}: {exc}")
         return None
@@ -483,6 +490,11 @@ def execute_buy(portfolio: dict, asset: dict, price: float,
     asset_id = asset["id"]
     symbol = asset.get("symbol", asset_id)
 
+    # FIX: Schutz vor NaN/ungueltigen Preisen
+    if not math.isfinite(price) or price <= 0:
+        log.warning(f"  Skip BUY {asset['name']}: invalid price={price}")
+        return False
+
     # Skip if already holding
     if asset_id in portfolio["positions"]:
         log.info(f"  Already holding {asset['name']} â skip BUY.")
@@ -563,6 +575,11 @@ def execute_sell(portfolio: dict, asset_id: str, price: float,
                  reason: str) -> dict | None:
     """Execute a paper SELL (close position). Returns trade record or None."""
     if asset_id not in portfolio["positions"]:
+        return None
+
+    # FIX: NaN-Preis wuerde cash & total_fees_paid zerstoeren
+    if not math.isfinite(price) or price <= 0:
+        log.warning(f"  Skip SELL {asset_id}: invalid price={price}")
         return None
 
     pos = portfolio["positions"][asset_id]
@@ -734,11 +751,16 @@ def run_paper_trading():
             continue
         prices = get_prices(asset)
         if prices and len(prices) > 0:
-            price_cache[asset_id] = float(prices[-1])
-            price_series_cache[asset_id] = prices
-            # Update ATR in position from latest data
-            if len(prices) >= 14:
-                portfolio["positions"][asset_id]["atr"] = atr_val(prices)
+            last_price = float(prices[-1])
+            # FIX: nur gueltige Preise in den Cache
+            if math.isfinite(last_price) and last_price > 0:
+                price_cache[asset_id] = last_price
+                price_series_cache[asset_id] = prices
+                # Update ATR in position from latest data
+                if len(prices) >= 14:
+                    atr = atr_val(prices)
+                    if math.isfinite(atr):
+                        portfolio["positions"][asset_id]["atr"] = atr
 
     # Phase 1: Update trailing stops with latest prices
     aktualisiere_trailing_stops(portfolio, price_cache)
