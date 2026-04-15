@@ -1,6 +1,6 @@
 {
   "start_datum": "2026-04-10",
-  "letztes_update": "2026-04-13",
+  "letztes_update": "2026-04-14",
   "bots": {
     "Momentum": {
       "kapital": 0.0,
@@ -38,6 +38,13 @@
           "cash": 0.0,
           "positionen_anzahl": 10,
           "trades_gesamt": 10
+        },
+        {
+          "datum": "2026-04-14",
+          "wert": 100635.91,
+          "cash": 0.0,
+          "positionen_anzahl": 10,
+          "trades_gesamt": 10
         }
       ]
     },
@@ -68,6 +75,13 @@
           "cash": 0,
           "positionen_anzahl": 1,
           "trades_gesamt": 1
+        },
+        {
+          "datum": "2026-04-14",
+          "wert": 102207.64,
+          "cash": 0,
+          "positionen_anzahl": 1,
+          "trades_gesamt": 1
         }
       ]
     },
@@ -92,6 +106,13 @@
         },
         {
           "datum": "2026-04-13",
+          "wert": 100000,
+          "cash": 100000,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 0
+        },
+        {
+          "datum": "2026-04-14",
           "wert": 100000,
           "cash": 100000,
           "positionen_anzahl": 0,
@@ -164,6 +185,13 @@
           "cash": 0.0,
           "positionen_anzahl": 38,
           "trades_gesamt": 38
+        },
+        {
+          "datum": "2026-04-14",
+          "wert": 102599.79,
+          "cash": 0.0,
+          "positionen_anzahl": 38,
+          "trades_gesamt": 38
         }
       ]
     },
@@ -188,6 +216,13 @@
         },
         {
           "datum": "2026-04-13",
+          "wert": 100000,
+          "cash": 100000,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 0
+        },
+        {
+          "datum": "2026-04-14",
           "wert": 100000,
           "cash": 100000,
           "positionen_anzahl": 0,
