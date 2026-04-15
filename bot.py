@@ -177,6 +177,9 @@ def send_photo(img, caption):
 
 # ── Journal ───────────────────────────────────────────────────
 def schreibe_journal(asset_name, signal, kurs, details, sw, seu):
+    if kurs is None or not math.isfinite(kurs) or kurs <= 0:
+        print(f"  Journal SKIP: {asset_name} ungueltiger Kurs {kurs}")
+        return
     try:
         import csv
         from pathlib import Path
@@ -258,8 +261,15 @@ def _get_aktie_inner(ticker):
     close = df["Close"]
     if isinstance(close, pd.DataFrame):
         close = close.iloc[:, 0]
+    close = close.dropna()
+    if len(close) < 50:
+        print(f"  WARN: {ticker} nach NaN-Filter nur {len(close)} Werte -> skip")
+        return None, None
     preise = [float(x) for x in close.values]
     daten = [x.to_pydatetime() for x in df.index]
+    if not math.isfinite(preise[-1]) or preise[-1] <= 0:
+        print(f"  WARN: {ticker} ungueltiger letzter Kurs {preise[-1]}")
+        return None, None
     return preise, daten
 
 def get_aktie(ticker):
@@ -466,6 +476,9 @@ def aktualisiere_trailing_stops():
     geaendert = False
     kurs_cache = {}
 
+    MAX_CLOSES_PRO_RUN = 3
+    closes_this_run = 0
+
     for zeile in zeilen:
         status = zeile.get("Status", "offen").strip()
         if status != "offen":
@@ -508,56 +521,33 @@ def aktualisiere_trailing_stops():
             continue
 
         ist_kauf = "KAUFEN" in signal
-        ist_short = asset_info.get("short", False)
-
-        if ist_kauf and not ist_short:
-            # Long Position: Trailing Stop = max(alter_stop, kurs - 3*ATR)
-            neuer_stop = aktuell - (current_atr * ATR_SL_MULTIPLIER)
-            if neuer_stop > alter_trailing:
-                zeile["Trailing_Stop"] = str(round(neuer_stop, 2))
-                geaendert = True
-                print(f"  Trailing Stop {asset_name}: {alter_trailing:.2f} -> {neuer_stop:.2f}")
-
-            # Pruefen ob Stop erreicht
-            effektiver_stop = max(neuer_stop, alter_trailing)
-            if aktuell <= effektiver_stop:
-                ergebnis_pct = ((aktuell - einstieg) / einstieg) * 100
-                ergebnis_pct -= TOTAL_COST * 100  # Gebuehren abziehen
-                zeile["Status"] = "geschlossen"
-                zeile["Ergebnis"] = f"{ergebnis_pct:+.2f}%"
-                zeile["Geschlossen_am"] = datetime.now().strftime("%d.%m.%Y %H:%M")
-                zeile["Kommentar"] = "Trailing Stop erreicht"
-                geaendert = True
-                geschlossene.append({
-                    "asset": asset_name, "signal": signal,
-                    "einstieg": einstieg, "aktuell": aktuell,
-                    "ergebnis": ergebnis_pct, "grund": "Trailing Stop",
-                    "datum": zeile.get("Datum", "")
-                })
-
-        elif ist_kauf and ist_short:
-            # Short-ETF: Stop ueber Kurs
-            neuer_stop = aktuell + (current_atr * ATR_SL_MULTIPLIER)
-            if neuer_stop < alter_trailing or alter_trailing == 0:
-                zeile["Trailing_Stop"] = str(round(neuer_stop, 2))
-                geaendert = True
-
-            effektiver_stop = min(neuer_stop, alter_trailing) if alter_trailing > 0 else neuer_stop
-            if aktuell >= effektiver_stop:
-                ergebnis_pct = ((aktuell - einstieg) / einstieg) * 100
-                ergebnis_pct -= TOTAL_COST * 100
-                zeile["Status"] = "geschlossen"
-                zeile["Ergebnis"] = f"{ergebnis_pct:+.2f}%"
-                zeile["Geschlossen_am"] = datetime.now().strftime("%d.%m.%Y %H:%M")
-                zeile["Kommentar"] = "Trailing Stop erreicht"
-                geaendert = True
-                geschlossene.append({
-                    "asset": asset_name, "signal": signal,
-                    "einstieg": einstieg, "aktuell": aktuell,
-                    "ergebnis": ergebnis_pct, "grund": "Trailing Stop",
-                    "datum": zeile.get("Datum", "")
-                })
-
+        if not ist_kauf:
+            continue
+        neuer_stop = aktuell - (current_atr * ATR_SL_MULTIPLIER)
+        if neuer_stop > alter_trailing:
+            zeile["Trailing_Stop"] = str(round(neuer_stop, 2))
+            geaendert = True
+        effektiver_stop = max(neuer_stop, alter_trailing)
+        if aktuell <= effektiver_stop:
+            if closes_this_run >= MAX_CLOSES_PRO_RUN:
+                print(f"  WARN: Close-Limit erreicht, {asset_name} uebersprungen")
+                continue
+            closes_this_run += 1
+            ergebnis_pct = ((aktuell - einstieg) / einstieg) * 100 - TOTAL_COST * 100
+            zeile["Status"] = "geschlossen"
+            zeile["Ergebnis"] = f"{ergebnis_pct:+.2f}%"
+            zeile["Geschlossen_am"] = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+            zeile["Kommentar"] = "Trailing Stop erreicht"
+            geaendert = True
+            geschlossene.append({
+                "asset": asset_name,
+                "signal": signal,
+                "einstieg": einstieg,
+                "aktuell": aktuell,
+                "ergebnis": ergebnis_pct,
+                "grund": "Trailing Stop",
+                "datum": zeile.get("Datum", "")
+            })
     if geaendert:
         with open(journal_file, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=JOURNAL_HEADER, extrasaction='ignore')
@@ -633,7 +623,11 @@ def hole_aktuellen_kurs(asset_name):
         else:
             preise, _ = get_aktie(asset["id"])
         if preise and len(preise) > 0:
-            return float(preise[-1])
+            kurs = float(preise[-1])
+            if not math.isfinite(kurs) or kurs <= 0:
+                print(f"  WARN: NaN/0 Kurs fuer {asset_name}")
+                return None
+            return kurs
     except Exception as e:
         print(f"  Kursfehler fuer {asset_name}: {e}")
     return None
@@ -651,6 +645,14 @@ def zaehle_offene_positionen():
     except Exception:
         return 0
 
+def ist_bereits_offen(asset_name, signal):
+    offene = lade_offene_positionen()
+    for pos in offene:
+        if pos.get("Asset", "").strip() == asset_name and \
+           pos.get("Signal", "").strip() == signal:
+            return True
+    return False
+
 # ── Asset Analyse ─────────────────────────────────────────────
 def analysiere_asset(asset, sw, seu):
     try:
@@ -663,20 +665,20 @@ def analysiere_asset(asset, sw, seu):
         if preise is None or len(preise) < 50:
             return None
 
+        preise = [p for p in preise if p is not None and math.isfinite(p) and p > 0]
+        if len(preise) < 50:
+            print(f"  {asset['name']}: zu viele NaN-Kurse, skip")
+            return None
+
         signal, punkte, details = berechne_signal(preise, sw, seu)
         if signal == "WARTEN":
             return None
 
-        # Short-ETF Logik
         if asset.get("short"):
-            if signal == "KAUFEN":
-                signal = "VERKAUFEN"
-            elif signal == "VERKAUFEN":
+            if punkte <= -3:
                 signal = "KAUFEN"
-            aktuell = float(preise[-1])
-            atr = details["atr"]
-            details["stop_loss"] = aktuell + (atr * ATR_SL_MULTIPLIER)
-            details["trailing_stop"] = details["stop_loss"]
+            else:
+                return None
 
         return {
             "asset": asset,
@@ -886,9 +888,10 @@ def run_bot():
                 print(f"  Chart-Fehler {asset['name']}: {ex}")
                 send_text(nachricht)
 
-            schreibe_journal(
-                asset["name"], signal_text, aktuell, details, sw, seu
-            )
+            if ist_bereits_offen(asset["name"], signal_text):
+                print(f"  Skip Journal: {asset['name']} {signal_text} bereits offen")
+            else:
+                schreibe_journal(asset["name"], signal_text, aktuell, details, sw, seu)
 
     # Zusammenfassung
     laufzeit = round(time.time() - start_zeit, 1)
