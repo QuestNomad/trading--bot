@@ -13,8 +13,8 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 6.562857491629464,
-      "trailing_stop": 674.7714494977679
+      "atr": 6.694283621651786,
+      "trailing_stop": 679.8571515764509
     },
     "AAPL": {
       "name": "Apple",
@@ -27,8 +27,8 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 2.410711015973772,
-      "trailing_stop": 252.01502881731307
+      "atr": 2.883568899972098,
+      "trailing_stop": 257.779285975865
     },
     "NVDA": {
       "name": "Nvidia",
@@ -41,8 +41,8 @@
       "signal": "BUY",
       "score": 9,
       "is_short": false,
-      "atr": 3.452141898018973,
-      "trailing_stop": 186.153568812779
+      "atr": 3.3721422467912947,
+      "trailing_stop": 188.7535683768136
     },
     "AMZN": {
       "name": "Amazon",
@@ -55,8 +55,8 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 4.865716116768973,
-      "trailing_stop": 234.422855922154
+      "atr": 4.583573477608817,
+      "trailing_stop": 234.74927956717355
     },
     "GOOGL": {
       "name": "Google",
@@ -69,8 +69,8 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 5.933574131556919,
-      "trailing_stop": 315.10928126743863
+      "atr": 6.199288504464286,
+      "trailing_stop": 318.52212960379467
     },
     "EWJ": {
       "name": "Nikkei ETF",
@@ -83,7 +83,7 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 1.2735726492745536,
+      "atr": 1.1928585597446986,
       "trailing_stop": 85.58928571428571
     },
     "7203.T": {
@@ -97,8 +97,8 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 49.069510323660715,
-      "trailing_stop": 3178.7914690290177
+      "atr": 49.479038783482146,
+      "trailing_stop": 3232.5628836495534
     },
     "EWZ": {
       "name": "Brasilien ETF",
@@ -111,7 +111,7 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 0.5085718972342355,
+      "atr": 0.46571459089006695,
       "trailing_stop": 40.20428385053362
     }
   },
@@ -198,10 +198,23 @@
       "vix": 18.360000610351562,
       "sentiment_world": -0.068,
       "sentiment_eu": -0.213
+    },
+    {
+      "date": "2026-04-15",
+      "portfolio_value": 10241.83,
+      "cash": 2344.79,
+      "positions_value": 7897.04,
+      "num_positions": 8,
+      "peak_value": 10241.83,
+      "drawdown_pct": 0.0,
+      "trades_today": 0,
+      "vix": 18.170000076293945,
+      "sentiment_world": -0.131,
+      "sentiment_eu": 0.017
     }
   ],
-  "peak_value": 10152.224751117341,
+  "peak_value": 10241.830712873283,
   "total_fees_paid": 22.9,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-04-14T22:53:39.421997"
+  "last_run": "2026-04-15T22:51:15.855281"
 }
