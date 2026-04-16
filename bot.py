@@ -15,7 +15,7 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
 
-# ── Konfiguration ─────────────────────────────────────────────
+# ââ Konfiguration âââââââââââââââââââââââââââââââââââââââââââââ
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 DRY_RUN = os.environ.get("DRY_RUN", "false").lower() == "true"
@@ -25,25 +25,25 @@ VIX_LIMIT = 30
 MAX_RETRIES = 3
 RETRY_DELAY = 5
 
-# ── Risk Management (sync mit arena_backtest.py) ──────────────
+# ââ Risk Management (sync mit arena_backtest.py) ââââââââââââââ
 KELLY_FRACTION = 0.0694  # Half Kelly = 6.94% pro Position
 MAX_EXPOSURE = 0.80      # Max 80% Gesamtexposure
 MAX_POSITIONS_PER_SECTOR = 4
 
-# ── Bollinger/RSI/ATR Parameter (sync mit arena_backtest.py) ──
+# ââ Bollinger/RSI/ATR Parameter (sync mit arena_backtest.py) ââ
 BB_PERIOD = 20
 RSI_PERIOD = 14
 ATR_SL_MULTIPLIER = 3.0  # Trailing Stop = 3x ATR
 BUY_THRESHOLD = 8
 SELL_THRESHOLD = 3
 
-# ── Trading 212 Gebühren ──────────────────────────────────────
+# ââ Trading 212 GebÃ¼hren ââââââââââââââââââââââââââââââââââââââ
 TRADING_FEE = 0.0015    # 0.15% FX-Fee
 SPREAD_COST = 0.0005    # 0.05% Spread
 SLIPPAGE_COST = 0.001   # 0.10% Slippage
 TOTAL_COST = TRADING_FEE + SPREAD_COST + SLIPPAGE_COST  # 0.30%
 
-# ── Sektor-Zuordnung (sync mit arena_backtest.py) ─────────────
+# ââ Sektor-Zuordnung (sync mit arena_backtest.py) âââââââââââââ
 SECTORS = {
     "Tech": ["AAPL", "MSFT", "GOOGL", "NVDA", "META"],
     "Consumer": ["AMZN", "TSLA"],
@@ -83,14 +83,14 @@ NEWS_FEEDS = {
     ]
 }
 
-# ── Journal-Header (erweitert für Trailing Stop) ──────────────
+# ââ Journal-Header (erweitert fÃ¼r Trailing Stop) ââââââââââââââ
 JOURNAL_HEADER = [
     "Datum", "Asset", "Signal", "Kurs", "SMA20", "RSI", "Score",
     "Stop Loss", "Trailing_Stop", "Sentiment Welt", "Sentiment EU",
     "Status", "Ergebnis", "Geschlossen_am", "Kommentar"
 ]
 
-# ── 38 eindeutige Assets ────────────────────────────────────────
+# ââ 38 eindeutige Assets ââââââââââââââââââââââââââââââââââââââââ
 ASSETS = [
     {"name": "Bitcoin",       "typ": "crypto", "id": "bitcoin",    "symbol": "BTC"},
     {"name": "Ethereum",      "typ": "crypto", "id": "ethereum",   "symbol": "ETH"},
@@ -132,7 +132,7 @@ ASSETS = [
     {"name": "Short Krypto",  "typ": "aktie",  "id": "BITI",       "symbol": "Krypto Short", "short": True},
 ]
 
-# ── Retry-Wrapper ─────────────────────────────────────────────
+# ââ Retry-Wrapper âââââââââââââââââââââââââââââââââââââââââââââ
 def mit_retry(func, *args, retries=MAX_RETRIES, delay=RETRY_DELAY):
     for versuch in range(retries):
         try:
@@ -143,7 +143,7 @@ def mit_retry(func, *args, retries=MAX_RETRIES, delay=RETRY_DELAY):
                 time.sleep(delay)
     return None
 
-# ── Telegram ──────────────────────────────────────────────────
+# ââ Telegram ââââââââââââââââââââââââââââââââââââââââââââââââââ
 def send_text(msg):
     if DRY_RUN:
         print(f"[DRY-RUN] Telegram: {msg[:120]}...")
@@ -175,7 +175,7 @@ def send_photo(img, caption):
     except Exception as e:
         print(f"Telegram send_photo Fehler: {e}")
 
-# ── Journal ───────────────────────────────────────────────────
+# ââ Journal âââââââââââââââââââââââââââââââââââââââââââââââââââ
 def schreibe_journal(asset_name, signal, kurs, details, sw, seu):
     if kurs is None or not math.isfinite(kurs) or kurs <= 0:
         print(f"  Journal SKIP: {asset_name} ungueltiger Kurs {kurs}")
@@ -210,7 +210,7 @@ def schreibe_journal(asset_name, signal, kurs, details, sw, seu):
     except Exception as e:
         print(f"  Journal CSV Fehler: {e}")
 
-# ── Sentiment ─────────────────────────────────────────────────
+# ââ Sentiment âââââââââââââââââââââââââââââââââââââââââââââââââ
 _sentiment_cache = {}
 
 def get_sentiment(kat="welt"):
@@ -234,7 +234,7 @@ def sentiment_emoji(s):
     if s < -0.2: return "Negativ"
     return "Neutral"
 
-# ── Daten-Laden ───────────────────────────────────────────────
+# ââ Daten-Laden âââââââââââââââââââââââââââââââââââââââââââââââ
 def _get_crypto_inner(coin_id):
     r = requests.get(
         f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart",
@@ -276,7 +276,7 @@ def get_aktie(ticker):
     result = mit_retry(_get_aktie_inner, ticker)
     return result if result else (None, None)
 
-# ── Technische Indikatoren ────────────────────────────────────
+# ââ Technische Indikatoren ââââââââââââââââââââââââââââââââââââ
 def sma(p, n):
     return pd.Series(p).rolling(n).mean()
 
@@ -296,12 +296,12 @@ def atr_val(p, n=14):
     tr.iloc[0] = 0
     return float(tr.rolling(n).mean().iloc[-1])
 
-# ══════════════════════════════════════════════════════════════
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 # Score Trader Signal (SYNC MIT arena_backtest.py)
 # Scoring: Bollinger Bands + RSI + SMA20
 # Exit: Trailing Stop-Loss (3x ATR)
-# ══════════════════════════════════════════════════════════════
-def berechne_signal(preise, sw=0.0, seu=0.0, kauf_schwelle=BUY_THRESHOLD, verk_schwelle=SELL_THRESHOLD):
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+def berechne_signal(preise, sw=0.0, seu=0.0, kauf_schwelle=BUY_THRESHOLD, verk_schwelle=SELL_THRESHOLD, is_short=False):
     """
     Score Trader Signalberechnung - IDENTISCH mit arena_backtest.py
     Scoring basiert auf Bollinger Bands, RSI und SMA20.
@@ -327,7 +327,7 @@ def berechne_signal(preise, sw=0.0, seu=0.0, kauf_schwelle=BUY_THRESHOLD, verk_s
     # ATR fuer Trailing Stop
     a = atr_val(preise)
 
-    # ── Score Berechnung (SYNC mit arena_backtest.py) ─────
+    # ââ Score Berechnung (SYNC mit arena_backtest.py) âââââ
     punkte = 0
 
     # SMA20: Preis ueber SMA20 = bullish (+3), darunter = bearish (-2)
@@ -350,8 +350,11 @@ def berechne_signal(preise, sw=0.0, seu=0.0, kauf_schwelle=BUY_THRESHOLD, verk_s
     elif aktuell > bb_upper:
         punkte -= 2   # Ueber oberem Band = ueberkauft
 
-    # Trailing Stop-Loss (3x ATR unter aktuellem Kurs)
-    trailing_stop = aktuell - (a * ATR_SL_MULTIPLIER)
+    # Trailing Stop-Loss (3x ATR — Richtung abhaengig von Long/Short)
+    if is_short:
+        trailing_stop = aktuell + (a * ATR_SL_MULTIPLIER)
+    else:
+        trailing_stop = aktuell - (a * ATR_SL_MULTIPLIER)
 
     # Position Sizing: Kelly Fraction
     position_size_pct = KELLY_FRACTION
@@ -375,7 +378,7 @@ def berechne_signal(preise, sw=0.0, seu=0.0, kauf_schwelle=BUY_THRESHOLD, verk_s
         return "VERKAUFEN", punkte, details
     return "HALTEN", punkte, details
 
-# ── Chart ─────────────────────────────────────────────────────
+# ââ Chart âââââââââââââââââââââââââââââââââââââââââââââââââââââ
 def erstelle_chart(preise, daten, name, signal, details):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8),
                                     gridspec_kw={'height_ratios': [3, 1]})
@@ -431,7 +434,7 @@ def erstelle_chart(preise, daten, name, signal, details):
     plt.close()
     return buf
 
-# ── Health-Check ──────────────────────────────────────────────
+# ââ Health-Check ââââââââââââââââââââââââââââââââââââââââââââââ
 def health_check():
     fehler = []
     if not TELEGRAM_TOKEN and not DRY_RUN:
@@ -450,7 +453,7 @@ def health_check():
     print("Health-Check OK")
     return True
 
-# ── Trailing Stop Management ──────────────────────────────────
+# ââ Trailing Stop Management ââââââââââââââââââââââââââââââââââ
 def aktualisiere_trailing_stops():
     """
     Prueft offene Positionen und aktualisiert Trailing Stop-Loss.
@@ -557,7 +560,7 @@ def aktualisiere_trailing_stops():
 
     return geschlossene
 
-# ── Portfolio State ───────────────────────────────────────────
+# ââ Portfolio State âââââââââââââââââââââââââââââââââââââââââââ
 def lade_offene_positionen():
     """Laedt offene Positionen aus journal.csv fuer Exposure/Sektor-Check."""
     import csv
@@ -608,7 +611,7 @@ def pruefe_exposure_und_sektor(asset_id):
 
     return True, "OK"
 
-# ── Hilfsfunktionen ───────────────────────────────────────────
+# ââ Hilfsfunktionen âââââââââââââââââââââââââââââââââââââââââââ
 def _asset_lookup():
     return {a["name"]: a for a in ASSETS}
 
@@ -650,10 +653,18 @@ def ist_bereits_offen(asset_name, signal):
     for pos in offene:
         if pos.get("Asset", "").strip() == asset_name and \
            pos.get("Signal", "").strip() == signal:
+            # TTL: Eintraege aelter als 7 Tage ignorieren
+            try:
+                datum_str = pos.get("Datum", "").strip()
+                datum = datetime.strptime(datum_str, "%d.%m.%Y %H:%M")
+                if (datetime.now() - datum).days > 7:
+                    continue
+            except (ValueError, TypeError):
+                pass
             return True
     return False
 
-# ── Asset Analyse ─────────────────────────────────────────────
+# ââ Asset Analyse âââââââââââââââââââââââââââââââââââââââââââââ
 def analysiere_asset(asset, sw, seu):
     try:
         print(f"  Analysiere {asset['name']}...")
@@ -670,7 +681,15 @@ def analysiere_asset(asset, sw, seu):
             print(f"  {asset['name']}: zu viele NaN-Kurse, skip")
             return None
 
-        signal, punkte, details = berechne_signal(preise, sw, seu)
+        preise = [p for p in preise if not math.isnan(p)]
+        if len(preise) < 50:
+            print(f"  {asset['name']}: zu viele NaN-Kurse, skip")
+            return None
+        if not math.isfinite(preise[-1]) or preise[-1] <= 0:
+            print(f"  {asset['name']}: letzter Kurs ungueltig ({preise[-1]}), skip")
+            return None
+        is_short = asset.get("short", False)
+        signal, punkte, details = berechne_signal(preise, sw, seu, is_short=is_short)
         if signal == "WARTEN":
             return None
 
@@ -692,7 +711,7 @@ def analysiere_asset(asset, sw, seu):
         print(f"  Fehler bei {asset['name']}: {e}")
         return None
 
-# ── Datenfehler-Check ─────────────────────────────────────────
+# ââ Datenfehler-Check âââââââââââââââââââââââââââââââââââââââââ
 def pruefe_datenfehler(ergebnisse):
     warnungen = []
     preis_fingerprints = {}
@@ -709,7 +728,7 @@ def pruefe_datenfehler(ergebnisse):
             preis_fingerprints[fp] = name
     return warnungen
 
-# ── P&L Zusammenfassung ──────────────────────────────────────
+# ââ P&L Zusammenfassung ââââââââââââââââââââââââââââââââââââââ
 def sende_pnl_zusammenfassung(geschlossene):
     if not geschlossene:
         return
@@ -732,11 +751,12 @@ def sende_pnl_zusammenfassung(geschlossene):
     )
     send_text(msg)
 
-# ══════════════════════════════════════════════════════════════
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 # HAUPTFUNKTION
-# ══════════════════════════════════════════════════════════════
+# ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 def run_bot():
     start_zeit = time.time()
+    journal_geschrieben = set()  # Verhindert Duplikate innerhalb eines Runs
     modus = "[DRY-RUN] " if DRY_RUN else ""
     print(f"=== {modus}Score Trader Bot (Arena Sync) gestartet ===")
 
@@ -744,7 +764,7 @@ def run_bot():
         print("Bot abgebrochen wegen Health-Check Fehler.")
         return
 
-    # ── Trailing Stop Update: Offene Positionen pruefen ────
+    # ââ Trailing Stop Update: Offene Positionen pruefen ââââ
     print("=== Trailing Stop Update ===")
     geschlossene_positionen = []
     try:
@@ -822,7 +842,7 @@ def run_bot():
         key=lambda x: -x["punkte"]
     )
 
-    # ── Exposure Cap & Sector Filter anwenden ─────────────
+    # ââ Exposure Cap & Sector Filter anwenden âââââââââââââ
     kaufen = []
     exposure_blocked = 0
     sector_blocked = 0
@@ -888,10 +908,14 @@ def run_bot():
                 print(f"  Chart-Fehler {asset['name']}: {ex}")
                 send_text(nachricht)
 
-            if ist_bereits_offen(asset["name"], signal_text):
+            journal_key = f"{asset['name']}_{signal_text}"
+            if journal_key in journal_geschrieben:
+                print(f"  Skip Journal: {asset['name']} {signal_text} bereits in diesem Run geschrieben")
+            elif ist_bereits_offen(asset["name"], signal_text):
                 print(f"  Skip Journal: {asset['name']} {signal_text} bereits offen")
             else:
                 schreibe_journal(asset["name"], signal_text, aktuell, details, sw, seu)
+                journal_geschrieben.add(journal_key)
 
     # Zusammenfassung
     laufzeit = round(time.time() - start_zeit, 1)
