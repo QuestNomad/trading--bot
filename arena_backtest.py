@@ -31,17 +31,19 @@ MAX_EXPOSURE = 0.80          # Maximum 80% of portfolio in risk at any time
 KELLY_FRACTION = 0.0694      # Half Kelly
 
 SECTORS = {
-    "Tech":          ["AAPL", "MSFT", "GOOGL", "NVDA", "META", "XLK", "ARKK", "QQQ"],
-    "Finance":       ["JPM", "V", "BAC", "XLF"],
-    "Consumer":      ["AMZN", "TSLA", "HD", "PG"],
-    "Health":        ["UNH", "JNJ"],
+    "Tech":          ["AAPL", "MSFT", "GOOGL", "NVDA", "META", "XLK", "ARKK", "QQQ", "AMD", "AVGO", "PLTR", "SMCI", "SHOP"],
+    "Finance":       ["JPM", "V", "BAC", "XLF", "COIN", "SOFI", "NU"],
+    "Consumer":      ["AMZN", "TSLA", "HD", "PG", "COST", "MELI"],
+    "Health":        ["UNH", "JNJ", "XLV", "LLY", "NVO", "MRNA", "XBI"],
     "Broad_ETF":     ["SPY", "IWM", "DIA", "VTI"],
-    "International": ["EFA", "EEM"],
-    "Energy":        ["XLE", "USO"],
+    "International": ["EFA", "EEM", "EWJ", "FXI", "EWT", "AAXJ", "EWZ", "INDA", "VGK"],
+    "Energy":        ["XLE", "USO", "XOM", "FSLR", "URA"],
     "Telecom":       ["XLC"],
-    "Crypto":        ["IBIT", "BITO", "COIN", "MSTR"],
-    "Commodities":   ["GLD", "SLV", "DBA"],
-    "Bonds":         ["TLT", "LQD", "BND"],
+    "Crypto":        ["IBIT", "BITO", "MSTR", "MARA"],
+    "Commodities":   ["GLD", "SLV", "DBA", "UNG"],
+    "Bonds":         ["TLT", "LQD", "BND", "HYG"],
+    "Semiconductor": ["TSM", "ASML"],
+    "Volatile":      ["SE", "SMCI"],
 }
 MAX_POSITIONS_PER_SECTOR = 4
 
@@ -53,10 +55,28 @@ for sector, tickers in SECTORS.items():
 
 # -- Assets ------------------------------------------------------------------
 ASSETS = [
-    "SPY","QQQ","IWM","EFA","EEM","VGK","EWJ","FXI","VNQ","XLE","XLF","XLV",
-    "XLK","XLI","XLU","XLP","XLY","XLRE","XBI","ARKK","GLD","SLV","TLT",
-    "HYG","LQD","BND","UNG","USO","DBA","MSTR","NVDA", "AAPL","MSFT","TSLA",
-    "IBIT","BITO","COIN","XLC"
+    # Index ETFs
+    "SPY", "QQQ", "IWM", "DIA", "VTI",
+    # International ETFs
+    "EFA", "EEM", "VGK", "EWJ", "FXI", "EWT", "AAXJ", "EWZ", "INDA",
+    # Sektor ETFs
+    "XLE", "XLF", "XLV", "XLK", "XLI", "XLU", "XLP", "XLY", "XLRE", "XLC",
+    "VNQ", "XBI", "ARKK",
+    # Rohstoffe
+    "GLD", "SLV", "UNG", "USO", "DBA", "URA",
+    # Anleihen
+    "TLT", "HYG", "LQD", "BND",
+    # Crypto Proxy
+    "IBIT", "BITO", "MSTR", "COIN", "MARA",
+    # Tech Einzelaktien
+    "AAPL", "NVDA", "MSFT", "TSLA", "AMZN", "META", "GOOGL",
+    "AMD", "AVGO", "PLTR", "SMCI", "SHOP", "TSM", "ASML",
+    # Volatile / High-Beta
+    "SOFI", "MRNA", "FSLR", "SE", "NU", "MELI",
+    # Health / Pharma
+    "LLY", "NVO",
+    # Konsum / Energie
+    "COST", "XOM",
 ]
 
 BENCH = "SPY"; VIX = "^VIX"; RF = 0.045; REBAL_DAYS = 5

@@ -45,23 +45,26 @@ TOTAL_COST = TRADING_FEE + SPREAD_COST + SLIPPAGE_COST  # 0.30%
 
 # ── Sektor-Zuordnung (sync mit arena_backtest.py) ─────────────
 SECTORS = {
-    "Tech": ["AAPL", "MSFT", "GOOGL", "NVDA", "META"],
-    "Consumer": ["AMZN", "TSLA"],
-    "Finance": ["DBK.DE", "BNP.PA", "UBSG.SW"],
+    "Tech": ["AAPL", "MSFT", "GOOGL", "NVDA", "META", "AMD", "AVGO", "SHOP", "PLTR", "SMCI", "MARA"],
+    "Consumer": ["AMZN", "TSLA", "COST", "MELI"],
+    "Finance": ["DBK.DE", "BNP.PA", "UBSG.SW", "COIN", "SOFI", "NU"],
+    "Health": ["LLY", "NVO", "MRNA"],
     "Auto": ["7203.T"],
     "Entertainment": ["6758.T"],
     "Defense": ["RHM.DE"],
     "Aerospace": ["AIR.DE"],
     "Ecommerce": ["ZAL.DE", "9988.HK"],
     "Delivery": ["DHER.DE"],
-    "Internet": ["0700.HK"],
+    "Internet": ["0700.HK", "SE"],
     "Index_EU": ["EXS1.DE", "SAP.DE"],
-    "Index_US": ["SPY", "IWM"],
-    "Index_Asia": ["EWJ", "FXI"],
-    "EM": ["INDA", "EWZ", "VWO"],
-    "Commodities": ["GC=F", "SI=F", "HG=F", "BZ=F", "ZW=F"],
-    "Crypto": ["bitcoin", "ethereum"],
+    "Index_US": ["SPY", "IWM", "QQQ"],
+    "Index_Asia": ["EWJ", "FXI", "EWT"],
+    "EM": ["INDA", "EWZ", "VWO", "AAXJ"],
+    "Commodities": ["GC=F", "SI=F", "HG=F", "BZ=F", "ZW=F", "URA"],
+    "Crypto": ["bitcoin", "ethereum", "solana"],
     "Short": ["XSPS.L", "DXSN.DE", "QQQS.L", "BITI"],
+    "Energy": ["XOM", "FSLR"],
+    "Semiconductor": ["TSM", "ASML"],
 }
 
 ASSET_TO_SECTOR = {}
@@ -90,11 +93,14 @@ JOURNAL_HEADER = [
     "Status", "Ergebnis", "Geschlossen_am", "Kommentar"
 ]
 
-# ── 38 eindeutige Assets ──────────────────────────────────────
+# ── 73 Assets: Aktien, ETFs, Crypto, Rohstoffe, Short ────────
 ASSETS = [
+    # --- Crypto ---
     {"name": "Bitcoin",       "typ": "crypto", "id": "bitcoin",    "symbol": "BTC"},
     {"name": "Ethereum",      "typ": "crypto", "id": "ethereum",   "symbol": "ETH"},
-    {"name": "S&P 500",       "typ": "aktie",  "id": "SPY",        "symbol": "SPY"},
+    {"name": "Solana",        "typ": "crypto", "id": "solana",     "symbol": "SOL"},
+
+    # --- US Tech ---
     {"name": "Apple",         "typ": "aktie",  "id": "AAPL",       "symbol": "AAPL"},
     {"name": "Nvidia",        "typ": "aktie",  "id": "NVDA",       "symbol": "NVDA"},
     {"name": "Tesla",         "typ": "aktie",  "id": "TSLA",       "symbol": "TSLA"},
@@ -102,6 +108,36 @@ ASSETS = [
     {"name": "Amazon",        "typ": "aktie",  "id": "AMZN",       "symbol": "AMZN"},
     {"name": "Meta",          "typ": "aktie",  "id": "META",       "symbol": "META"},
     {"name": "Google",        "typ": "aktie",  "id": "GOOGL",      "symbol": "GOOGL"},
+    {"name": "AMD",           "typ": "aktie",  "id": "AMD",        "symbol": "AMD"},
+    {"name": "Broadcom",      "typ": "aktie",  "id": "AVGO",       "symbol": "AVGO"},
+    {"name": "Palantir",      "typ": "aktie",  "id": "PLTR",       "symbol": "PLTR"},
+    {"name": "Super Micro",   "typ": "aktie",  "id": "SMCI",       "symbol": "SMCI"},
+    {"name": "Shopify",       "typ": "aktie",  "id": "SHOP",       "symbol": "SHOP"},
+
+    # --- US Volatile / High-Beta ---
+    {"name": "MicroStrategy", "typ": "aktie",  "id": "MSTR",       "symbol": "MSTR"},
+    {"name": "Coinbase",      "typ": "aktie",  "id": "COIN",       "symbol": "COIN"},
+    {"name": "Marathon Digi", "typ": "aktie",  "id": "MARA",       "symbol": "MARA"},
+    {"name": "SoFi",          "typ": "aktie",  "id": "SOFI",       "symbol": "SOFI"},
+    {"name": "Moderna",       "typ": "aktie",  "id": "MRNA",       "symbol": "MRNA"},
+    {"name": "First Solar",   "typ": "aktie",  "id": "FSLR",       "symbol": "FSLR"},
+    {"name": "Sea Ltd",       "typ": "aktie",  "id": "SE",         "symbol": "SE"},
+    {"name": "Nu Holdings",   "typ": "aktie",  "id": "NU",         "symbol": "NU"},
+
+    # --- Health / Pharma ---
+    {"name": "Eli Lilly",     "typ": "aktie",  "id": "LLY",        "symbol": "LLY"},
+    {"name": "Novo Nordisk",  "typ": "aktie",  "id": "NVO",        "symbol": "NVO"},
+
+    # --- Konsum / Energie / LatAm ---
+    {"name": "Costco",        "typ": "aktie",  "id": "COST",       "symbol": "COST"},
+    {"name": "ExxonMobil",    "typ": "aktie",  "id": "XOM",        "symbol": "XOM"},
+    {"name": "MercadoLibre",  "typ": "aktie",  "id": "MELI",       "symbol": "MELI"},
+
+    # --- Halbleiter International (US-gelistet) ---
+    {"name": "TSMC",          "typ": "aktie",  "id": "TSM",        "symbol": "TSM"},
+    {"name": "ASML",          "typ": "aktie",  "id": "ASML",       "symbol": "ASML"},
+
+    # --- Europa ---
     {"name": "DAX ETF",       "typ": "aktie",  "id": "EXS1.DE",    "symbol": "DAX"},
     {"name": "SAP",           "typ": "aktie",  "id": "SAP.DE",     "symbol": "SAP"},
     {"name": "Rheinmetall",   "typ": "aktie",  "id": "RHM.DE",     "symbol": "RHM"},
@@ -111,21 +147,36 @@ ASSETS = [
     {"name": "Deutsche Bank", "typ": "aktie",  "id": "DBK.DE",     "symbol": "DBK"},
     {"name": "BNP Paribas",   "typ": "aktie",  "id": "BNP.PA",     "symbol": "BNP"},
     {"name": "UBS",           "typ": "aktie",  "id": "UBSG.SW",    "symbol": "UBS"},
+
+    # --- Asien ---
     {"name": "Nikkei ETF",    "typ": "aktie",  "id": "EWJ",        "symbol": "EWJ"},
     {"name": "Toyota",        "typ": "aktie",  "id": "7203.T",     "symbol": "Toyota"},
     {"name": "Sony",          "typ": "aktie",  "id": "6758.T",     "symbol": "Sony"},
     {"name": "China ETF",     "typ": "aktie",  "id": "FXI",        "symbol": "FXI"},
     {"name": "Alibaba HK",    "typ": "aktie",  "id": "9988.HK",    "symbol": "Alibaba"},
     {"name": "Tencent",       "typ": "aktie",  "id": "0700.HK",    "symbol": "Tencent"},
+    {"name": "Taiwan ETF",    "typ": "aktie",  "id": "EWT",        "symbol": "EWT"},
+
+    # --- Emerging Markets ---
     {"name": "Indien ETF",    "typ": "aktie",  "id": "INDA",       "symbol": "INDA"},
     {"name": "Brasilien ETF", "typ": "aktie",  "id": "EWZ",        "symbol": "EWZ"},
     {"name": "EM ETF",        "typ": "aktie",  "id": "VWO",        "symbol": "VWO"},
+    {"name": "Asia ex-Japan", "typ": "aktie",  "id": "AAXJ",       "symbol": "AAXJ"},
+
+    # --- US Index ETFs ---
+    {"name": "S&P 500",       "typ": "aktie",  "id": "SPY",        "symbol": "SPY"},
     {"name": "Russell 2000",  "typ": "aktie",  "id": "IWM",        "symbol": "IWM"},
+    {"name": "Nasdaq 100",    "typ": "aktie",  "id": "QQQ",        "symbol": "QQQ"},
+
+    # --- Rohstoffe ---
     {"name": "Gold",          "typ": "aktie",  "id": "GC=F",       "symbol": "Gold"},
     {"name": "Silber",        "typ": "aktie",  "id": "SI=F",       "symbol": "Silber"},
     {"name": "Oel",           "typ": "aktie",  "id": "BZ=F",       "symbol": "Oel"},
     {"name": "Kupfer",        "typ": "aktie",  "id": "HG=F",       "symbol": "Kupfer"},
     {"name": "Weizen",        "typ": "aktie",  "id": "ZW=F",       "symbol": "Weizen"},
+    {"name": "Uran ETF",      "typ": "aktie",  "id": "URA",        "symbol": "URA"},
+
+    # --- Short ETFs ---
     {"name": "Short S&P 500", "typ": "aktie",  "id": "XSPS.L",    "symbol": "XSPS", "short": True},
     {"name": "Short DAX",     "typ": "aktie",  "id": "DXSN.DE",   "symbol": "DXSN", "short": True},
     {"name": "Short Nasdaq",  "typ": "aktie",  "id": "QQQS.L",    "symbol": "QQQS", "short": True},
