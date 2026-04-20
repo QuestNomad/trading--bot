@@ -13,7 +13,7 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 5.799285888671875,
+      "atr": 5.749285016741071,
       "trailing_stop": 692.7421569824219
     },
     "AAPL": {
@@ -27,8 +27,8 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 3.2764271327427457,
-      "trailing_stop": 260.40072958809986
+      "atr": 3.3228541782924106,
+      "trailing_stop": 263.08142525809154
     },
     "NVDA": {
       "name": "Nvidia",
@@ -41,8 +41,8 @@
       "signal": "BUY",
       "score": 9,
       "is_short": false,
-      "atr": 2.8499984741210938,
-      "trailing_stop": 193.12999725341797
+      "atr": 2.709284101213728,
+      "trailing_stop": 193.93214525495256
     },
     "AMZN": {
       "name": "Amazon",
@@ -55,7 +55,7 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 3.847143990652902,
+      "atr": 3.895001002720424,
       "trailing_stop": 239.01856558663505
     },
     "GOOGL": {
@@ -69,7 +69,7 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 5.4971466064453125,
+      "atr": 5.741431100027902,
       "trailing_stop": 325.1885528564453
     },
     "EWJ": {
@@ -83,7 +83,7 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 1.0357159205845423,
+      "atr": 1.0907162257603236,
       "trailing_stop": 87.08285467965263
     },
     "7203.T": {
@@ -97,8 +97,8 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 42.785714285714285,
-      "trailing_stop": 3232.5628836495534
+      "atr": 41.714285714285715,
+      "trailing_stop": 3264.8571428571427
     },
     "EWZ": {
       "name": "Brasilien ETF",
@@ -211,12 +211,25 @@
       "vix": 17.479999542236328,
       "sentiment_world": -0.231,
       "sentiment_eu": -0.209
+    },
+    {
+      "date": "2026-04-20",
+      "portfolio_value": 10331.05,
+      "cash": 2344.79,
+      "positions_value": 7986.26,
+      "num_positions": 8,
+      "peak_value": 10332.52,
+      "drawdown_pct": 0.01,
+      "trades_today": 0,
+      "vix": 18.8700008392334,
+      "sentiment_world": -0.136,
+      "sentiment_eu": -0.421
     }
   ],
   "peak_value": 10332.517586914819,
   "total_fees_paid": 22.9,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-04-17T22:52:25.023343",
+  "last_run": "2026-04-20T22:54:32.672794",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
