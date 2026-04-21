@@ -13,7 +13,7 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 5.749285016741071,
+      "atr": 4.768563406808036,
       "trailing_stop": 692.7421569824219
     },
     "AAPL": {
@@ -27,7 +27,7 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 3.3228541782924106,
+      "atr": 3.3028531755719865,
       "trailing_stop": 263.08142525809154
     },
     "NVDA": {
@@ -41,7 +41,7 @@
       "signal": "BUY",
       "score": 9,
       "is_short": false,
-      "atr": 2.709284101213728,
+      "atr": 2.205712454659598,
       "trailing_stop": 193.93214525495256
     },
     "AMZN": {
@@ -55,8 +55,8 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 3.895001002720424,
-      "trailing_stop": 239.01856558663505
+      "atr": 3.488572256905692,
+      "trailing_stop": 239.4442868913923
     },
     "GOOGL": {
       "name": "Google",
@@ -69,7 +69,7 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 5.741431100027902,
+      "atr": 5.103574480329241,
       "trailing_stop": 325.1885528564453
     },
     "EWJ": {
@@ -83,7 +83,7 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 1.0907162257603236,
+      "atr": 1.0385731288364954,
       "trailing_stop": 87.08285467965263
     },
     "7203.T": {
@@ -97,7 +97,7 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 37.714285714285715,
+      "atr": 38.92857142857143,
       "trailing_stop": 3264.8571428571427
     },
     "EWZ": {
@@ -111,7 +111,7 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 0.4235719953264509,
+      "atr": 0.34428623744419645,
       "trailing_stop": 40.20428385053362
     }
   },
@@ -237,12 +237,25 @@
       "vix": 18.8700008392334,
       "sentiment_world": -0.202,
       "sentiment_eu": -0.029
+    },
+    {
+      "date": "2026-04-21",
+      "portfolio_value": 10226.97,
+      "cash": 2344.79,
+      "positions_value": 7882.18,
+      "num_positions": 8,
+      "peak_value": 10332.52,
+      "drawdown_pct": 1.02,
+      "trades_today": 0,
+      "vix": 19.5,
+      "sentiment_world": -0.335,
+      "sentiment_eu": -0.291
     }
   ],
   "peak_value": 10332.517586914819,
   "total_fees_paid": 22.9,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-04-21T06:11:11.064002",
+  "last_run": "2026-04-21T22:48:04.733390",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
