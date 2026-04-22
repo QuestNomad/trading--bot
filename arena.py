@@ -7,7 +7,7 @@ Bots:
   2. Crash Guard  - Buy & Hold SPY mit SMA200-Schutz
   3. Kronos      - SMA20/BB/RSI/ATR Score-System (kauf_schwelle=8, original)
     4. Athena      - Erweitertes 6-Komponenten Score-System (V2, kauf_schwelle=8)
-  4. Buy & Hold   - Gleichgewichtet alle 38 Assets
+  4. Buy & Hold   - Gleichgewichtet alle 66 Assets
   5. Adaptiv      - Wechselt zwischen Momentum, Crash Guard und Cash je nach VIX
 """
 
@@ -26,11 +26,31 @@ from datetime import datetime, timedelta
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("arena")
 
+# ── 66 US-Assets: Index, Sektor, Einzelaktien, Rohstoff-ETFs, Crypto-ETFs ──
 ASSETS = [
-    "SPY", "QQQ", "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META",
-    "BRK-B", "JPM", "JNJ", "V", "UNH", "HD", "PG", "MA", "DIS", "NFLX", "AMD",
-    "INTC", "CRM", "PYPL", "BA", "NKE", "KO", "PEP", "MCD", "WMT", "COST",
-    "ABBV", "TMO", "LLY", "AVGO", "ORCL", "ADBE", "CSCO", "TXN",
+    # --- US Index ETFs ---
+    "SPY", "QQQ", "IWM", "DIA", "VTI",
+    # --- International / EM ETFs ---
+    "EFA", "EEM", "VGK", "EWJ", "FXI", "EWT", "AAXJ", "EWZ", "INDA",
+    # --- Sektor ETFs ---
+    "XLE", "XLF", "XLV", "XLK", "XLI", "XLU", "XLP", "XLY", "XLRE", "XLC",
+    "VNQ", "XBI", "ARKK",
+    # --- Rohstoff ETFs ---
+    "GLD", "SLV", "UNG", "USO", "DBA", "URA",
+    # --- Bond ETFs ---
+    "TLT", "HYG", "LQD", "BND",
+    # --- Crypto ETFs ---
+    "IBIT", "BITO", "MSTR", "COIN", "MARA",
+    # --- US Tech / Mega Cap ---
+    "AAPL", "NVDA", "MSFT", "TSLA", "AMZN", "META", "GOOGL",
+    # --- Halbleiter / Tech Growth ---
+    "AMD", "AVGO", "PLTR", "SMCI", "SHOP", "TSM", "ASML",
+    # --- Volatile / High-Beta ---
+    "SOFI", "MRNA", "FSLR", "SE", "NU", "MELI",
+    # --- Health / Pharma ---
+    "LLY", "NVO",
+    # --- Konsum / Energie ---
+    "COST", "XOM",
 ]
 
 ARENA_FILE = "arena_results.json"
@@ -522,7 +542,7 @@ def bot_athena(state: dict, close: pd.DataFrame, ind: dict, heute: str):
 
 def bot_buy_hold(state: dict, close: pd.DataFrame, ind: dict, heute: str):
     """
-    Gleichgewichtet alle 38 Assets, monatliches Rebalancing.
+    Gleichgewichtet alle 66 Assets, monatliches Rebalancing.
     Kein aktives Trading \u2013 reine Benchmark.
     """
     bot = state["bots"]["Buy_Hold"]

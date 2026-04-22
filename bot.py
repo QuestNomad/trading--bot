@@ -412,11 +412,8 @@ def berechne_signal(preise, sw=0.0, seu=0.0, kauf_schwelle=BUY_THRESHOLD, verk_s
     elif aktuell > bb_upper:
         punkte -= 2   # Ueber oberem Band = ueberkauft
 
-    # Trailing Stop-Loss (3x ATR -- Richtung abhaengig von Long/Short)
-    if is_short:
-        trailing_stop = aktuell + (a * ATR_SL_MULTIPLIER)
-    else:
-        trailing_stop = aktuell - (a * ATR_SL_MULTIPLIER)
+    # Trailing Stop-Loss (3x ATR -- immer unter Einstieg, auch Short-ETFs)
+    trailing_stop = aktuell - (a * ATR_SL_MULTIPLIER)
 
     # Position Sizing: Kelly Fraction
     position_size_pct = KELLY_FRACTION
@@ -750,7 +747,9 @@ def analysiere_asset(asset, sw, seu):
         if not math.isfinite(preise[-1]) or preise[-1] <= 0:
             print(f"  {asset['name']}: letzter Kurs ungueltig ({preise[-1]}), skip")
             return None
-        is_short = asset.get("short", False)
+        # FIX: is_short=False fuer alle Assets (Short-ETFs sind Long-Instrumente,
+        # Trailing Stop muss immer UNTER Einstieg liegen)
+        is_short = False
         signal, punkte, details = berechne_signal(preise, sw, seu, is_short=is_short)
         if signal == "WARTEN":
             return None
@@ -762,11 +761,10 @@ def analysiere_asset(asset, sw, seu):
                 print(f"  {asset['name']}: {key}=NaN, skip")
                 return None
 
-        if asset.get("short"):
-            if punkte <= -3:
-                signal = "KAUFEN"
-            else:
-                return None
+        # FIX: Alte is_short-Sonderlogik entfernt.
+        # Short-ETFs werden wie normale Assets behandelt:
+        # Score >= 8 -> KAUFEN (passiert wenn Underlying faellt -> Short-ETF steigt)
+        # Score <= 3 -> VERKAUFEN
 
         return {
             "asset": asset,
