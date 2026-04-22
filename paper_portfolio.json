@@ -1,6 +1,6 @@
 {
   "capital": 10000,
-  "cash": 2344.79,
+  "cash": 2690.6114043054704,
   "positions": {
     "SPY": {
       "name": "S&P 500",
@@ -13,8 +13,8 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 4.768563406808036,
-      "trailing_stop": 692.7421569824219
+      "atr": 4.927852085658482,
+      "trailing_stop": 696.4264657156808
     },
     "AAPL": {
       "name": "Apple",
@@ -27,7 +27,7 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 3.3028531755719865,
+      "atr": 3.671423775809152,
       "trailing_stop": 263.08142525809154
     },
     "NVDA": {
@@ -41,8 +41,8 @@
       "signal": "BUY",
       "score": 9,
       "is_short": false,
-      "atr": 2.205712454659598,
-      "trailing_stop": 193.93214525495256
+      "atr": 2.2964259556361606,
+      "trailing_stop": 195.6107221330915
     },
     "AMZN": {
       "name": "Amazon",
@@ -55,8 +55,8 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 3.488572256905692,
-      "trailing_stop": 239.4442868913923
+      "atr": 3.7135718209402904,
+      "trailing_stop": 244.21928514753068
     },
     "GOOGL": {
       "name": "Google",
@@ -69,7 +69,7 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 5.103574480329241,
+      "atr": 4.903573172433036,
       "trailing_stop": 325.1885528564453
     },
     "EWJ": {
@@ -83,22 +83,8 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 1.0385731288364954,
+      "atr": 0.9371446881975446,
       "trailing_stop": 87.08285467965263
-    },
-    "7203.T": {
-      "name": "Toyota",
-      "symbol": "Toyota",
-      "entry_price": 3319,
-      "quantity": 0.10870009096718877,
-      "stop_loss": 3154.922119140625,
-      "take_profit": 3756.541015625,
-      "entry_date": "2026-04-12T00:39:07.221185",
-      "signal": "BUY",
-      "score": 8,
-      "is_short": false,
-      "atr": 38.92857142857143,
-      "trailing_stop": 3264.8571428571427
     },
     "EWZ": {
       "name": "Brasilien ETF",
@@ -111,7 +97,7 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 0.34428623744419645,
+      "atr": 0.3571434020996094,
       "trailing_stop": 40.20428385053362
     }
   },
@@ -143,6 +129,20 @@
       "pnl_pct": 0,
       "fee_paid": 0,
       "reason": "Signal-SELL [REPAIRED-NaN]"
+    },
+    {
+      "asset": "Toyota",
+      "asset_id": "7203.T",
+      "signal": "BUY",
+      "entry_price": 3319,
+      "exit_price": 3191.0,
+      "quantity": 0.10870009096718877,
+      "entry_date": "2026-04-12T00:39:07.221185",
+      "exit_date": "2026-04-22T22:55:09.133018",
+      "pnl": -14.95,
+      "pnl_pct": -4.15,
+      "fee_paid": 1.04,
+      "reason": "Trailing-Stop"
     }
   ],
   "daily_snapshots": [
@@ -250,12 +250,25 @@
       "vix": 19.5,
       "sentiment_world": -0.335,
       "sentiment_eu": -0.291
+    },
+    {
+      "date": "2026-04-22",
+      "portfolio_value": 10337.03,
+      "cash": 2690.61,
+      "positions_value": 7646.41,
+      "num_positions": 7,
+      "peak_value": 10337.03,
+      "drawdown_pct": 0.0,
+      "trades_today": 1,
+      "vix": 18.920000076293945,
+      "sentiment_world": -0.337,
+      "sentiment_eu": -0.359
     }
   ],
-  "peak_value": 10332.517586914819,
-  "total_fees_paid": 22.9,
+  "peak_value": 10337.025989453987,
+  "total_fees_paid": 23.940585970828895,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-04-21T22:48:04.733390",
+  "last_run": "2026-04-22T22:55:13.827672",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
