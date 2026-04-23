@@ -1,6 +1,6 @@
 {
   "capital": 10000,
-  "cash": 2690.6114043054704,
+  "cash": 3414.0655027231505,
   "positions": {
     "SPY": {
       "name": "S&P 500",
@@ -13,7 +13,7 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 4.927852085658482,
+      "atr": 5.082850864955357,
       "trailing_stop": 696.4264657156808
     },
     "AAPL": {
@@ -27,7 +27,7 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 3.671423775809152,
+      "atr": 3.6692799159458707,
       "trailing_stop": 263.08142525809154
     },
     "NVDA": {
@@ -41,7 +41,7 @@
       "signal": "BUY",
       "score": 9,
       "is_short": false,
-      "atr": 2.2964259556361606,
+      "atr": 2.383568899972098,
       "trailing_stop": 195.6107221330915
     },
     "AMZN": {
@@ -55,7 +55,7 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 3.7135718209402904,
+      "atr": 3.676428658621652,
       "trailing_stop": 244.21928514753068
     },
     "GOOGL": {
@@ -69,36 +69,8 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 4.903573172433036,
+      "atr": 4.818570818219866,
       "trailing_stop": 325.1885528564453
-    },
-    "EWJ": {
-      "name": "Nikkei ETF",
-      "symbol": "EWJ",
-      "entry_price": 88.12999725341797,
-      "quantity": 5.120934953508829,
-      "stop_loss": 84.02213559831891,
-      "take_profit": 99.08429500034877,
-      "entry_date": "2026-04-12T00:39:07.022683",
-      "signal": "BUY",
-      "score": 10,
-      "is_short": false,
-      "atr": 0.9371446881975446,
-      "trailing_stop": 87.08285467965263
-    },
-    "EWZ": {
-      "name": "Brasilien ETF",
-      "symbol": "EWZ",
-      "entry_price": 41.33000183105469,
-      "quantity": 6.978078959537464,
-      "stop_loss": 39.46785763331822,
-      "take_profit": 46.29571969168527,
-      "entry_date": "2026-04-12T00:39:08.193709",
-      "signal": "BUY",
-      "score": 8,
-      "is_short": false,
-      "atr": 0.3571434020996094,
-      "trailing_stop": 40.20428385053362
     }
   },
   "trade_history": [
@@ -142,6 +114,34 @@
       "pnl": -14.95,
       "pnl_pct": -4.15,
       "fee_paid": 1.04,
+      "reason": "Trailing-Stop"
+    },
+    {
+      "asset": "Nikkei ETF",
+      "asset_id": "EWJ",
+      "signal": "BUY",
+      "entry_price": 88.12999725341797,
+      "exit_price": 87.06999969482422,
+      "quantity": 5.120934953508829,
+      "entry_date": "2026-04-12T00:39:07.022683",
+      "exit_date": "2026-04-23T22:56:20.331897",
+      "pnl": -6.77,
+      "pnl_pct": -1.5,
+      "fee_paid": 1.34,
+      "reason": "Trailing-Stop"
+    },
+    {
+      "asset": "Brasilien ETF",
+      "asset_id": "EWZ",
+      "signal": "BUY",
+      "entry_price": 41.33000183105469,
+      "exit_price": 40.09000015258789,
+      "quantity": 6.978078959537464,
+      "entry_date": "2026-04-12T00:39:08.193709",
+      "exit_date": "2026-04-23T22:56:20.332507",
+      "pnl": -9.49,
+      "pnl_pct": -3.29,
+      "fee_paid": 0.84,
       "reason": "Trailing-Stop"
     }
   ],
@@ -263,12 +263,25 @@
       "vix": 18.920000076293945,
       "sentiment_world": -0.337,
       "sentiment_eu": -0.359
+    },
+    {
+      "date": "2026-04-23",
+      "portfolio_value": 10299.83,
+      "cash": 3414.07,
+      "positions_value": 6885.77,
+      "num_positions": 5,
+      "peak_value": 10337.03,
+      "drawdown_pct": 0.36,
+      "trades_today": 2,
+      "vix": 19.309999465942383,
+      "sentiment_world": -0.133,
+      "sentiment_eu": -0.187
     }
   ],
   "peak_value": 10337.025989453987,
-  "total_fees_paid": 23.940585970828895,
+  "total_fees_paid": 26.11747894500446,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-04-22T22:55:13.827672",
+  "last_run": "2026-04-23T22:56:25.391166",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
