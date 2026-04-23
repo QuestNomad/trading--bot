@@ -25,6 +25,13 @@ VIX_LIMIT = 30
 MAX_RETRIES = 3
 RETRY_DELAY = 5
 
+# ── SMA200 Regime-Filter (Crash-Schutz) ──────────────────────
+# Wenn SPY unter SMA200 -> keine neuen BUY-Signale (SELL geht durch).
+# Basierend auf arena.py Crash-Guard-Pattern. Deaktivierbar via Env-Var.
+ENABLE_SMA200_FILTER = os.environ.get("ENABLE_SMA200_FILTER", "true").lower() == "true"
+SMA200_PERIOD = 200
+REGIME_TICKER = "SPY"
+
 # ── Risk Management (sync mit arena_backtest.py) ──────────────
 KELLY_FRACTION = 0.0694  # Half Kelly = 6.94% pro Position
 MAX_EXPOSURE = 0.80      # Max 80% Gesamtexposure
@@ -43,34 +50,13 @@ SPREAD_COST = 0.0005    # 0.05% Spread
 SLIPPAGE_COST = 0.001   # 0.10% Slippage
 TOTAL_COST = TRADING_FEE + SPREAD_COST + SLIPPAGE_COST  # 0.30%
 
-# ── Sektor-Zuordnung (sync mit arena_backtest.py) ─────────────
-SECTORS = {
-    "Tech": ["AAPL", "MSFT", "GOOGL", "NVDA", "META", "AMD", "AVGO", "SHOP", "PLTR", "SMCI", "MARA"],
-    "Consumer": ["AMZN", "TSLA", "COST", "MELI"],
-    "Finance": ["DBK.DE", "BNP.PA", "UBSG.SW", "COIN", "SOFI", "NU"],
-    "Health": ["LLY", "NVO", "MRNA"],
-    "Auto": ["7203.T"],
-    "Entertainment": ["6758.T"],
-    "Defense": ["RHM.DE"],
-    "Aerospace": ["AIR.DE"],
-    "Ecommerce": ["ZAL.DE", "9988.HK"],
-    "Delivery": ["DHER.DE"],
-    "Internet": ["0700.HK", "SE"],
-    "Index_EU": ["EXS1.DE", "SAP.DE"],
-    "Index_US": ["SPY", "IWM", "QQQ"],
-    "Index_Asia": ["EWJ", "FXI", "EWT"],
-    "EM": ["INDA", "EWZ", "VWO", "AAXJ"],
-    "Commodities": ["GC=F", "SI=F", "HG=F", "BZ=F", "ZW=F", "URA"],
-    "Crypto": ["bitcoin", "ethereum", "solana"],
-    "Short": ["XSPS.L", "DXSN.DE", "QQQS.L", "BITI"],
-    "Energy": ["XOM", "FSLR"],
-    "Semiconductor": ["TSM", "ASML"],
-}
-
-ASSET_TO_SECTOR = {}
-for sector, assets in SECTORS.items():
-    for asset_id in assets:
-        ASSET_TO_SECTOR[asset_id] = sector
+# ── Sektor-Zuordnung (Single Source of Truth in universe.py) ──
+# Import statt Duplikat. SECTORS + ASSET_TO_SECTOR werden dort gepflegt.
+# Hinweis: Crypto nutzt in bot.py coingecko-IDs (bitcoin/ethereum/solana),
+# universe.py verwendet yfinance-Format (BTC-USD/...). Die Zuordnung
+# universe.SECTORS["Crypto"] enthaelt yfinance-Symbole; fuer bot.py sind
+# die coingecko-IDs ohnehin nicht sektor-kritisch (single-sector "Crypto").
+from universe import SECTORS, ASSET_TO_SECTOR, COINGECKO_IDS  # noqa: E402
 
 analyzer = SentimentIntensityAnalyzer()
 _yf_lock = threading.Lock()
@@ -871,6 +857,50 @@ def run_bot():
     except Exception as e:
         print(f"VIX Fehler: {e}")
 
+    # SMA200 Regime-Filter (Crash-Schutz)
+    # Bei SPY < SMA200 werden BUY-Signale geblockt. SELL-Signale gehen durch.
+    regime_bullish = True  # Default: True (no-op bei Fehler = bestehende Logik)
+    spy_kurs = None
+    spy_sma200 = None
+    if ENABLE_SMA200_FILTER:
+        try:
+            spy_hist = yf.download(
+                REGIME_TICKER,
+                period="1y",
+                interval="1d",
+                progress=False,
+                auto_adjust=True,
+            )
+            spy_close = spy_hist["Close"]
+            if isinstance(spy_close, pd.DataFrame):
+                spy_close = spy_close.iloc[:, 0]
+            if len(spy_close) >= SMA200_PERIOD:
+                spy_kurs = float(spy_close.iloc[-1])
+                spy_sma200 = float(spy_close.rolling(SMA200_PERIOD).mean().iloc[-1])
+                regime_bullish = spy_kurs >= spy_sma200
+                pct = (spy_kurs / spy_sma200 - 1) * 100
+                print(
+                    f"Regime: SPY={spy_kurs:.2f} "
+                    f"SMA{SMA200_PERIOD}={spy_sma200:.2f} "
+                    f"({pct:+.1f}%) -> {'BULLISH' if regime_bullish else 'BEARISH'}"
+                )
+                if not regime_bullish:
+                    send_text(
+                        f"<b>Regime-Filter: BEARISH</b>\n\n"
+                        f"SPY {spy_kurs:.2f} unter SMA{SMA200_PERIOD} "
+                        f"({spy_sma200:.2f}, {pct:+.1f}%)\n"
+                        f"Keine neuen BUY-Signale, nur SELL."
+                    )
+                else:
+                    send_text(
+                        f"Regime: BULLISH "
+                        f"(SPY {pct:+.1f}% ueber SMA{SMA200_PERIOD})"
+                    )
+            else:
+                print(f"Regime: zu wenig Daten ({len(spy_close)} < {SMA200_PERIOD})")
+        except Exception as e:
+            print(f"Regime-Filter Fehler: {e} - fahre ohne Filter fort")
+
     # Sentiment
     heute = datetime.now().strftime("%d.%m.%Y %H:%M")
     sw = get_sentiment("welt")
@@ -906,10 +936,15 @@ def run_bot():
         send_text("<b>Datenfehler erkannt!</b>\n\n" + "\n".join(datenfehler))
 
     # Sortieren & Top-Signale
+    # Regime-Filter: BUY nur wenn bullish (oder Filter deaktiviert)
+    buy_allowed = regime_bullish or not ENABLE_SMA200_FILTER
     kaufen_raw = sorted(
-        [e for e in ergebnisse if e["signal"] == "KAUFEN"],
+        [e for e in ergebnisse if e["signal"] == "KAUFEN" and buy_allowed],
         key=lambda x: -x["punkte"]
     )
+    if not buy_allowed:
+        n_blocked = sum(1 for e in ergebnisse if e["signal"] == "KAUFEN")
+        print(f"Regime-Filter: {n_blocked} BUY-Signal(e) geblockt (SPY<SMA200)")
 
     # ── Exposure Cap & Sector Filter anwenden ─────────────
     kaufen = []
