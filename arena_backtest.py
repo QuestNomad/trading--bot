@@ -158,7 +158,8 @@ def strat_momentum():
 
 
 def strat_score_trader(date_range=None, bb_period=20, rsi_period=14,
-                       atr_sl_mult=3.0, track_per_asset=False):
+                       atr_sl_mult=3.0, track_per_asset=False,
+                       use_regime_filter=False):
     """Score Trader with configurable parameters.
 
     Enhancements v4:
@@ -166,12 +167,17 @@ def strat_score_trader(date_range=None, bb_period=20, rsi_period=14,
       Each position sized at KELLY_FRACTION (6.94%), scaled down if needed.
     - Sector Correlation Filter: max MAX_POSITIONS_PER_SECTOR (4) per sector.
 
+    Enhancement v5 (2026-04-24):
+    - SMA200 Regime Filter (optional): block new BUY entries when
+      SPY < SMA200 (risk_off == True). Exits bleiben unbetroffen.
+
     Args:
         date_range: tuple (start_idx, end_idx) to slice dates, or None for all
         bb_period: Bollinger Band period (default 20)
         rsi_period: RSI period (default 14)
         atr_sl_mult: ATR multiplier for stop-loss (default 3.0)
         track_per_asset: if True, collect per-asset statistics
+        use_regime_filter: if True, skip BUY when SPY<SMA200
     """
     use_dates = dates[date_range[0]:date_range[1]] if date_range else dates
     vals  = [10000.0]; prev = 10000.0; positions = {}; trades = 0
@@ -197,6 +203,7 @@ def strat_score_trader(date_range=None, bb_period=20, rsi_period=14,
     rm_exposure_count = 0
     rm_sector_skips = 0
     rm_exposure_caps = 0
+    rm_regime_skips = 0   # v5: BUY geblockt weil SPY<SMA200
     rm_sector_distribution = {s: 0 for s in SECTORS}   # total entries per sector
 
     for i, d in enumerate(use_dates):
@@ -240,6 +247,10 @@ def strat_score_trader(date_range=None, bb_period=20, rsi_period=14,
                 if p < bb_mid + 0.5*bb_std: score += 3
                 if rsi_ind[a].loc[d] < 55:  score += 2
                 if score >= 8:
+                    # --- SMA200 Regime Filter (v5) ---
+                    if use_regime_filter and risk_off.loc[d]:
+                        rm_regime_skips += 1
+                        continue
                     # --- Sector Correlation Filter (v4) ---
                     sector = ASSET_TO_SECTOR.get(a, "Other")
                     sector_count = sum(
@@ -323,6 +334,8 @@ def strat_score_trader(date_range=None, bb_period=20, rsi_period=14,
         "kelly_fraction%": KELLY_FRACTION * 100,
         "exposure_cap_triggers": rm_exposure_caps,
         "sector_filter_skips": rm_sector_skips,
+        "regime_filter_skips": rm_regime_skips,
+        "regime_filter_active": use_regime_filter,
         "sector_distribution": rm_sector_distribution,
         "max_positions_per_sector": MAX_POSITIONS_PER_SECTOR,
     }
@@ -886,6 +899,32 @@ results["Score Trader"] = k_st
 results["score_trader_per_asset"] = per_asset_data
 results["risk_management"] = risk_mgmt_data
 
+# Score Trader + SMA200 Regime Filter (v5) - direkter A/B-Vergleich
+print("  Running Score+Regime (SMA200 Filter) ...")
+eq_sr, k_sr, _, risk_mgmt_sr = strat_score_trader(use_regime_filter=True)
+results["Score+Regime"] = k_sr
+results["score_regime_risk_management"] = risk_mgmt_sr
+results["regime_filter_impact"] = {
+    "score_trader": {
+        "return%":  k_st.get("Return%"),
+        "max_dd%":  k_st.get("MaxDD%"),
+        "sharpe":   k_st.get("Sharpe"),
+        "win_rate%": k_st.get("WinRate%"),
+    },
+    "score_regime": {
+        "return%":  k_sr.get("Return%"),
+        "max_dd%":  k_sr.get("MaxDD%"),
+        "sharpe":   k_sr.get("Sharpe"),
+        "win_rate%": k_sr.get("WinRate%"),
+    },
+    "buy_signals_blocked_by_regime": risk_mgmt_sr.get("regime_filter_skips"),
+    "interpretation": (
+        "Vergleiche Return, MaxDD und Sharpe. Regime-Filter sollte MaxDD "
+        "senken bei moderatem Rendite-Verlust (oder besser gleich). "
+        "Wenn Sharpe steigt -> besseres Risiko/Rendite-Verhaeltnis."
+    ),
+}
+
 # Out-of-Sample test (Enhancement 2)
 results["out_of_sample"] = run_out_of_sample()
 
@@ -918,6 +957,7 @@ results["_meta"] = {
         "Kelly criterion (position sizing + growth estimates)",
         "max-exposure rule (80% portfolio cap with Half Kelly sizing)",
         "sector correlation filter (max 4 positions per sector)",
+        "SMA200 regime filter A/B (Score Trader vs Score+Regime)",
     ],
 }
 
