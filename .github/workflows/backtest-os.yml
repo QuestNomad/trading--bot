@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install deps
-        run: pip install yfinance pandas numpy
+        run: pip install -r requirements.txt
       - name: Run backtest
         env:
           LOOKBACK_DAYS: ${{ inputs.lookback_days || '365' }}
