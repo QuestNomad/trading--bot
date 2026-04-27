@@ -13,8 +13,8 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 5.253566196986607,
-      "trailing_stop": 698.1793038504464
+      "atr": 5.320709228515625,
+      "trailing_stop": 699.2078552246094
     },
     "AAPL": {
       "name": "Apple",
@@ -27,7 +27,7 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 3.628566196986607,
+      "atr": 3.4921395438058034,
       "trailing_stop": 263.08142525809154
     },
     "NVDA": {
@@ -41,8 +41,8 @@
       "signal": "BUY",
       "score": 9,
       "is_short": false,
-      "atr": 2.982140677315848,
-      "trailing_stop": 199.3235822405134
+      "atr": 3.544997079031808,
+      "trailing_stop": 205.97500937325614
     },
     "AMZN": {
       "name": "Amazon",
@@ -55,7 +55,7 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 4.097142900739398,
+      "atr": 4.232141767229352,
       "trailing_stop": 251.69856153215682
     },
     "GOOGL": {
@@ -69,8 +69,8 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 4.910712105887277,
-      "trailing_stop": 329.6678575788225
+      "atr": 4.944283621651786,
+      "trailing_stop": 335.5071454729353
     }
   },
   "trade_history": [
@@ -289,12 +289,25 @@
       "vix": 18.709999084472656,
       "sentiment_world": 0.135,
       "sentiment_eu": -0.338
+    },
+    {
+      "date": "2026-04-27",
+      "portfolio_value": 10449.22,
+      "cash": 3414.07,
+      "positions_value": 7035.16,
+      "num_positions": 5,
+      "peak_value": 10449.22,
+      "drawdown_pct": 0.0,
+      "trades_today": 0,
+      "vix": 18.020000457763672,
+      "sentiment_world": -0.321,
+      "sentiment_eu": -0.272
     }
   ],
-  "peak_value": 10406.11822003196,
+  "peak_value": 10449.22420901374,
   "total_fees_paid": 26.11747894500446,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-04-24T22:50:10.455567",
+  "last_run": "2026-04-27T22:59:30.068013",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
