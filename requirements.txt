@@ -1,0 +1,12 @@
+# Trading Bot dependencies (24.04.2026)
+# Install: pip install -r requirements.txt
+
+requests>=2.31
+pandas>=2.1
+numpy>=1.26
+yfinance>=0.2.40
+feedparser>=6.0
+vaderSentiment>=3.3
+matplotlib>=3.8
+beautifulsoup4>=4.12
+python-telegram-bot>=20.0

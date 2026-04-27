@@ -29,7 +29,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests pandas numpy yfinance feedparser vaderSentiment python-telegram-bot
+          pip install -r requirements.txt
 
       - name: Run Paper Trading
         env:

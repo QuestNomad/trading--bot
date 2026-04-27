@@ -17,7 +17,7 @@ jobs:
           python-version: '3.11'
 
       - name: Libraries installieren
-        run: pip install requests pandas numpy yfinance
+        run: pip install -r requirements.txt
 
       - name: Backtest ausführen
         env:
