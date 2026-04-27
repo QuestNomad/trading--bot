@@ -52,6 +52,13 @@ SPREAD_COST = 0.0005    # 0.05% Spread
 SLIPPAGE_COST = 0.001   # 0.10% Slippage
 TOTAL_COST = TRADING_FEE + SPREAD_COST + SLIPPAGE_COST  # 0.30%
 
+# Optional: Overrides aus config/bot.json (vom Dashboard geschrieben)
+try:
+    from config_loader import apply_overrides as _apply
+    _apply(globals())
+except ImportError:
+    pass
+
 # ── Sektor-Zuordnung (Single Source of Truth in universe.py) ──
 # Import statt Duplikat. SECTORS + ASSET_TO_SECTOR werden dort gepflegt.
 # Hinweis: Crypto nutzt in bot.py coingecko-IDs (bitcoin/ethereum/solana),
@@ -814,6 +821,18 @@ def run_bot():
     journal_geschrieben = set()  # Verhindert Duplikate innerhalb eines Runs
     modus = "[DRY-RUN] " if DRY_RUN else ""
     print(f"=== {modus}Score Trader Bot (Arena Sync) gestartet ===")
+
+    # STOP-Flag Check (vom Dashboard gesetzt)
+    from pathlib import Path as _P
+    _stop = _P(__file__).resolve().parent.parent / "data" / "STOP.flag"
+    if _stop.exists():
+        msg = f"Bot abgebrochen: STOP.flag aktiv ({_stop})"
+        print(msg)
+        try:
+            send_text(f"<b>Bot gestoppt</b>\n{msg}")
+        except Exception:
+            pass
+        return
 
     if not health_check():
         print("Bot abgebrochen wegen Health-Check Fehler.")
