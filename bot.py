@@ -27,8 +27,10 @@ RETRY_DELAY = 5
 
 # ── SMA200 Regime-Filter (Crash-Schutz) ──────────────────────
 # Wenn SPY unter SMA200 -> keine neuen BUY-Signale (SELL geht durch).
-# Basierend auf arena.py Crash-Guard-Pattern. Deaktivierbar via Env-Var.
-ENABLE_SMA200_FILTER = os.environ.get("ENABLE_SMA200_FILTER", "true").lower() == "true"
+# Default: AUS (Backtest 2026-04-27 zeigt: Filter senkt Return von 2806% auf
+# 1032% bei gleichem MaxDD. Trailing-Stop + Sector-Cap leisten den Job bereits.)
+# Aktivierung fuer Saekular-Baer-Schutz: ENABLE_SMA200_FILTER=true setzen.
+ENABLE_SMA200_FILTER = os.environ.get("ENABLE_SMA200_FILTER", "false").lower() == "true"
 SMA200_PERIOD = 200
 REGIME_TICKER = "SPY"
 
