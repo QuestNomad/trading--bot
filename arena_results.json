@@ -1,36 +1,52 @@
 {
-  "start_datum": "2026-04-25",
-  "letztes_update": "",
-  "bots": {
-    "Momentum": {
-      "kapital": 100000,
-      "positionen": {},
-      "trades": 0,
-      "historie": []
-    },
-    "Crash_Guard": {
-      "kapital": 100000,
-      "positionen": {},
-      "trades": 0,
-      "historie": []
-    },
-    "Score_Trader": {
-      "kapital": 100000,
-      "positionen": {},
-      "trades": 0,
-      "historie": []
-    },
-    "Buy_Hold": {
-      "kapital": 100000,
-      "positionen": {},
-      "trades": 0,
-      "historie": []
-    },
-    "Adaptiv": {
-      "kapital": 100000,
-      "positionen": {},
-      "trades": 0,
-      "historie": []
+    "start_datum": "2026-05-01",
+    "letztes_update": "",
+    "bots": {
+          "Momentum": {
+                  "kapital": 100000,
+                  "positionen": {},
+                  "trades": 0,
+                  "history": []
+          },
+          "Crash_Guard": {
+                  "kapital": 100000,
+                  "positionen": {},
+                  "trades": 0,
+                  "history": []
+          },
+          "Kronos": {
+                  "kapital": 100000,
+                  "positionen": {},
+                  "trades": 0,
+                  "history": [],
+                  "meta": {}
+          },
+          "Athena": {
+                  "kapital": 100000,
+                  "positionen": {},
+                  "trades": 0,
+                  "history": [],
+                  "meta": {}
+          },
+          "Buy_Hold": {
+                  "kapital": 100000,
+                  "positionen": {},
+                  "trades": 0,
+                  "history": []
+          },
+          "Adaptiv": {
+                  "kapital": 100000,
+                  "positionen": {},
+                  "trades": 0,
+                  "history": [],
+                  "modus": "momentum"
+          },
+          "Ensemble": {
+                  "kapital": 100000,
+                  "positionen": {},
+                  "trades": 0,
+                  "history": [],
+                  "meta": {}
+          }
     }
-  }
 }
