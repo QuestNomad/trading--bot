@@ -153,9 +153,10 @@ def berechne_indikatoren(close: pd.DataFrame) -> dict:
 def portfolio_wert(bot_state: dict, kurse: dict) -> float:
     """Berechnet den Gesamtwert: Cash + Positionen * aktuelle Kurse."""
     wert = bot_state["kapital"]
-    for symbol, menge in bot_state["positionen"].items():
+    for symbol, pos in bot_state["positionen"].items():
         preis = kurse.get(symbol, 0)
         if preis and not np.isnan(preis):
+            menge = pos["stueck"] if isinstance(pos, dict) else pos
             wert += menge * preis
     return round(wert, 2)
 
@@ -177,7 +178,8 @@ def kaufe(bot_state: dict, symbol: str, betrag: float, kurs: float) -> bool:
 
 def verkaufe(bot_state: dict, symbol: str, kurs: float) -> float:
     """Verkauft die gesamte Position. Gibt den Erloessbetrag zurueck."""
-    menge = bot_state["positionen"].get(symbol, 0)
+    pos = bot_state["positionen"].get(symbol, 0)
+    menge = pos["stueck"] if isinstance(pos, dict) else pos
     if menge <= 0 or kurs <= 0 or np.isnan(kurs):
         return 0
     erloes = menge * kurs
@@ -941,11 +943,11 @@ def main():
     leader_name = rangliste[0][0]
     leader = state["bots"][leader_name]
     if leader["positionen"]:
-        top_pos = sorted(leader["positionen"].items(), key=lambda x: x[1] * kurse.get(x[0], 0), reverse=True)[:5]
+        top_pos = sorted(leader["positionen"].items(), key=lambda x: (x[1]["stueck"] if isinstance(x[1], dict) else x[1]) * kurse.get(x[0], 0), reverse=True)[:5]
         msg_lines.append(f"\n<b>Top-Positionen ({leader_name}):</b>")
-        for sym, menge in top_pos:
+        for sym, pos in top_pos:
+            menge = pos["stueck"] if isinstance(pos, dict) else pos
             wert_pos = menge * kurse.get(sym, 0)
-            msg_lines.append(f"  {sym}: ${wert_pos:,.0f}")
 
     msg = "\n".join(msg_lines)
     sende_telegram(msg)
