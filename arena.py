@@ -808,10 +808,15 @@ def lade_arena_state() -> dict:
     if os.path.exists(ARENA_FILE):
         with open(ARENA_FILE, "r") as f:
             data = json.load(f)
-      # Sicherstellen dass meta-Feld bei allen Bots existiert
-            for bot_name in data["bots"]:
-                      if "meta" not in data["bots"][bot_name]:
-                                  data["bots"][bot_name]["meta"] = {}
+        # Felder-Check: historie->history Migration und meta-Feld
+        for bot_name in data["bots"]:
+            bot = data["bots"][bot_name]
+            if "historie" in bot and "history" not in bot:
+                bot["history"] = bot.pop("historie")
+            if "history" not in bot:
+                bot["history"] = []
+            if "meta" not in bot:
+                bot["meta"] = {}
         return data
 
     logger.info("Kein bestehender State gefunden \u2013 initialisiere neue Arena")
