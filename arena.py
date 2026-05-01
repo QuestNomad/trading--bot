@@ -8,7 +8,7 @@ Bots:
   3. Kronos      - SMA20/BB/RSI/ATR Score-System (kauf_schwelle=8, original)
     4. Athena      - Erweitertes 6-Komponenten Score-System (V2, kauf_schwelle=8)
   4. Buy & Hold   - Gleichgewichtet alle 66 Assets
-  5. Adaptiv      - Wechselt zwischen Momentum, Crash Guard und Cash je nach VIX
+  5. Adaptiv      - Wechselt zwischen Momentum, Crahsh Guard und Cash je nach VIX
 """
 
 import yfinance as yf
@@ -808,9 +808,10 @@ def lade_arena_state() -> dict:
     if os.path.exists(ARENA_FILE):
         with open(ARENA_FILE, "r") as f:
             data = json.load(f)
-        # Sicherstellen dass meta-Feld existiert
-        if "meta" not in data["bots"].get("Kronos", {}):
-            data["bots"]["Kronos"]["meta"] = {}
+      # Sicherstellen dass meta-Feld bei allen Bots existiert
+            for bot_name in data["bots"]:
+                      if "meta" not in data["bots"][bot_name]:
+                                  data["bots"][bot_name]["meta"] = {}
         return data
 
     logger.info("Kein bestehender State gefunden \u2013 initialisiere neue Arena")
