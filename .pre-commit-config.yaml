@@ -1,0 +1,37 @@
+# Pre-Commit Hooks fuer Trading-Bot
+# Setup:
+#   pip install pre-commit
+#   pre-commit install
+# Manuell auf alles:
+#   pre-commit run --all-files
+
+repos:
+  # ── Secret-Scan: gitleaks ───────────────────────────────────
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+        name: gitleaks (Secret-Scan)
+        description: Erkennt API-Keys, Tokens, Passwords vor jedem Commit
+
+  # ── Basis-Hygiene ───────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      # end-of-file-fixer disabled: Windows ASR blockt das Binary (WinError 4551).
+      # Gitleaks deckt den eigentlichen Use-Case (Secret-Scan) ab.
+      # - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  # ── Optional: Python Linting (ruff) ─────────────────────────
+  # Aktivieren wenn gewuenscht. Ruff ist sehr schnell und hat sinnvolle Defaults.
+  # - repo: https://github.com/astral-sh/ruff-pre-commit
+  #   rev: v0.6.9
+  #   hooks:
+  #     - id: ruff
+  #       args: [--fix]
