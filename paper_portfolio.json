@@ -13,7 +13,7 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 4.240713936941964,
+      "atr": 3.8321402413504466,
       "trailing_stop": 707.9278826032366
     },
     "AAPL": {
@@ -27,7 +27,7 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 3.8728550502232144,
+      "atr": 4.082855224609375,
       "trailing_stop": 268.52144949776783
     },
     "AMZN": {
@@ -41,8 +41,8 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 3.0792835780552457,
-      "trailing_stop": 259.02215903145924
+      "atr": 2.6978530883789062,
+      "trailing_stop": 263.95642852783203
     },
     "GOOGL": {
       "name": "Google",
@@ -55,7 +55,7 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 6.238568987165179,
+      "atr": 5.584283011300223,
       "trailing_stop": 366.9742954799107
     },
     "DXSN.DE": {
@@ -64,7 +64,7 @@
       "entry_price": 9.633000373840332,
       "quantity": 75.00171285830129,
       "trailing_stop": 9.713500091007777,
-      "atr": 0.06149993624005999,
+      "atr": 0.06735706329345703,
       "entry_date": "2026-04-29T23:02:35.329215",
       "signal": "BUY",
       "score": -2,
@@ -366,12 +366,25 @@
       "vix": 16.989999771118164,
       "sentiment_world": -0.147,
       "sentiment_eu": -0.36
+    },
+    {
+      "date": "2026-05-04",
+      "portfolio_value": 10514.43,
+      "cash": 4037.56,
+      "positions_value": 6476.88,
+      "num_positions": 5,
+      "peak_value": 10526.12,
+      "drawdown_pct": 0.11,
+      "trades_today": 0,
+      "vix": 18.290000915527344,
+      "sentiment_world": -0.157,
+      "sentiment_eu": -0.118
     }
   ],
   "peak_value": 10526.122138385543,
   "total_fees_paid": 32.34157080169621,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-05-01T22:56:29.505033",
+  "last_run": "2026-05-04T23:01:34.060527",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
