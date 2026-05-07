@@ -13,7 +13,7 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 4.447858537946429,
+      "atr": 4.002855573381696,
       "trailing_stop": 720.4864414760044
     },
     "AAPL": {
@@ -27,8 +27,8 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 4.086427961077009,
-      "trailing_stop": 275.25072588239397
+      "atr": 3.603570120675223,
+      "trailing_stop": 276.6292920793806
     },
     "AMZN": {
       "name": "Amazon",
@@ -41,7 +41,7 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 2.7849960327148438,
+      "atr": 2.996422903878348,
       "trailing_stop": 266.63500213623047
     },
     "GOOGL": {
@@ -55,16 +55,16 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 6.261426653180804,
-      "trailing_stop": 379.2557285853795
+      "atr": 5.860713413783482,
+      "trailing_stop": 380.40784999302457
     },
     "DXSN.DE": {
       "name": "Short DAX",
       "symbol": "DXSN",
       "entry_price": 9.633000373840332,
       "quantity": 75.00171285830129,
-      "trailing_stop": 9.687142304011754,
-      "atr": 0.06971420560564313,
+      "trailing_stop": 9.52307094846453,
+      "atr": 0.08335706165858678,
       "entry_date": "2026-04-29T23:02:35.329215",
       "signal": "BUY",
       "score": -2,
@@ -405,12 +405,25 @@
       "vix": 17.389999389648438,
       "sentiment_world": -0.232,
       "sentiment_eu": -0.164
+    },
+    {
+      "date": "2026-05-07",
+      "portfolio_value": 10624.89,
+      "cash": 4037.56,
+      "positions_value": 6587.34,
+      "num_positions": 5,
+      "peak_value": 10661.42,
+      "drawdown_pct": 0.34,
+      "trades_today": 0,
+      "vix": 17.079999923706055,
+      "sentiment_world": -0.088,
+      "sentiment_eu": -0.09
     }
   ],
   "peak_value": 10661.42410346103,
   "total_fees_paid": 32.34157080169621,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-05-06T22:57:52.961110",
+  "last_run": "2026-05-07T23:05:02.953082",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
