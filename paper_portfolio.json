@@ -13,8 +13,8 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 4.332850864955357,
-      "trailing_stop": 724.6214425223214
+      "atr": 4.121425083705357,
+      "trailing_stop": 726.9357125418527
     },
     "AAPL": {
       "name": "Apple",
@@ -27,8 +27,8 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 3.8221435546875,
-      "trailing_stop": 281.85357666015625
+      "atr": 3.376432146344866,
+      "trailing_stop": 282.55069623674666
     },
     "AMZN": {
       "name": "Amazon",
@@ -41,7 +41,7 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 2.9414215087890625,
+      "atr": 3.088564191545759,
       "trailing_stop": 266.63500213623047
     },
     "GOOGL": {
@@ -55,7 +55,7 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 5.757143293108259,
+      "atr": 6.259283883231027,
       "trailing_stop": 383.52855791364397
     },
     "DXSN.DE": {
@@ -64,7 +64,7 @@
       "entry_price": 9.633000373840332,
       "quantity": 75.00171285830129,
       "trailing_stop": 9.52307094846453,
-      "atr": 0.08892849513462611,
+      "atr": 0.0815713746207101,
       "entry_date": "2026-04-29T23:02:35.329215",
       "signal": "BUY",
       "score": -2,
@@ -431,12 +431,25 @@
       "vix": 17.190000534057617,
       "sentiment_world": -0.129,
       "sentiment_eu": -0.185
+    },
+    {
+      "date": "2026-05-11",
+      "portfolio_value": 10665.24,
+      "cash": 4037.56,
+      "positions_value": 6627.68,
+      "num_positions": 5,
+      "peak_value": 10698.5,
+      "drawdown_pct": 0.31,
+      "trades_today": 0,
+      "vix": 18.3799991607666,
+      "sentiment_world": -0.038,
+      "sentiment_eu": -0.234
     }
   ],
   "peak_value": 10698.497476543735,
   "total_fees_paid": 32.34157080169621,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-05-08T23:02:02.518038",
+  "last_run": "2026-05-11T23:02:20.223528",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
