@@ -1,6 +1,6 @@
 {
   "capital": 10000,
-  "cash": 4037.5556404250115,
+  "cash": 5007.322757361447,
   "positions": {
     "SPY": {
       "name": "S&P 500",
@@ -13,8 +13,8 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 4.121425083705357,
-      "trailing_stop": 726.9357125418527
+      "atr": 3.692138671875,
+      "trailing_stop": 727.1035766601562
     },
     "AAPL": {
       "name": "Apple",
@@ -27,22 +27,8 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 3.376432146344866,
-      "trailing_stop": 282.55069623674666
-    },
-    "AMZN": {
-      "name": "Amazon",
-      "symbol": "AMZN",
-      "entry_price": 238.3800048828125,
-      "quantity": 3.6591872156087164,
-      "stop_loss": 224.4192853655134,
-      "take_profit": 275.6085902622768,
-      "entry_date": "2026-04-12T00:39:05.021964",
-      "signal": "BUY",
-      "score": 8,
-      "is_short": false,
-      "atr": 3.088564191545759,
-      "trailing_stop": 266.63500213623047
+      "atr": 3.0059727260044644,
+      "trailing_stop": 285.78206961495533
     },
     "GOOGL": {
       "name": "Google",
@@ -55,7 +41,7 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 6.259283883231027,
+      "atr": 5.849284580775669,
       "trailing_stop": 383.52855791364397
     },
     "DXSN.DE": {
@@ -64,7 +50,7 @@
       "entry_price": 9.633000373840332,
       "quantity": 75.00171285830129,
       "trailing_stop": 9.52307094846453,
-      "atr": 0.0815713746207101,
+      "atr": 0.07364286695207868,
       "entry_date": "2026-04-29T23:02:35.329215",
       "signal": "BUY",
       "score": -2,
@@ -154,6 +140,20 @@
       "pnl": 70.07,
       "pnl_pct": 5.48,
       "fee_paid": 4.06,
+      "reason": "Trailing-Stop"
+    },
+    {
+      "asset": "Amazon",
+      "asset_id": "AMZN",
+      "signal": "BUY",
+      "entry_price": 238.3800048828125,
+      "exit_price": 265.82000732421875,
+      "quantity": 3.6591872156087164,
+      "entry_date": "2026-04-12T00:39:05.021964",
+      "exit_date": "2026-05-12T23:08:56.921245",
+      "pnl": 97.49,
+      "pnl_pct": 11.18,
+      "fee_paid": 2.92,
       "reason": "Trailing-Stop"
     }
   ],
@@ -444,12 +444,25 @@
       "vix": 18.3799991607666,
       "sentiment_world": -0.038,
       "sentiment_eu": -0.234
+    },
+    {
+      "date": "2026-05-12",
+      "portfolio_value": 10657.33,
+      "cash": 5007.32,
+      "positions_value": 5650.0,
+      "num_positions": 4,
+      "peak_value": 10698.5,
+      "drawdown_pct": 0.38,
+      "trades_today": 1,
+      "vix": 17.989999771118164,
+      "sentiment_world": -0.31,
+      "sentiment_eu": -0.215
     }
   ],
   "peak_value": 10698.497476543735,
-  "total_fees_paid": 32.34157080169621,
+  "total_fees_paid": 35.259626319057595,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-05-11T23:02:20.223528",
+  "last_run": "2026-05-12T23:09:03.093917",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
