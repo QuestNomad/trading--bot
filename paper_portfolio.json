@@ -1,6 +1,6 @@
 {
   "capital": 10000,
-  "cash": 5007.322757361447,
+  "cash": 5729.067572220302,
   "positions": {
     "SPY": {
       "name": "S&P 500",
@@ -13,8 +13,8 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 3.692138671875,
-      "trailing_stop": 727.1035766601562
+      "atr": 3.7899954659598216,
+      "trailing_stop": 730.9400111607143
     },
     "AAPL": {
       "name": "Apple",
@@ -27,8 +27,8 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 3.0059727260044644,
-      "trailing_stop": 285.78206961495533
+      "atr": 3.278135027204241,
+      "trailing_stop": 289.0355900355748
     },
     "GOOGL": {
       "name": "Google",
@@ -41,20 +41,8 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 5.849284580775669,
+      "atr": 6.909284319196429,
       "trailing_stop": 383.52855791364397
-    },
-    "DXSN.DE": {
-      "name": "Short DAX",
-      "symbol": "DXSN",
-      "entry_price": 9.633000373840332,
-      "quantity": 75.00171285830129,
-      "trailing_stop": 9.52307094846453,
-      "atr": 0.07364286695207868,
-      "entry_date": "2026-04-29T23:02:35.329215",
-      "signal": "BUY",
-      "score": -2,
-      "is_short": true
     }
   },
   "trade_history": [
@@ -154,6 +142,20 @@
       "pnl": 97.49,
       "pnl_pct": 11.18,
       "fee_paid": 2.92,
+      "reason": "Trailing-Stop"
+    },
+    {
+      "asset": "Short DAX",
+      "asset_id": "DXSN.DE",
+      "signal": "BUY",
+      "entry_price": 9.633000373840332,
+      "exit_price": 9.652000427246094,
+      "quantity": 75.00171285830129,
+      "entry_date": "2026-04-29T23:02:35.329215",
+      "exit_date": "2026-05-13T23:12:38.051806",
+      "pnl": -0.75,
+      "pnl_pct": -0.1,
+      "fee_paid": 2.17,
       "reason": "Trailing-Stop"
     }
   ],
@@ -457,12 +459,25 @@
       "vix": 17.989999771118164,
       "sentiment_world": -0.31,
       "sentiment_eu": -0.215
+    },
+    {
+      "date": "2026-05-13",
+      "portfolio_value": 10741.82,
+      "cash": 5729.07,
+      "positions_value": 5012.75,
+      "num_positions": 3,
+      "peak_value": 10741.82,
+      "drawdown_pct": 0.0,
+      "trades_today": 1,
+      "vix": 17.8700008392334,
+      "sentiment_world": -0.016,
+      "sentiment_eu": -0.36
     }
   ],
-  "peak_value": 10698.497476543735,
-  "total_fees_paid": 35.259626319057595,
+  "peak_value": 10741.816769431558,
+  "total_fees_paid": 37.431376012715134,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-05-12T23:09:03.093917",
+  "last_run": "2026-05-13T23:12:49.980588",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
