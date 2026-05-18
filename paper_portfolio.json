@@ -13,7 +13,7 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 4.371425083705357,
+      "atr": 4.159994942801339,
       "trailing_stop": 736.7207118443081
     },
     "AAPL": {
@@ -27,7 +27,7 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 3.054231916155134,
+      "atr": 3.003720964704241,
       "trailing_stop": 291.0673152378627
     },
     "GOOGL": {
@@ -41,7 +41,7 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 6.508571079799107,
+      "atr": 6.480000087193081,
       "trailing_stop": 383.52855791364397
     }
   },
@@ -498,12 +498,25 @@
       "vix": 18.43000030517578,
       "sentiment_world": 0.003,
       "sentiment_eu": -0.206
+    },
+    {
+      "date": "2026-05-18",
+      "portfolio_value": 10710.71,
+      "cash": 5729.07,
+      "positions_value": 4981.64,
+      "num_positions": 3,
+      "peak_value": 10751.19,
+      "drawdown_pct": 0.38,
+      "trades_today": 0,
+      "vix": 17.81999969482422,
+      "sentiment_world": -0.044,
+      "sentiment_eu": -0.149
     }
   ],
   "peak_value": 10751.190661521267,
   "total_fees_paid": 37.431376012715134,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-05-15T23:03:04.864619",
+  "last_run": "2026-05-18T23:12:20.921699",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
