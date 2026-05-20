@@ -13,8 +13,8 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 3.045900617327009,
-      "trailing_stop": 291.0673152378627
+      "atr": 3.195977347237723,
+      "trailing_stop": 292.66206795828685
     },
     "GOOGL": {
       "name": "Google",
@@ -27,7 +27,7 @@
       "signal": "BUY",
       "score": 10,
       "is_short": false,
-      "atr": 7.131428309849331,
+      "atr": 4.730715070452009,
       "trailing_stop": 383.52855791364397
     }
   },
@@ -524,12 +524,25 @@
       "vix": 18.059999465942383,
       "sentiment_world": -0.282,
       "sentiment_eu": -0.293
+    },
+    {
+      "date": "2026-05-20",
+      "portfolio_value": 10697.0,
+      "cash": 7882.33,
+      "positions_value": 2814.67,
+      "num_positions": 2,
+      "peak_value": 10751.19,
+      "drawdown_pct": 0.5,
+      "trades_today": 0,
+      "vix": 17.440000534057617,
+      "sentiment_world": -0.295,
+      "sentiment_eu": -0.252
     }
   ],
   "peak_value": 10751.190661521267,
   "total_fees_paid": 43.91060913967851,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-05-19T23:12:26.821311",
+  "last_run": "2026-05-20T23:19:59.154970",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
