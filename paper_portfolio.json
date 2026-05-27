@@ -13,8 +13,8 @@
       "signal": "BUY",
       "score": 8,
       "is_short": false,
-      "atr": 2.312255859375,
-      "trailing_stop": 301.3932189941406
+      "atr": 2.2546190534319197,
+      "trailing_stop": 304.0861489432199
     }
   },
   "trade_history": [
@@ -589,12 +589,25 @@
       "vix": 17.010000228881836,
       "sentiment_world": -0.015,
       "sentiment_eu": -0.269
+    },
+    {
+      "date": "2026-05-27",
+      "portfolio_value": 10732.3,
+      "cash": 8824.33,
+      "positions_value": 1907.97,
+      "num_positions": 1,
+      "peak_value": 10751.19,
+      "drawdown_pct": 0.18,
+      "trades_today": 0,
+      "vix": 16.290000915527344,
+      "sentiment_world": 0.078,
+      "sentiment_eu": -0.158
     }
   ],
   "peak_value": 10751.190661521267,
   "total_fees_paid": 46.74511864467456,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-05-26T23:16:06.898472",
+  "last_run": "2026-05-27T23:22:24.776077",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
