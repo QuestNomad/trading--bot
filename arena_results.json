@@ -269,6 +269,13 @@
           "cash": 160.33,
           "positionen_anzahl": 10,
           "trades_gesamt": 68
+        },
+        {
+          "datum": "2026-06-18",
+          "wert": 98692.43,
+          "cash": 160.33,
+          "positionen_anzahl": 10,
+          "trades_gesamt": 68
         }
       ],
       "meta": {}
@@ -531,6 +538,13 @@
           "cash": 0,
           "positionen_anzahl": 1,
           "trades_gesamt": 1
+        },
+        {
+          "datum": "2026-06-18",
+          "wert": 103907.27,
+          "cash": 0,
+          "positionen_anzahl": 1,
+          "trades_gesamt": 1
         }
       ],
       "meta": {}
@@ -780,6 +794,13 @@
         },
         {
           "datum": "2026-06-17",
+          "wert": 100000,
+          "cash": 100000,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 0
+        },
+        {
+          "datum": "2026-06-18",
           "wert": 100000,
           "cash": 100000,
           "positionen_anzahl": 0,
@@ -1412,6 +1433,13 @@
           "cash": 25126.58,
           "positionen_anzahl": 45,
           "trades_gesamt": 309
+        },
+        {
+          "datum": "2026-06-18",
+          "wert": 96222.66,
+          "cash": 25126.58,
+          "positionen_anzahl": 45,
+          "trades_gesamt": 309
         }
       ],
       "meta": {
@@ -1992,6 +2020,13 @@
           "cash": 0.0,
           "positionen_anzahl": 66,
           "trades_gesamt": 590
+        },
+        {
+          "datum": "2026-06-18",
+          "wert": 95793.36,
+          "cash": 0.0,
+          "positionen_anzahl": 66,
+          "trades_gesamt": 590
         }
       ],
       "meta": {}
@@ -2263,6 +2298,13 @@
           "cash": 0.0,
           "positionen_anzahl": 10,
           "trades_gesamt": 65
+        },
+        {
+          "datum": "2026-06-18",
+          "wert": 96391.96,
+          "cash": 0.0,
+          "positionen_anzahl": 10,
+          "trades_gesamt": 65
         }
       ],
       "modus": "momentum",
@@ -2513,6 +2555,13 @@
         },
         {
           "datum": "2026-06-17",
+          "wert": 100000,
+          "cash": 100000,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 0
+        },
+        {
+          "datum": "2026-06-18",
           "wert": 100000,
           "cash": 100000,
           "positionen_anzahl": 0,
