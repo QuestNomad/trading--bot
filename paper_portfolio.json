@@ -1,14 +1,14 @@
 {
   "capital": 10000,
-  "cash": 9206.068044996859,
+  "cash": 8463.080413706739,
   "positions": {
     "XSPS.L": {
       "name": "Short S&P 500",
       "symbol": "XSPS",
       "entry_price": 422.92498779296875,
       "quantity": 1.7549451004939143,
-      "trailing_stop": 428.7410801478795,
-      "atr": 2.2553580147879466,
+      "trailing_stop": 427.21070861816406,
+      "atr": 2.3035736083984375,
       "entry_date": "2026-07-03T23:12:41.232170",
       "signal": "BUY",
       "score": -2,
@@ -19,9 +19,21 @@
       "symbol": "QQQS",
       "entry_price": 1.6720000505447388,
       "quantity": 443.743949356622,
-      "trailing_stop": 1.7915714723723275,
-      "atr": 0.039857140609196255,
+      "trailing_stop": 1.7617499743189131,
+      "atr": 0.03875000987734113,
       "entry_date": "2026-07-06T23:14:02.495707",
+      "signal": "BUY",
+      "score": -2,
+      "is_short": true
+    },
+    "BITI": {
+      "name": "Short Krypto",
+      "symbol": "BITI",
+      "entry_price": 25.34000015258789,
+      "quantity": 29.233043836766324,
+      "trailing_stop": 26.97660541534424,
+      "atr": 0.5455350875854492,
+      "entry_date": "2026-07-07T23:08:12.153892",
       "signal": "BUY",
       "score": -2,
       "is_short": true
@@ -1018,12 +1030,25 @@
       "vix": 15.569999694824219,
       "sentiment_world": -0.028,
       "sentiment_eu": -0.176
+    },
+    {
+      "date": "2026-07-07",
+      "portfolio_value": 10671.63,
+      "cash": 8463.08,
+      "positions_value": 2208.55,
+      "num_positions": 3,
+      "peak_value": 10759.0,
+      "drawdown_pct": 0.81,
+      "trades_today": 1,
+      "vix": 16.1299991607666,
+      "sentiment_world": 0.108,
+      "sentiment_eu": -0.189
     }
   ],
   "peak_value": 10759.00054790066,
-  "total_fees_paid": 65.73638370018114,
+  "total_fees_paid": 67.95867970603393,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-07-06T23:14:05.770002",
+  "last_run": "2026-07-07T23:08:15.569498",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
