@@ -7,8 +7,8 @@
       "symbol": "XSPS",
       "entry_price": 422.92498779296875,
       "quantity": 1.7549451004939143,
-      "trailing_stop": 427.21070861816406,
-      "atr": 2.021429879324777,
+      "trailing_stop": 427.16070338657926,
+      "atr": 2.4535718645368303,
       "entry_date": "2026-07-03T23:12:41.232170",
       "signal": "BUY",
       "score": -2,
@@ -19,8 +19,8 @@
       "symbol": "BITI",
       "entry_price": 25.34000015258789,
       "quantity": 29.233043836766324,
-      "trailing_stop": 26.97660541534424,
-      "atr": 0.558100836617606,
+      "trailing_stop": 26.90600722176688,
+      "atr": 0.5386687687465123,
       "entry_date": "2026-07-07T23:08:12.153892",
       "signal": "BUY",
       "score": -2,
@@ -1071,12 +1071,25 @@
       "vix": 15.84000015258789,
       "sentiment_world": -0.16,
       "sentiment_eu": -0.3
+    },
+    {
+      "date": "2026-07-10",
+      "portfolio_value": 10723.95,
+      "cash": 9247.92,
+      "positions_value": 1476.03,
+      "num_positions": 2,
+      "peak_value": 10759.0,
+      "drawdown_pct": 0.33,
+      "trades_today": 0,
+      "vix": 15.029999732971191,
+      "sentiment_world": -0.033,
+      "sentiment_eu": -0.332
     }
   ],
   "peak_value": 10759.00054790066,
   "total_fees_paid": 70.32028506925752,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-07-09T23:19:13.757696",
+  "last_run": "2026-07-10T23:04:53.568052",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
