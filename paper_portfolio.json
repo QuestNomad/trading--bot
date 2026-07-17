@@ -1,6 +1,6 @@
 {
   "capital": 10000,
-  "cash": 8500.387767702216,
+  "cash": 9337.259441193693,
   "positions": {
     "XSPS.L": {
       "name": "Short S&P 500",
@@ -8,7 +8,7 @@
       "entry_price": 422.92498779296875,
       "quantity": 1.7549451004939143,
       "trailing_stop": 422.35357666015625,
-      "atr": 2.36785888671875,
+      "atr": 2.6714324951171875,
       "entry_date": "2026-07-03T23:12:41.232170",
       "signal": "BUY",
       "score": -2,
@@ -20,20 +20,8 @@
       "entry_price": 25.34000015258789,
       "quantity": 29.233043836766324,
       "trailing_stop": 26.288421358380997,
-      "atr": 0.49115071977887836,
+      "atr": 0.4784348351614816,
       "entry_date": "2026-07-07T23:08:12.153892",
-      "signal": "BUY",
-      "score": -2,
-      "is_short": true
-    },
-    "QQQS.L": {
-      "name": "Short Nasdaq",
-      "symbol": "QQQS",
-      "entry_price": 1.6514999866485596,
-      "quantity": 451.2848583682032,
-      "trailing_stop": 1.8183214579309737,
-      "atr": 0.05221429892948696,
-      "entry_date": "2026-07-13T23:01:56.379993",
       "signal": "BUY",
       "score": -2,
       "is_short": true
@@ -234,6 +222,20 @@
       "pnl": 42.9,
       "pnl_pct": 5.78,
       "fee_paid": 2.36,
+      "reason": "Trailing-Stop"
+    },
+    {
+      "asset": "Short Nasdaq",
+      "asset_id": "QQQS.L",
+      "signal": "BUY",
+      "entry_price": 1.6514999866485596,
+      "exit_price": 1.8600000143051147,
+      "quantity": 451.2848583682032,
+      "entry_date": "2026-07-13T23:01:56.379993",
+      "exit_date": "2026-07-17T22:55:21.784034",
+      "pnl": 91.57,
+      "pnl_pct": 12.29,
+      "fee_paid": 2.52,
       "reason": "Trailing-Stop"
     }
   ],
@@ -1148,12 +1150,25 @@
       "vix": 16.729999542236328,
       "sentiment_world": 0.091,
       "sentiment_eu": 0.036
+    },
+    {
+      "date": "2026-07-17",
+      "portfolio_value": 10812.18,
+      "cash": 9337.26,
+      "positions_value": 1474.92,
+      "num_positions": 2,
+      "peak_value": 10812.18,
+      "drawdown_pct": 0.0,
+      "trades_today": 1,
+      "vix": 18.770000457763672,
+      "sentiment_world": -0.083,
+      "sentiment_eu": -0.025
     }
   ],
-  "peak_value": 10759.00054790066,
-  "total_fees_paid": 72.55617588196688,
+  "peak_value": 10812.17984239503,
+  "total_fees_paid": 75.0743454110285,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-07-16T23:03:51.831676",
+  "last_run": "2026-07-17T22:55:32.198102",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
