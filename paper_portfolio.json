@@ -1,14 +1,14 @@
 {
   "capital": 10000,
-  "cash": 9339.703375808696,
+  "cash": 8590.551921670345,
   "positions": {
     "BITI": {
       "name": "Short Krypto",
       "symbol": "BITI",
       "entry_price": 25.34000015258789,
       "quantity": 29.233043836766324,
-      "trailing_stop": 25.210714067731583,
-      "atr": 0.42357117789132254,
+      "trailing_stop": 24.754053388323104,
+      "atr": 0.31135123116629465,
       "entry_date": "2026-07-07T23:08:12.153892",
       "signal": "BUY",
       "score": -2,
@@ -19,9 +19,21 @@
       "symbol": "DXSN",
       "entry_price": 9.225000381469727,
       "quantity": 81.29466465639436,
-      "trailing_stop": 9.217571667262487,
-      "atr": 0.051857130868094306,
+      "trailing_stop": 9.116071701049805,
+      "atr": 0.060357093811035156,
       "entry_date": "2026-07-23T23:03:37.404458",
+      "signal": "BUY",
+      "score": -2,
+      "is_short": true
+    },
+    "QQQS.L": {
+      "name": "Short Nasdaq",
+      "symbol": "QQQS",
+      "entry_price": 1.8250000476837158,
+      "quantity": 409.26613833265935,
+      "trailing_stop": 2.0230000019073486,
+      "atr": 0.06599998474121094,
+      "entry_date": "2026-08-04T23:09:46.151261",
       "signal": "BUY",
       "score": -2,
       "is_short": true
@@ -1320,12 +1332,25 @@
       "vix": 15.859999656677246,
       "sentiment_world": -0.199,
       "sentiment_eu": -0.352
+    },
+    {
+      "date": "2026-08-04",
+      "portfolio_value": 10760.16,
+      "cash": 8590.55,
+      "positions_value": 2169.61,
+      "num_positions": 3,
+      "peak_value": 10836.76,
+      "drawdown_pct": 0.71,
+      "trades_today": 1,
+      "vix": 16.5,
+      "sentiment_world": -0.159,
+      "sentiment_eu": -0.144
     }
   ],
   "peak_value": 10836.759561176264,
-  "total_fees_paid": 79.59489874968965,
+  "total_fees_paid": 81.83563091560694,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-08-03T23:10:17.806421",
+  "last_run": "2026-08-04T23:09:49.600801",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
