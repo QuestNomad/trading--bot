@@ -7,8 +7,8 @@
       "symbol": "BITI",
       "entry_price": 25.34000015258789,
       "quantity": 29.233043836766324,
-      "trailing_stop": 20.617857388087682,
-      "atr": 0.45000008174351286,
+      "trailing_stop": 20.377142906188965,
+      "atr": 0.45571422576904297,
       "entry_date": "2026-07-07T23:08:12.153892",
       "signal": "BUY",
       "score": -2,
@@ -1557,12 +1557,25 @@
       "vix": 15.210000038146973,
       "sentiment_world": 0.277,
       "sentiment_eu": -0.268
+    },
+    {
+      "date": "2026-08-28",
+      "portfolio_value": 10576.7,
+      "cash": 10020.98,
+      "positions_value": 555.72,
+      "num_positions": 1,
+      "peak_value": 10836.76,
+      "drawdown_pct": 2.4,
+      "trades_today": 0,
+      "vix": 14.510000228881836,
+      "sentiment_world": -0.154,
+      "sentiment_eu": -0.226
     }
   ],
   "peak_value": 10836.759561176264,
   "total_fees_paid": 86.13983458960377,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-08-27T03:02:58.716204",
+  "last_run": "2026-08-28T06:03:30.136728",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
