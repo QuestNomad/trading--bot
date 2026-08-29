@@ -1,6 +1,6 @@
 {
   "capital": 10000,
-  "cash": 10020.982275995286,
+  "cash": 7809.409618110018,
   "positions": {
     "BITI": {
       "name": "Short Krypto",
@@ -8,8 +8,44 @@
       "entry_price": 25.34000015258789,
       "quantity": 29.233043836766324,
       "trailing_stop": 20.377142906188965,
-      "atr": 0.45571422576904297,
+      "atr": 0.46857125418526785,
       "entry_date": "2026-07-07T23:08:12.153892",
+      "signal": "BUY",
+      "score": -2,
+      "is_short": true
+    },
+    "XSPS.L": {
+      "name": "Short S&P 500",
+      "symbol": "XSPS",
+      "entry_price": 406.25,
+      "quantity": 1.809572857820119,
+      "trailing_stop": 410.88926478794644,
+      "atr": 1.5464215959821428,
+      "entry_date": "2026-08-29T03:37:05.863719",
+      "signal": "BUY",
+      "score": -2,
+      "is_short": true
+    },
+    "DXSN.DE": {
+      "name": "Short DAX",
+      "symbol": "DXSN",
+      "entry_price": 8.83899974822998,
+      "quantity": 83.15261211567795,
+      "trailing_stop": 8.925142696925572,
+      "atr": 0.02871431623186384,
+      "entry_date": "2026-08-29T03:37:08.228672",
+      "signal": "BUY",
+      "score": -2,
+      "is_short": true
+    },
+    "QQQS.L": {
+      "name": "Short Nasdaq",
+      "symbol": "QQQS",
+      "entry_price": 1.655500054359436,
+      "quantity": 443.8736752391333,
+      "trailing_stop": 1.7542857101985385,
+      "atr": 0.03292855194636753,
+      "entry_date": "2026-08-29T03:37:08.841862",
       "signal": "BUY",
       "score": -2,
       "is_short": true
@@ -1570,12 +1606,25 @@
       "vix": 14.510000228881836,
       "sentiment_world": -0.154,
       "sentiment_eu": -0.226
+    },
+    {
+      "date": "2026-08-29",
+      "portfolio_value": 10586.17,
+      "cash": 7809.41,
+      "positions_value": 2776.76,
+      "num_positions": 4,
+      "peak_value": 10836.76,
+      "drawdown_pct": 2.31,
+      "trades_today": 3,
+      "vix": 14.430000305175781,
+      "sentiment_world": -0.173,
+      "sentiment_eu": -0.215
     }
   ],
   "peak_value": 10836.759561176264,
-  "total_fees_paid": 86.13983458960377,
+  "total_fees_paid": 92.75470794319878,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-08-28T06:03:30.136728",
+  "last_run": "2026-08-29T03:37:10.150825",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
