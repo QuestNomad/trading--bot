@@ -1,6 +1,6 @@
 {
   "capital": 10000,
-  "cash": 7809.409618110018,
+  "cash": 9288.489746215595,
   "positions": {
     "BITI": {
       "name": "Short Krypto",
@@ -8,32 +8,8 @@
       "entry_price": 25.34000015258789,
       "quantity": 29.233043836766324,
       "trailing_stop": 20.377142906188965,
-      "atr": 0.479285512651716,
+      "atr": 0.4771427427019392,
       "entry_date": "2026-07-07T23:08:12.153892",
-      "signal": "BUY",
-      "score": -2,
-      "is_short": true
-    },
-    "XSPS.L": {
-      "name": "Short S&P 500",
-      "symbol": "XSPS",
-      "entry_price": 406.25,
-      "quantity": 1.809572857820119,
-      "trailing_stop": 409.79284232003346,
-      "atr": 1.5642787388392858,
-      "entry_date": "2026-08-29T03:37:05.863719",
-      "signal": "BUY",
-      "score": -2,
-      "is_short": true
-    },
-    "DXSN.DE": {
-      "name": "Short DAX",
-      "symbol": "DXSN",
-      "entry_price": 8.83899974822998,
-      "quantity": 83.15261211567795,
-      "trailing_stop": 8.873785427638463,
-      "atr": 0.032928603036063056,
-      "entry_date": "2026-08-29T03:37:08.228672",
       "signal": "BUY",
       "score": -2,
       "is_short": true
@@ -44,7 +20,7 @@
       "entry_price": 1.655500054359436,
       "quantity": 443.8736752391333,
       "trailing_stop": 1.7254999365125383,
-      "atr": 0.034499985831124444,
+      "atr": 0.04014284270150321,
       "entry_date": "2026-08-29T03:37:08.841862",
       "signal": "BUY",
       "score": -2,
@@ -302,6 +278,34 @@
       "pnl": -39.37,
       "pnl_pct": -5.27,
       "fee_paid": 2.13,
+      "reason": "Trailing-Stop"
+    },
+    {
+      "asset": "Short S&P 500",
+      "asset_id": "XSPS.L",
+      "signal": "BUY",
+      "entry_price": 406.25,
+      "exit_price": 412.04998779296875,
+      "quantity": 1.809572857820119,
+      "entry_date": "2026-08-29T03:37:05.863719",
+      "exit_date": "2026-09-01T23:56:28.141130",
+      "pnl": 8.26,
+      "pnl_pct": 1.12,
+      "fee_paid": 2.24,
+      "reason": "Trailing-Stop"
+    },
+    {
+      "asset": "Short DAX",
+      "asset_id": "DXSN.DE",
+      "signal": "BUY",
+      "entry_price": 8.83899974822998,
+      "exit_price": 8.87399959564209,
+      "quantity": 83.15261211567795,
+      "entry_date": "2026-08-29T03:37:08.228672",
+      "exit_date": "2026-09-01T23:56:28.141458",
+      "pnl": 0.7,
+      "pnl_pct": 0.09,
+      "fee_paid": 2.21,
       "reason": "Trailing-Stop"
     }
   ],
@@ -1632,12 +1636,25 @@
       "vix": 14.920000076293945,
       "sentiment_world": -0.374,
       "sentiment_eu": -0.143
+    },
+    {
+      "date": "2026-09-01",
+      "portfolio_value": 10610.85,
+      "cash": 9288.49,
+      "positions_value": 1322.36,
+      "num_positions": 2,
+      "peak_value": 10836.76,
+      "drawdown_pct": 2.08,
+      "trades_today": 2,
+      "vix": 16.34000015258789,
+      "sentiment_world": 0.091,
+      "sentiment_eu": -0.198
     }
   ],
   "peak_value": 10836.759561176264,
-  "total_fees_paid": 92.75470794319878,
+  "total_fees_paid": 97.20530010399791,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-09-01T01:10:50.664588",
+  "last_run": "2026-09-01T23:56:40.464627",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
