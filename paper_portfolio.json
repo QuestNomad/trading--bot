@@ -8,7 +8,7 @@
       "entry_price": 25.34000015258789,
       "quantity": 29.233043836766324,
       "trailing_stop": 20.377142906188965,
-      "atr": 0.4771427427019392,
+      "atr": 0.49400220598493305,
       "entry_date": "2026-07-07T23:08:12.153892",
       "signal": "BUY",
       "score": -2,
@@ -1649,12 +1649,25 @@
       "vix": 16.34000015258789,
       "sentiment_world": 0.091,
       "sentiment_eu": -0.198
+    },
+    {
+      "date": "2026-09-02",
+      "portfolio_value": 10610.85,
+      "cash": 9288.49,
+      "positions_value": 1322.36,
+      "num_positions": 2,
+      "peak_value": 10836.76,
+      "drawdown_pct": 2.08,
+      "trades_today": 0,
+      "vix": 15.199999809265137,
+      "sentiment_world": -0.037,
+      "sentiment_eu": -0.197
     }
   ],
   "peak_value": 10836.759561176264,
   "total_fees_paid": 97.20530010399791,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-09-01T23:56:40.464627",
+  "last_run": "2026-09-02T23:59:32.176165",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
