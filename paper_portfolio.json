@@ -7,8 +7,8 @@
       "symbol": "BITI",
       "entry_price": 25.34000015258789,
       "quantity": 29.233043836766324,
-      "trailing_stop": 19.797888210841588,
-      "atr": 0.3115809304373605,
+      "trailing_stop": 19.714404242379324,
+      "atr": 0.3114678519112723,
       "entry_date": "2026-07-07T23:08:12.153892",
       "signal": "BUY",
       "score": -2,
@@ -20,7 +20,7 @@
       "entry_price": 1.655500054359436,
       "quantity": 443.8736752391333,
       "trailing_stop": 1.7254999365125383,
-      "atr": 0.03275000197546823,
+      "atr": 0.033428583826337545,
       "entry_date": "2026-08-29T03:37:08.841862",
       "signal": "BUY",
       "score": -2,
@@ -1766,12 +1766,25 @@
       "vix": 17.100000381469727,
       "sentiment_world": -0.09,
       "sentiment_eu": -0.185
+    },
+    {
+      "date": "2026-09-16",
+      "portfolio_value": 10600.95,
+      "cash": 9288.49,
+      "positions_value": 1312.46,
+      "num_positions": 2,
+      "peak_value": 10836.76,
+      "drawdown_pct": 2.18,
+      "trades_today": 0,
+      "vix": 17.200000762939453,
+      "sentiment_world": 0.121,
+      "sentiment_eu": -0.283
     }
   ],
   "peak_value": 10836.759561176264,
   "total_fees_paid": 97.20530010399791,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-09-15T00:26:39.710794",
+  "last_run": "2026-09-16T00:06:02.417164",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
