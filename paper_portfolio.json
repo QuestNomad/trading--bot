@@ -1,6 +1,6 @@
 {
   "capital": 10000,
-  "cash": 10062.938341089073,
+  "cash": 9323.060085031246,
   "positions": {
     "BITI": {
       "name": "Short Krypto",
@@ -8,8 +8,20 @@
       "entry_price": 25.34000015258789,
       "quantity": 29.233043836766324,
       "trailing_stop": 19.714404242379324,
-      "atr": 0.3573079790387835,
+      "atr": 0.34559849330357145,
       "entry_date": "2026-07-07T23:08:12.153892",
+      "signal": "BUY",
+      "score": -2,
+      "is_short": true
+    },
+    "QQQS.L": {
+      "name": "Short Nasdaq",
+      "symbol": "QQQS",
+      "entry_price": 1.6720000505447388,
+      "quantity": 441.1873432878574,
+      "trailing_stop": 1.7751786538532803,
+      "atr": 0.034392867769513814,
+      "entry_date": "2026-09-19T00:06:04.977531",
       "signal": "BUY",
       "score": -2,
       "is_short": true
@@ -1807,12 +1819,25 @@
       "vix": 15.4399995803833,
       "sentiment_world": 0.099,
       "sentiment_eu": -0.229
+    },
+    {
+      "date": "2026-09-19",
+      "portfolio_value": 10626.97,
+      "cash": 9323.06,
+      "positions_value": 1303.91,
+      "num_positions": 2,
+      "peak_value": 10836.76,
+      "drawdown_pct": 1.94,
+      "trades_today": 1,
+      "vix": 14.8100004196167,
+      "sentiment_world": -0.075,
+      "sentiment_eu": -0.059
     }
   ],
   "peak_value": 10836.759561176264,
-  "total_fees_paid": 99.53563689900336,
+  "total_fees_paid": 101.74863267983436,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-09-18T00:02:38.263475",
+  "last_run": "2026-09-19T00:06:08.203715",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
