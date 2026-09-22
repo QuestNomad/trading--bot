@@ -731,6 +731,13 @@
           "cash": 47.09,
           "positionen_anzahl": 10,
           "trades_gesamt": 188
+        },
+        {
+          "datum": "2026-09-18",
+          "wert": 91157.73,
+          "cash": 47.09,
+          "positionen_anzahl": 10,
+          "trades_gesamt": 188
         }
       ],
       "meta": {}
@@ -1445,6 +1452,13 @@
         {
           "datum": "2026-09-17",
           "wert": 106114.16,
+          "cash": 0,
+          "positionen_anzahl": 1,
+          "trades_gesamt": 1
+        },
+        {
+          "datum": "2026-09-18",
+          "wert": 105987.54,
           "cash": 0,
           "positionen_anzahl": 1,
           "trades_gesamt": 1
@@ -2177,12 +2191,19 @@
           "cash": 100000,
           "positionen_anzahl": 0,
           "trades_gesamt": 0
+        },
+        {
+          "datum": "2026-09-18",
+          "wert": 100000,
+          "cash": 100000,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 0
         }
       ],
       "meta": {}
     },
     "Athena": {
-      "kapital": 29801.520091092585,
+      "kapital": 28357.898616666316,
       "positionen": {
         "MSTR": {
           "kauf_kurs": 96.16,
@@ -2527,9 +2548,17 @@
           "high": 434.6700134277344,
           "datum": "2026-09-17",
           "score": 9
+        },
+        "QQQ": {
+          "kauf_kurs": 721.45,
+          "stueck": 2,
+          "sl": 707.63,
+          "high": 721.45,
+          "datum": "2026-09-18",
+          "score": 9
         }
       },
-      "trades": 795,
+      "trades": 796,
       "history": [
         {
           "datum": "2026-04-30",
@@ -3244,6 +3273,13 @@
           "cash": 29801.52,
           "positionen_anzahl": 43,
           "trades_gesamt": 795
+        },
+        {
+          "datum": "2026-09-18",
+          "wert": 105434.02,
+          "cash": 28357.9,
+          "positionen_anzahl": 44,
+          "trades_gesamt": 796
         }
       ],
       "meta": {
@@ -3252,8 +3288,8 @@
           "datum": "2026-09-10"
         },
         "QQQ": {
-          "score": 10,
-          "datum": "2026-08-20"
+          "score": 9,
+          "datum": "2026-09-18"
         },
         "IWM": {
           "score": 9,
@@ -4294,6 +4330,13 @@
           "cash": 0.0,
           "positionen_anzahl": 66,
           "trades_gesamt": 1514
+        },
+        {
+          "datum": "2026-09-18",
+          "wert": 109667.63,
+          "cash": 0.0,
+          "positionen_anzahl": 66,
+          "trades_gesamt": 1514
         }
       ],
       "meta": {}
@@ -5027,6 +5070,13 @@
           "cash": 144.82,
           "positionen_anzahl": 10,
           "trades_gesamt": 192
+        },
+        {
+          "datum": "2026-09-18",
+          "wert": 89071.87,
+          "cash": 144.82,
+          "positionen_anzahl": 10,
+          "trades_gesamt": 192
         }
       ],
       "modus": "momentum",
@@ -5739,6 +5789,13 @@
         },
         {
           "datum": "2026-09-17",
+          "wert": 99640.96,
+          "cash": 99640.96,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 2
+        },
+        {
+          "datum": "2026-09-18",
           "wert": 99640.96,
           "cash": 99640.96,
           "positionen_anzahl": 0,
