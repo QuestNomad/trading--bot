@@ -1,8 +1,8 @@
 {
-  "datum": "20.09.2026",
+  "datum": "27.09.2026",
   "periode": "2y",
   "assets_count": 38,
-  "beste_strategie": "Locker",
+  "beste_strategie": "Original",
   "resultate": [
     {
       "name": "Original",
@@ -14,12 +14,12 @@
         "tp": 4
       },
       "bot_return": 3.1,
-      "hold_return": 18.6,
-      "trades": 568,
-      "winrate": 41.2,
-      "gewonnen": 234,
+      "hold_return": 17.3,
+      "trades": 566,
+      "winrate": 41.0,
+      "gewonnen": 232,
       "verloren": 334,
-      "diff": -15.5
+      "diff": -14.2
     },
     {
       "name": "Aggressiv",
@@ -30,13 +30,13 @@
         "sl": 3,
         "tp": 8
       },
-      "bot_return": 3.1,
-      "hold_return": 18.6,
-      "trades": 297,
-      "winrate": 37.0,
+      "bot_return": 2.9,
+      "hold_return": 17.3,
+      "trades": 298,
+      "winrate": 36.9,
       "gewonnen": 110,
-      "verloren": 187,
-      "diff": -15.5
+      "verloren": 188,
+      "diff": -14.4
     },
     {
       "name": "Locker",
@@ -47,13 +47,13 @@
         "sl": 3,
         "tp": 6
       },
-      "bot_return": 3.4,
-      "hold_return": 18.6,
-      "trades": 438,
-      "winrate": 40.4,
-      "gewonnen": 177,
-      "verloren": 261,
-      "diff": -15.2
+      "bot_return": 3.1,
+      "hold_return": 17.3,
+      "trades": 439,
+      "winrate": 40.1,
+      "gewonnen": 176,
+      "verloren": 263,
+      "diff": -14.2
     },
     {
       "name": "Konservativ",
@@ -64,13 +64,13 @@
         "sl": 2,
         "tp": 5
       },
-      "bot_return": 2.0,
-      "hold_return": 18.6,
-      "trades": 278,
-      "winrate": 38.8,
-      "gewonnen": 108,
-      "verloren": 170,
-      "diff": -16.6
+      "bot_return": 2.2,
+      "hold_return": 17.3,
+      "trades": 283,
+      "winrate": 39.2,
+      "gewonnen": 111,
+      "verloren": 172,
+      "diff": -15.1
     }
   ]
 }
