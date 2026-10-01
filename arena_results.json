@@ -1,6 +1,6 @@
 {
   "start_datum": "2026-05-01",
-  "letztes_update": "2026-09-28",
+  "letztes_update": "2026-09-29",
   "bots": {
     "Momentum": {
       "kapital": 0.0,
@@ -780,6 +780,13 @@
           "cash": 0.0,
           "positionen_anzahl": 10,
           "trades_gesamt": 206
+        },
+        {
+          "datum": "2026-09-29",
+          "wert": 93401.72,
+          "cash": 0.0,
+          "positionen_anzahl": 10,
+          "trades_gesamt": 206
         }
       ],
       "meta": {}
@@ -1550,6 +1557,13 @@
         {
           "datum": "2026-09-28",
           "wert": 106532.99,
+          "cash": 0,
+          "positionen_anzahl": 1,
+          "trades_gesamt": 1
+        },
+        {
+          "datum": "2026-09-29",
+          "wert": 106336.8,
           "cash": 0,
           "positionen_anzahl": 1,
           "trades_gesamt": 1
@@ -2324,12 +2338,19 @@
           "cash": 100000,
           "positionen_anzahl": 0,
           "trades_gesamt": 0
+        },
+        {
+          "datum": "2026-09-29",
+          "wert": 100000,
+          "cash": 100000,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 0
         }
       ],
       "meta": {}
     },
     "Athena": {
-      "kapital": 35554.343605944145,
+      "kapital": 38360.37988838433,
       "positionen": {
         "MSTR": {
           "kauf_kurs": 96.16,
@@ -2379,19 +2400,11 @@
           "datum": "2026-09-08",
           "score": 10
         },
-        "AAPL": {
-          "kauf_kurs": 316.22,
-          "stueck": 4,
-          "sl": 305.07,
-          "high": 341.07000732421875,
-          "datum": "2026-09-08",
-          "score": 12
-        },
         "SHOP": {
           "kauf_kurs": 134.1,
           "stueck": 10,
           "sl": 123.97,
-          "high": 147.74000549316406,
+          "high": 148.25999450683594,
           "datum": "2026-09-08",
           "score": 9
         },
@@ -2439,7 +2452,7 @@
           "kauf_kurs": 136.62,
           "stueck": 12,
           "sl": 116.31,
-          "high": 198.8800048828125,
+          "high": 203.4600067138672,
           "datum": "2026-09-10",
           "score": 12
         },
@@ -2543,7 +2556,7 @@
           "kauf_kurs": 430.26,
           "stueck": 3,
           "sl": 410.68,
-          "high": 452.8800048828125,
+          "high": 456.94000244140625,
           "datum": "2026-09-17",
           "score": 9
         },
@@ -2562,14 +2575,6 @@
           "high": 69.1,
           "datum": "2026-09-22",
           "score": 9
-        },
-        "FXI": {
-          "kauf_kurs": 35.0,
-          "stueck": 44,
-          "sl": 33.94,
-          "high": 35.0,
-          "datum": "2026-09-22",
-          "score": 10
         },
         "AAXJ": {
           "kauf_kurs": 120.29,
@@ -2647,7 +2652,7 @@
           "kauf_kurs": 715.62,
           "stueck": 2,
           "sl": 654.0,
-          "high": 715.62,
+          "high": 738.7899780273438,
           "datum": "2026-09-28",
           "score": 9
         },
@@ -2655,12 +2660,12 @@
           "kauf_kurs": 1771.41,
           "stueck": 1,
           "sl": 1673.16,
-          "high": 1771.41,
+          "high": 1834.3900146484375,
           "datum": "2026-09-28",
           "score": 9
         }
       },
-      "trades": 825,
+      "trades": 827,
       "history": [
         {
           "datum": "2026-04-30",
@@ -3424,6 +3429,13 @@
           "cash": 35554.34,
           "positionen_anzahl": 41,
           "trades_gesamt": 825
+        },
+        {
+          "datum": "2026-09-29",
+          "wert": 106199.23,
+          "cash": 38360.38,
+          "positionen_anzahl": 39,
+          "trades_gesamt": 827
         }
       ],
       "meta": {
@@ -4523,6 +4535,13 @@
           "cash": 0.0,
           "positionen_anzahl": 66,
           "trades_gesamt": 1514
+        },
+        {
+          "datum": "2026-09-29",
+          "wert": 109646.23,
+          "cash": 0.0,
+          "positionen_anzahl": 66,
+          "trades_gesamt": 1514
         }
       ],
       "meta": {}
@@ -5305,6 +5324,13 @@
           "cash": 0.0,
           "positionen_anzahl": 10,
           "trades_gesamt": 210
+        },
+        {
+          "datum": "2026-09-29",
+          "wert": 91253.81,
+          "cash": 0.0,
+          "positionen_anzahl": 10,
+          "trades_gesamt": 210
         }
       ],
       "modus": "momentum",
@@ -6073,6 +6099,13 @@
         },
         {
           "datum": "2026-09-28",
+          "wert": 99640.96,
+          "cash": 99640.96,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 2
+        },
+        {
+          "datum": "2026-09-29",
           "wert": 99640.96,
           "cash": 99640.96,
           "positionen_anzahl": 0,
