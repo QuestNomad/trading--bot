@@ -7,8 +7,8 @@
       "symbol": "BITI",
       "entry_price": 25.34000015258789,
       "quantity": 29.233043836766324,
-      "trailing_stop": 18.337141309465682,
-      "atr": 0.32581233978271484,
+      "trailing_stop": 17.997253554207937,
+      "atr": 0.2724177496773856,
       "entry_date": "2026-07-07T23:08:12.153892",
       "signal": "BUY",
       "score": -2,
@@ -19,8 +19,8 @@
       "symbol": "QQQS",
       "entry_price": 1.6720000505447388,
       "quantity": 441.1873432878574,
-      "trailing_stop": 1.5937499744551522,
-      "atr": 0.043250015803745816,
+      "trailing_stop": 1.5834643159593855,
+      "atr": 0.04432143483843122,
       "entry_date": "2026-09-19T00:06:04.977531",
       "signal": "BUY",
       "score": -2,
@@ -1962,12 +1962,25 @@
       "vix": 15.3100004196167,
       "sentiment_world": -0.195,
       "sentiment_eu": -0.331
+    },
+    {
+      "date": "2026-10-06",
+      "portfolio_value": 10465.23,
+      "cash": 9323.06,
+      "positions_value": 1142.17,
+      "num_positions": 2,
+      "peak_value": 10836.76,
+      "drawdown_pct": 3.43,
+      "trades_today": 0,
+      "vix": 15.520000457763672,
+      "sentiment_world": 0.139,
+      "sentiment_eu": -0.175
     }
   ],
   "peak_value": 10836.759561176264,
   "total_fees_paid": 101.74863267983436,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-10-03T01:02:06.752196",
+  "last_run": "2026-10-06T02:10:42.898653",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
