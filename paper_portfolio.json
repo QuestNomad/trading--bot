@@ -1,26 +1,14 @@
 {
   "capital": 10000,
-  "cash": 9323.060085031246,
+  "cash": 9847.676289725854,
   "positions": {
-    "BITI": {
-      "name": "Short Krypto",
-      "symbol": "BITI",
-      "entry_price": 25.34000015258789,
-      "quantity": 29.233043836766324,
-      "trailing_stop": 17.997253554207937,
-      "atr": 0.29458740779331755,
-      "entry_date": "2026-07-07T23:08:12.153892",
-      "signal": "BUY",
-      "score": -2,
-      "is_short": true
-    },
     "QQQS.L": {
       "name": "Short Nasdaq",
       "symbol": "QQQS",
       "entry_price": 1.6720000505447388,
       "quantity": 441.1873432878574,
       "trailing_stop": 1.5119286179542542,
-      "atr": 0.044642865657806396,
+      "atr": 0.04471429756709507,
       "entry_date": "2026-09-19T00:06:04.977531",
       "signal": "BUY",
       "score": -2,
@@ -320,6 +308,20 @@
       "pnl": 39.62,
       "pnl_pct": 5.39,
       "fee_paid": 2.33,
+      "reason": "Trailing-Stop"
+    },
+    {
+      "asset": "Short Krypto",
+      "asset_id": "BITI",
+      "signal": "BUY",
+      "entry_price": 25.34000015258789,
+      "exit_price": 18.0,
+      "quantity": 29.233043836766324,
+      "entry_date": "2026-07-07T23:08:12.153892",
+      "exit_date": "2026-10-09T01:55:33.338063",
+      "pnl": -216.15,
+      "pnl_pct": -29.18,
+      "fee_paid": 1.58,
       "reason": "Trailing-Stop"
     }
   ],
@@ -2001,12 +2003,25 @@
       "vix": 15.079999923706055,
       "sentiment_world": -0.083,
       "sentiment_eu": -0.398
+    },
+    {
+      "date": "2026-10-09",
+      "portfolio_value": 10473.72,
+      "cash": 9847.68,
+      "positions_value": 626.04,
+      "num_positions": 1,
+      "peak_value": 10836.76,
+      "drawdown_pct": 3.35,
+      "trades_today": 1,
+      "vix": 15.40999984741211,
+      "sentiment_world": -0.348,
+      "sentiment_eu": -0.271
     }
   ],
   "peak_value": 10836.759561176264,
-  "total_fees_paid": 101.74863267983436,
+  "total_fees_paid": 103.32721704701974,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-10-08T01:44:45.028056",
+  "last_run": "2026-10-09T01:55:47.845222",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
