@@ -1,6 +1,6 @@
 {
   "capital": 10000,
-  "cash": 9066.868057866212,
+  "cash": 8333.66436562174,
   "positions": {
     "XSPS.L": {
       "name": "Short S&P 500",
@@ -8,7 +8,7 @@
       "entry_price": 416.2749938964844,
       "quantity": 1.74853487938953,
       "trailing_stop": 426.16248212541853,
-      "atr": 3.2999965122767856,
+      "atr": 3.1964263916015625,
       "entry_date": "2026-10-13T02:57:08.872097",
       "signal": "BUY",
       "score": -2,
@@ -20,8 +20,20 @@
       "entry_price": 17.799999237060547,
       "quantity": 40.88313677655822,
       "trailing_stop": 18.120790481567383,
-      "atr": 0.16716807229178293,
+      "atr": 0.16718551090785436,
       "entry_date": "2026-10-13T02:57:11.478181",
+      "signal": "BUY",
+      "score": -2,
+      "is_short": true
+    },
+    "DXSN.DE": {
+      "name": "Short DAX",
+      "symbol": "DXSN",
+      "entry_price": 9.227999687194824,
+      "quantity": 79.21658918975292,
+      "trailing_stop": 9.4062853540693,
+      "atr": 0.059428555624825616,
+      "entry_date": "2026-10-17T00:16:09.051806",
       "signal": "BUY",
       "score": -2,
       "is_short": true
@@ -2107,12 +2119,25 @@
       "vix": 16.459999084472656,
       "sentiment_world": 0.324,
       "sentiment_eu": -0.141
+    },
+    {
+      "date": "2026-10-17",
+      "portfolio_value": 10531.1,
+      "cash": 8333.66,
+      "positions_value": 2197.44,
+      "num_positions": 3,
+      "peak_value": 10836.76,
+      "drawdown_pct": 2.82,
+      "trades_today": 1,
+      "vix": 19.989999771118164,
+      "sentiment_world": 0.126,
+      "sentiment_eu": -0.189
     }
   ],
   "peak_value": 10836.759561176264,
-  "total_fees_paid": 109.73757030928991,
+  "total_fees_paid": 111.93060229008096,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-10-16T00:12:40.800598",
+  "last_run": "2026-10-17T00:16:12.585396",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
