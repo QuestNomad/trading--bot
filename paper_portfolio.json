@@ -8,7 +8,7 @@
       "entry_price": 416.2749938964844,
       "quantity": 1.74853487938953,
       "trailing_stop": 422.3428475516183,
-      "atr": 1.7249952043805803,
+      "atr": 1.649993896484375,
       "entry_date": "2026-10-13T02:57:08.872097",
       "signal": "BUY",
       "score": -2,
@@ -19,8 +19,8 @@
       "symbol": "DXSN",
       "entry_price": 9.227999687194824,
       "quantity": 79.21658918975292,
-      "trailing_stop": 9.320856843675886,
-      "atr": 0.06528561455862862,
+      "trailing_stop": 9.20407131740025,
+      "atr": 0.06635706765311104,
       "entry_date": "2026-10-17T00:16:09.051806",
       "signal": "BUY",
       "score": -2,
@@ -2251,12 +2251,25 @@
       "vix": 17.200000762939453,
       "sentiment_world": -0.122,
       "sentiment_eu": -0.329
+    },
+    {
+      "date": "2026-10-31",
+      "portfolio_value": 10514.77,
+      "cash": 9071.02,
+      "positions_value": 1443.75,
+      "num_positions": 2,
+      "peak_value": 10836.76,
+      "drawdown_pct": 2.97,
+      "trades_today": 0,
+      "vix": 19.420000076293945,
+      "sentiment_world": 0.03,
+      "sentiment_eu": -0.333
     }
   ],
   "peak_value": 10836.759561176264,
   "total_fees_paid": 114.14933014165959,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-10-30T01:47:55.342695",
+  "last_run": "2026-10-31T01:28:55.078389",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
