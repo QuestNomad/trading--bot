@@ -1,6 +1,6 @@
 {
   "start_datum": "2026-05-01",
-  "letztes_update": "2026-11-04",
+  "letztes_update": "2026-11-05",
   "bots": {
     "Momentum": {
       "kapital": 137.6542811991385,
@@ -969,6 +969,13 @@
           "cash": 137.65,
           "positionen_anzahl": 10,
           "trades_gesamt": 256
+        },
+        {
+          "datum": "2026-11-05",
+          "wert": 86042.94,
+          "cash": 137.65,
+          "positionen_anzahl": 10,
+          "trades_gesamt": 256
         }
       ],
       "meta": {}
@@ -1928,6 +1935,13 @@
         {
           "datum": "2026-11-04",
           "wert": 106699.97,
+          "cash": 0,
+          "positionen_anzahl": 1,
+          "trades_gesamt": 1
+        },
+        {
+          "datum": "2026-11-05",
+          "wert": 101995.38,
           "cash": 0,
           "positionen_anzahl": 1,
           "trades_gesamt": 1
@@ -2891,21 +2905,20 @@
           "cash": 100000,
           "positionen_anzahl": 0,
           "trades_gesamt": 0
+        },
+        {
+          "datum": "2026-11-05",
+          "wert": 100000,
+          "cash": 100000,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 0
         }
       ],
       "meta": {}
     },
     "Athena": {
-      "kapital": 37613.03841013093,
+      "kapital": 44036.43910715624,
       "positionen": {
-        "EFA": {
-          "kauf_kurs": 103.89,
-          "stueck": 22,
-          "sl": 101.52,
-          "high": 105.72000122070312,
-          "datum": "2026-09-30",
-          "score": 9
-        },
         "XLV": {
           "kauf_kurs": 168.42,
           "stueck": 12,
@@ -2966,7 +2979,7 @@
           "kauf_kurs": 102.88,
           "stueck": 14,
           "sl": 102.18,
-          "high": 104.5,
+          "high": 104.66000366210938,
           "datum": "2026-10-19",
           "score": 8
         },
@@ -2977,22 +2990,6 @@
           "high": 122.33000183105469,
           "datum": "2026-10-20",
           "score": 9
-        },
-        "XBI": {
-          "kauf_kurs": 153.24,
-          "stueck": 8,
-          "sl": 144.5,
-          "high": 159.10000610351562,
-          "datum": "2026-10-20",
-          "score": 12
-        },
-        "TSLA": {
-          "kauf_kurs": 374.58,
-          "stueck": 4,
-          "sl": 354.2,
-          "high": 407.4599914550781,
-          "datum": "2026-10-22",
-          "score": 12
         },
         "MRNA": {
           "kauf_kurs": 202.63,
@@ -3010,22 +3007,6 @@
           "datum": "2026-10-23",
           "score": 9
         },
-        "IWM": {
-          "kauf_kurs": 280.18,
-          "stueck": 6,
-          "sl": 273.97,
-          "high": 284.0199890136719,
-          "datum": "2026-10-27",
-          "score": 9
-        },
-        "XLI": {
-          "kauf_kurs": 168.49,
-          "stueck": 10,
-          "sl": 165.42,
-          "high": 171.32000732421875,
-          "datum": "2026-10-28",
-          "score": 10
-        },
         "XLP": {
           "kauf_kurs": 86.84,
           "stueck": 20,
@@ -3038,7 +3019,7 @@
           "kauf_kurs": 176.3,
           "stueck": 8,
           "sl": 166.89,
-          "high": 194.50999450683594,
+          "high": 195.75999450683594,
           "datum": "2026-10-28",
           "score": 10
         },
@@ -3046,17 +3027,9 @@
           "kauf_kurs": 982.73,
           "stueck": 1,
           "sl": 954.68,
-          "high": 1046.469970703125,
+          "high": 1065.5899658203125,
           "datum": "2026-10-28",
           "score": 12
-        },
-        "ARKK": {
-          "kauf_kurs": 78.96,
-          "stueck": 44,
-          "sl": 73.18,
-          "high": 80.37000274658203,
-          "datum": "2026-11-02",
-          "score": 9
         },
         "IBIT": {
           "kauf_kurs": 43.35,
@@ -3090,22 +3063,6 @@
           "datum": "2026-11-02",
           "score": 9
         },
-        "PLTR": {
-          "kauf_kurs": 178.34,
-          "stueck": 14,
-          "sl": 163.32,
-          "high": 178.34,
-          "datum": "2026-11-02",
-          "score": 9
-        },
-        "XLE": {
-          "kauf_kurs": 66.68,
-          "stueck": 37,
-          "sl": 63.94,
-          "high": 66.68,
-          "datum": "2026-11-03",
-          "score": 9
-        },
         "MSTR": {
           "kauf_kurs": 135.63,
           "stueck": 17,
@@ -3114,35 +3071,11 @@
           "datum": "2026-11-03",
           "score": 9
         },
-        "AMD": {
-          "kauf_kurs": 483.9,
-          "stueck": 4,
-          "sl": 416.05,
-          "high": 488.7799987792969,
-          "datum": "2026-11-03",
-          "score": 9
-        },
-        "SPY": {
-          "kauf_kurs": 766.81,
-          "stueck": 3,
-          "sl": 749.93,
-          "high": 766.81,
-          "datum": "2026-11-04",
-          "score": 9
-        },
-        "VTI": {
-          "kauf_kurs": 376.92,
-          "stueck": 6,
-          "sl": 368.82,
-          "high": 376.92,
-          "datum": "2026-11-04",
-          "score": 10
-        },
         "USO": {
           "kauf_kurs": 145.41,
           "stueck": 14,
           "sl": 134.1,
-          "high": 145.41,
+          "high": 148.2100067138672,
           "datum": "2026-11-04",
           "score": 9
         },
@@ -3161,9 +3094,57 @@
           "high": 169.27,
           "datum": "2026-11-04",
           "score": 9
+        },
+        "EFA": {
+          "kauf_kurs": 102.7,
+          "stueck": 28,
+          "sl": 100.0,
+          "high": 102.7,
+          "datum": "2026-11-05",
+          "score": 9
+        },
+        "XLE": {
+          "kauf_kurs": 61.63,
+          "stueck": 45,
+          "sl": 58.4,
+          "high": 61.63,
+          "datum": "2026-11-05",
+          "score": 9
+        },
+        "XBI": {
+          "kauf_kurs": 148.4,
+          "stueck": 18,
+          "sl": 138.89,
+          "high": 148.4,
+          "datum": "2026-11-05",
+          "score": 9
+        },
+        "GLD": {
+          "kauf_kurs": 375.49,
+          "stueck": 6,
+          "sl": 361.11,
+          "high": 375.49,
+          "datum": "2026-11-05",
+          "score": 10
+        },
+        "HYG": {
+          "kauf_kurs": 77.28,
+          "stueck": 31,
+          "sl": 76.75,
+          "high": 77.28,
+          "datum": "2026-11-05",
+          "score": 8
+        },
+        "SOFI": {
+          "kauf_kurs": 16.04,
+          "stueck": 144,
+          "sl": 14.42,
+          "high": 16.04,
+          "datum": "2026-11-05",
+          "score": 8
         }
       },
-      "trades": 1039,
+      "trades": 1056,
       "history": [
         {
           "datum": "2026-04-30",
@@ -4116,6 +4097,13 @@
           "cash": 37613.04,
           "positionen_anzahl": 33,
           "trades_gesamt": 1039
+        },
+        {
+          "datum": "2026-11-05",
+          "wert": 100684.39,
+          "cash": 44036.44,
+          "positionen_anzahl": 28,
+          "trades_gesamt": 1056
         }
       ],
       "meta": {
@@ -4141,7 +4129,7 @@
         },
         "EFA": {
           "score": 9,
-          "datum": "2026-09-30"
+          "datum": "2026-11-05"
         },
         "EEM": {
           "score": 9,
@@ -4173,7 +4161,7 @@
         },
         "XLE": {
           "score": 9,
-          "datum": "2026-11-03"
+          "datum": "2026-11-05"
         },
         "XLK": {
           "score": 9,
@@ -4204,8 +4192,8 @@
           "datum": "2026-10-12"
         },
         "XBI": {
-          "score": 12,
-          "datum": "2026-10-20"
+          "score": 9,
+          "datum": "2026-11-05"
         },
         "USO": {
           "score": 9,
@@ -4216,8 +4204,8 @@
           "datum": "2026-10-23"
         },
         "HYG": {
-          "score": 10,
-          "datum": "2026-10-22"
+          "score": 8,
+          "datum": "2026-11-05"
         },
         "AAPL": {
           "score": 9,
@@ -4316,8 +4304,8 @@
           "datum": "2026-09-28"
         },
         "GLD": {
-          "score": 9,
-          "datum": "2026-10-13"
+          "score": 10,
+          "datum": "2026-11-05"
         },
         "UNG": {
           "score": 9,
@@ -4360,8 +4348,8 @@
           "datum": "2026-10-15"
         },
         "SOFI": {
-          "score": 9,
-          "datum": "2026-08-04"
+          "score": 8,
+          "datum": "2026-11-05"
         },
         "SHOP": {
           "score": 9,
@@ -5404,6 +5392,13 @@
           "cash": 0.0,
           "positionen_anzahl": 66,
           "trades_gesamt": 2040
+        },
+        {
+          "datum": "2026-11-05",
+          "wert": 102702.51,
+          "cash": 0.0,
+          "positionen_anzahl": 66,
+          "trades_gesamt": 2040
         }
       ],
       "meta": {}
@@ -6360,6 +6355,13 @@
         },
         {
           "datum": "2026-11-04",
+          "wert": 87664.93,
+          "cash": 87664.93,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 260
+        },
+        {
+          "datum": "2026-11-05",
           "wert": 87664.93,
           "cash": 87664.93,
           "positionen_anzahl": 0,
@@ -7321,6 +7323,13 @@
         },
         {
           "datum": "2026-11-04",
+          "wert": 103919.37,
+          "cash": 103919.37,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 6
+        },
+        {
+          "datum": "2026-11-05",
           "wert": 103919.37,
           "cash": 103919.37,
           "positionen_anzahl": 0,
