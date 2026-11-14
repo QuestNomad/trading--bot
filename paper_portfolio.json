@@ -1,15 +1,27 @@
 {
   "capital": 10000,
-  "cash": 9809.043113402553,
+  "cash": 9077.916467098308,
   "positions": {
     "DXSN.DE": {
       "name": "Short DAX",
       "symbol": "DXSN",
       "entry_price": 9.227999687194824,
       "quantity": 79.21658918975292,
-      "trailing_stop": 9.075500079563685,
-      "atr": 0.08849988664899554,
+      "trailing_stop": 9.02528531210763,
+      "atr": 0.08642850603376116,
       "entry_date": "2026-10-17T00:16:09.051806",
+      "signal": "BUY",
+      "score": -2,
+      "is_short": true
+    },
+    "QQQS.L": {
+      "name": "Short Nasdaq",
+      "symbol": "QQQS",
+      "entry_price": 1.7480000257492065,
+      "quantity": 417.01362476316007,
+      "trailing_stop": 1.9755714109965734,
+      "atr": 0.07585712841578893,
+      "entry_date": "2026-11-14T02:10:29.413274",
       "signal": "BUY",
       "score": -2,
       "is_short": true
@@ -2383,12 +2395,25 @@
       "vix": 18.700000762939453,
       "sentiment_world": 0.08,
       "sentiment_eu": -0.15
+    },
+    {
+      "date": "2026-11-14",
+      "portfolio_value": 10501.27,
+      "cash": 9077.92,
+      "positions_value": 1423.35,
+      "num_positions": 2,
+      "peak_value": 10836.76,
+      "drawdown_pct": 3.1,
+      "trades_today": 1,
+      "vix": 19.299999237060547,
+      "sentiment_world": 0.006,
+      "sentiment_eu": -0.07
     }
   ],
   "peak_value": 10836.759561176264,
-  "total_fees_paid": 116.3700568972449,
+  "total_fees_paid": 118.55687637771621,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-11-13T02:30:28.187213",
+  "last_run": "2026-11-14T02:10:34.683669",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
