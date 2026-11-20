@@ -1,22 +1,14 @@
 {
   "start_datum": "2026-05-01",
-  "letztes_update": "2026-11-18",
+  "letztes_update": "2026-11-19",
   "bots": {
     "Momentum": {
-      "kapital": 0.0,
+      "kapital": 62912.132581878635,
       "positionen": {
         "MRNA": 38.37983850988823,
-        "MSTR": 80.19050856924008,
-        "TSLA": 21.757065920027774,
-        "LLY": 5.770902335311834,
-        "AAPL": 23.41977444466407,
-        "COST": 7.4182736297915834,
-        "XLV": 43.97502546986479,
-        "META": 13.189489877572091,
-        "XLP": 89.22276604906196,
-        "MSFT": 15.950159640644245
+        "META": 13.189489877572091
       },
-      "trades": 281,
+      "trades": 289,
       "history": [
         {
           "datum": "2026-04-30",
@@ -1032,16 +1024,21 @@
           "cash": 0.0,
           "positionen_anzahl": 10,
           "trades_gesamt": 281
+        },
+        {
+          "datum": "2026-11-19",
+          "wert": 62912.13,
+          "cash": 62912.13,
+          "positionen_anzahl": 2,
+          "trades_gesamt": 289
         }
       ],
       "meta": {}
     },
     "Crash_Guard": {
-      "kapital": 0,
-      "positionen": {
-        "SPY": 139.1478637142475
-      },
-      "trades": 1,
+      "kapital": 99611.78051768543,
+      "positionen": {},
+      "trades": 2,
       "history": [
         {
           "datum": "2026-04-30",
@@ -2057,6 +2054,13 @@
           "cash": 0,
           "positionen_anzahl": 1,
           "trades_gesamt": 1
+        },
+        {
+          "datum": "2026-11-19",
+          "wert": 99611.78,
+          "cash": 99611.78,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 2
         }
       ],
       "meta": {}
@@ -3080,21 +3084,20 @@
           "cash": 100000,
           "positionen_anzahl": 0,
           "trades_gesamt": 0
+        },
+        {
+          "datum": "2026-11-19",
+          "wert": 100000,
+          "cash": 100000,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 0
         }
       ],
       "meta": {}
     },
     "Athena": {
-      "kapital": 58413.64162767932,
+      "kapital": 60772.248090987654,
       "positionen": {
-        "LLY": {
-          "kauf_kurs": 1157.49,
-          "stueck": 1,
-          "sl": 1127.1,
-          "high": 1443.5,
-          "datum": "2026-10-06",
-          "score": 8
-        },
         "AMZN": {
           "kauf_kurs": 248.0,
           "stueck": 7,
@@ -3199,30 +3202,6 @@
           "datum": "2026-11-11",
           "score": 10
         },
-        "EWT": {
-          "kauf_kurs": 97.38,
-          "stueck": 14,
-          "sl": 87.58,
-          "high": 97.38,
-          "datum": "2026-11-13",
-          "score": 9
-        },
-        "XLI": {
-          "kauf_kurs": 168.78,
-          "stueck": 8,
-          "sl": 162.42,
-          "high": 168.78,
-          "datum": "2026-11-13",
-          "score": 10
-        },
-        "XLU": {
-          "kauf_kurs": 44.04,
-          "stueck": 29,
-          "sl": 43.22,
-          "high": 44.119998931884766,
-          "datum": "2026-11-13",
-          "score": 9
-        },
         "MRNA": {
           "kauf_kurs": 215.27,
           "stueck": 8,
@@ -3251,12 +3230,20 @@
           "kauf_kurs": 136.11,
           "stueck": 22,
           "sl": 125.05,
-          "high": 136.11,
+          "high": 138.08999633789062,
           "datum": "2026-11-18",
+          "score": 9
+        },
+        "LLY": {
+          "kauf_kurs": 1351.12,
+          "stueck": 2,
+          "sl": 1290.22,
+          "high": 1351.12,
+          "datum": "2026-11-19",
           "score": 9
         }
       },
-      "trades": 1115,
+      "trades": 1120,
       "history": [
         {
           "datum": "2026-04-30",
@@ -4272,6 +4259,13 @@
           "cash": 58413.64,
           "positionen_anzahl": 21,
           "trades_gesamt": 1115
+        },
+        {
+          "datum": "2026-11-19",
+          "wert": 87251.64,
+          "cash": 60772.25,
+          "positionen_anzahl": 18,
+          "trades_gesamt": 1120
         }
       ],
       "meta": {
@@ -4412,8 +4406,8 @@
           "datum": "2026-11-11"
         },
         "LLY": {
-          "score": 8,
-          "datum": "2026-10-06"
+          "score": 9,
+          "datum": "2026-11-19"
         },
         "XOM": {
           "score": 9,
@@ -5623,6 +5617,13 @@
           "cash": 0.0,
           "positionen_anzahl": 66,
           "trades_gesamt": 2040
+        },
+        {
+          "datum": "2026-11-19",
+          "wert": 76666.85,
+          "cash": 0.0,
+          "positionen_anzahl": 66,
+          "trades_gesamt": 2040
         }
       ],
       "meta": {}
@@ -6642,6 +6643,13 @@
         },
         {
           "datum": "2026-11-18",
+          "wert": 87664.93,
+          "cash": 87664.93,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 260
+        },
+        {
+          "datum": "2026-11-19",
           "wert": 87664.93,
           "cash": 87664.93,
           "positionen_anzahl": 0,
@@ -7666,6 +7674,13 @@
         },
         {
           "datum": "2026-11-18",
+          "wert": 103919.37,
+          "cash": 103919.37,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 6
+        },
+        {
+          "datum": "2026-11-19",
           "wert": 103919.37,
           "cash": 103919.37,
           "positionen_anzahl": 0,
