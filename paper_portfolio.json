@@ -1,20 +1,7 @@
 {
   "capital": 10000,
-  "cash": 9938.960819568378,
-  "positions": {
-    "DXSN.DE": {
-      "name": "Short DAX",
-      "symbol": "DXSN",
-      "entry_price": 9.227999687194824,
-      "quantity": 79.21658918975292,
-      "trailing_stop": 9.02528531210763,
-      "atr": 0.09078570774623326,
-      "entry_date": "2026-10-17T00:16:09.051806",
-      "signal": "BUY",
-      "score": -2,
-      "is_short": true
-    }
-  },
+  "cash": 10659.169802505276,
+  "positions": {},
   "trade_history": [
     {
       "asset": "BNP Paribas",
@@ -378,6 +365,20 @@
       "pnl": 132.1,
       "pnl_pct": 18.12,
       "fee_paid": 2.59,
+      "reason": "Trailing-Stop"
+    },
+    {
+      "asset": "Short DAX",
+      "asset_id": "DXSN.DE",
+      "signal": "BUY",
+      "entry_price": 9.227999687194824,
+      "exit_price": 9.119000434875488,
+      "quantity": 79.21658918975292,
+      "entry_date": "2026-10-17T00:16:09.051806",
+      "exit_date": "2026-11-20T02:56:23.078089",
+      "pnl": -10.8,
+      "pnl_pct": -1.48,
+      "fee_paid": 2.17,
       "reason": "Trailing-Stop"
     }
   ],
@@ -2449,12 +2450,25 @@
       "vix": 24.559999465942383,
       "sentiment_world": 0.251,
       "sentiment_eu": -0.138
+    },
+    {
+      "date": "2026-11-20",
+      "portfolio_value": 10659.17,
+      "cash": 10659.17,
+      "positions_value": 0.0,
+      "num_positions": 0,
+      "peak_value": 10836.76,
+      "drawdown_pct": 1.64,
+      "trades_today": 1,
+      "vix": 28.440000534057617,
+      "sentiment_world": 0.232,
+      "sentiment_eu": -0.151
     }
   ],
   "peak_value": 10836.759561176264,
-  "total_fees_paid": 121.14778215245062,
+  "total_fees_paid": 123.31491048626275,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-11-19T03:05:47.788132",
+  "last_run": "2026-11-20T02:56:33.170998",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
