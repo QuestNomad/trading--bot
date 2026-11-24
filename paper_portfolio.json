@@ -2476,12 +2476,25 @@
       "vix": 35.88999938964844,
       "sentiment_world": 0.243,
       "sentiment_eu": -0.248
+    },
+    {
+      "date": "2026-11-24",
+      "portfolio_value": 10659.17,
+      "cash": 10659.17,
+      "positions_value": 0.0,
+      "num_positions": 0,
+      "peak_value": 10836.76,
+      "drawdown_pct": 1.64,
+      "trades_today": 0,
+      "vix": 26.6200008392334,
+      "sentiment_world": 0.175,
+      "sentiment_eu": -0.277
     }
   ],
   "peak_value": 10836.759561176264,
   "total_fees_paid": 123.31491048626275,
   "created_at": "2026-04-12T00:39:02.101705",
-  "last_run": "2026-11-21T03:03:31.813894",
+  "last_run": "2026-11-24T05:51:07.710025",
   "portfolio_value": 9977.11,
   "drawdown_pct": 2.58
 }
