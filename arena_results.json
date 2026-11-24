@@ -1,6 +1,6 @@
 {
   "start_datum": "2026-05-01",
-  "letztes_update": "2026-11-20",
+  "letztes_update": "2026-11-23",
   "bots": {
     "Momentum": {
       "kapital": 77793.3949484543,
@@ -1031,6 +1031,13 @@
         },
         {
           "datum": "2026-11-20",
+          "wert": 77793.39,
+          "cash": 77793.39,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 291
+        },
+        {
+          "datum": "2026-11-23",
           "wert": 77793.39,
           "cash": 77793.39,
           "positionen_anzahl": 0,
@@ -2072,6 +2079,13 @@
           "cash": 99611.78,
           "positionen_anzahl": 0,
           "trades_gesamt": 2
+        },
+        {
+          "datum": "2026-11-23",
+          "wert": 99611.78,
+          "cash": 99611.78,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 2
         }
       ],
       "meta": {}
@@ -3109,12 +3123,19 @@
           "cash": 100000,
           "positionen_anzahl": 0,
           "trades_gesamt": 0
+        },
+        {
+          "datum": "2026-11-23",
+          "wert": 100000,
+          "cash": 100000,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 0
         }
       ],
       "meta": {}
     },
     "Athena": {
-      "kapital": 72787.23777400158,
+      "kapital": 62613.42346670863,
       "positionen": {
         "XLP": {
           "kauf_kurs": 86.84,
@@ -3192,12 +3213,36 @@
           "kauf_kurs": 1351.12,
           "stueck": 2,
           "sl": 1290.22,
-          "high": 1351.12,
+          "high": 1364.5999755859375,
           "datum": "2026-11-19",
           "score": 9
+        },
+        "LQD": {
+          "kauf_kurs": 103.93,
+          "stueck": 35,
+          "sl": 102.94,
+          "high": 103.93,
+          "datum": "2026-11-23",
+          "score": 8
+        },
+        "MSFT": {
+          "kauf_kurs": 492.5,
+          "stueck": 7,
+          "sl": 460.02,
+          "high": 492.5,
+          "datum": "2026-11-23",
+          "score": 9
+        },
+        "TSLA": {
+          "kauf_kurs": 385.46,
+          "stueck": 8,
+          "sl": 340.93,
+          "high": 385.46,
+          "datum": "2026-11-23",
+          "score": 12
         }
       },
-      "trades": 1128,
+      "trades": 1131,
       "history": [
         {
           "datum": "2026-04-30",
@@ -4227,6 +4272,13 @@
           "cash": 72787.24,
           "positionen_anzahl": 10,
           "trades_gesamt": 1128
+        },
+        {
+          "datum": "2026-11-23",
+          "wert": 96224.32,
+          "cash": 62613.42,
+          "positionen_anzahl": 13,
+          "trades_gesamt": 1131
         }
       ],
       "meta": {
@@ -4340,7 +4392,7 @@
         },
         "MSFT": {
           "score": 9,
-          "datum": "2026-11-11"
+          "datum": "2026-11-23"
         },
         "AMZN": {
           "score": 9,
@@ -4420,7 +4472,7 @@
         },
         "LQD": {
           "score": 8,
-          "datum": "2026-10-19"
+          "datum": "2026-11-23"
         },
         "MARA": {
           "score": 12,
@@ -4435,8 +4487,8 @@
           "datum": "2026-11-09"
         },
         "TSLA": {
-          "score": 10,
-          "datum": "2026-11-11"
+          "score": 12,
+          "datum": "2026-11-23"
         },
         "TLT": {
           "score": 8,
@@ -5592,6 +5644,13 @@
           "cash": 0.0,
           "positionen_anzahl": 66,
           "trades_gesamt": 2040
+        },
+        {
+          "datum": "2026-11-23",
+          "wert": 99653.82,
+          "cash": 0.0,
+          "positionen_anzahl": 66,
+          "trades_gesamt": 2040
         }
       ],
       "meta": {}
@@ -6629,9 +6688,16 @@
           "cash": 87664.93,
           "positionen_anzahl": 0,
           "trades_gesamt": 260
+        },
+        {
+          "datum": "2026-11-23",
+          "wert": 87664.93,
+          "cash": 87664.93,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 260
         }
       ],
-      "modus": "cash",
+      "modus": "crash_guard",
       "meta": {}
     },
     "Ensemble": {
@@ -7663,6 +7729,13 @@
         },
         {
           "datum": "2026-11-20",
+          "wert": 103919.37,
+          "cash": 103919.37,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 6
+        },
+        {
+          "datum": "2026-11-23",
           "wert": 103919.37,
           "cash": 103919.37,
           "positionen_anzahl": 0,
