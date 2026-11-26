@@ -1,6 +1,6 @@
 {
   "start_datum": "2026-05-01",
-  "letztes_update": "2026-11-24",
+  "letztes_update": "2026-11-25",
   "bots": {
     "Momentum": {
       "kapital": 77793.3949484543,
@@ -1045,6 +1045,13 @@
         },
         {
           "datum": "2026-11-24",
+          "wert": 77793.39,
+          "cash": 77793.39,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 291
+        },
+        {
+          "datum": "2026-11-25",
           "wert": 77793.39,
           "cash": 77793.39,
           "positionen_anzahl": 0,
@@ -2100,6 +2107,13 @@
           "cash": 99611.78,
           "positionen_anzahl": 0,
           "trades_gesamt": 2
+        },
+        {
+          "datum": "2026-11-25",
+          "wert": 99611.78,
+          "cash": 99611.78,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 2
         }
       ],
       "meta": {}
@@ -3151,12 +3165,19 @@
           "cash": 100000,
           "positionen_anzahl": 0,
           "trades_gesamt": 0
+        },
+        {
+          "datum": "2026-11-25",
+          "wert": 100000,
+          "cash": 100000,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 0
         }
       ],
       "meta": {}
     },
     "Athena": {
-      "kapital": 51110.74503193614,
+      "kapital": 41713.64886857555,
       "positionen": {
         "XLP": {
           "kauf_kurs": 86.84,
@@ -3186,7 +3207,7 @@
           "kauf_kurs": 51.41,
           "stueck": 48,
           "sl": 50.02,
-          "high": 52.900001525878906,
+          "high": 53.20000076293945,
           "datum": "2026-11-09",
           "score": 9
         },
@@ -3210,7 +3231,7 @@
           "kauf_kurs": 94.89,
           "stueck": 28,
           "sl": 92.17,
-          "high": 95.18000030517578,
+          "high": 95.66000366210938,
           "datum": "2026-11-17",
           "score": 8
         },
@@ -3226,7 +3247,7 @@
           "kauf_kurs": 136.11,
           "stueck": 22,
           "sl": 125.05,
-          "high": 139.6300048828125,
+          "high": 139.88999938964844,
           "datum": "2026-11-18",
           "score": 9
         },
@@ -3242,7 +3263,7 @@
           "kauf_kurs": 103.93,
           "stueck": 35,
           "sl": 102.94,
-          "high": 103.93,
+          "high": 104.29000091552734,
           "datum": "2026-11-23",
           "score": 8
         },
@@ -3274,7 +3295,7 @@
           "kauf_kurs": 104.45,
           "stueck": 28,
           "sl": 100.0,
-          "high": 104.45,
+          "high": 105.37999725341797,
           "datum": "2026-11-24",
           "score": 8
         },
@@ -3282,7 +3303,7 @@
           "kauf_kurs": 40.31,
           "stueck": 70,
           "sl": 37.79,
-          "high": 40.31,
+          "high": 40.970001220703125,
           "datum": "2026-11-24",
           "score": 8
         },
@@ -3293,9 +3314,41 @@
           "high": 158.23,
           "datum": "2026-11-24",
           "score": 9
+        },
+        "XLU": {
+          "kauf_kurs": 43.61,
+          "stueck": 58,
+          "sl": 42.77,
+          "high": 43.61,
+          "datum": "2026-11-25",
+          "score": 10
+        },
+        "XLRE": {
+          "kauf_kurs": 43.86,
+          "stueck": 55,
+          "sl": 42.87,
+          "high": 43.86,
+          "datum": "2026-11-25",
+          "score": 10
+        },
+        "TLT": {
+          "kauf_kurs": 82.24,
+          "stueck": 28,
+          "sl": 80.96,
+          "high": 82.24,
+          "datum": "2026-11-25",
+          "score": 9
+        },
+        "BND": {
+          "kauf_kurs": 71.6,
+          "stueck": 30,
+          "sl": 71.13,
+          "high": 71.6,
+          "datum": "2026-11-25",
+          "score": 9
         }
       },
-      "trades": 1135,
+      "trades": 1139,
       "history": [
         {
           "datum": "2026-04-30",
@@ -4339,6 +4392,13 @@
           "cash": 51110.75,
           "positionen_anzahl": 17,
           "trades_gesamt": 1135
+        },
+        {
+          "datum": "2026-11-25",
+          "wert": 93732.94,
+          "cash": 41713.65,
+          "positionen_anzahl": 21,
+          "trades_gesamt": 1139
         }
       ],
       "meta": {
@@ -4407,8 +4467,8 @@
           "datum": "2026-11-13"
         },
         "XLU": {
-          "score": 9,
-          "datum": "2026-11-13"
+          "score": 10,
+          "datum": "2026-11-25"
         },
         "XLP": {
           "score": 9,
@@ -4416,7 +4476,7 @@
         },
         "XLRE": {
           "score": 10,
-          "datum": "2026-10-12"
+          "datum": "2026-11-25"
         },
         "XLC": {
           "score": 8,
@@ -4519,8 +4579,8 @@
           "datum": "2026-11-02"
         },
         "BND": {
-          "score": 10,
-          "datum": "2026-11-11"
+          "score": 9,
+          "datum": "2026-11-25"
         },
         "COIN": {
           "score": 9,
@@ -4551,8 +4611,8 @@
           "datum": "2026-11-23"
         },
         "TLT": {
-          "score": 8,
-          "datum": "2026-09-04"
+          "score": 9,
+          "datum": "2026-11-25"
         },
         "FSLR": {
           "score": 10,
@@ -5718,6 +5778,13 @@
           "cash": 0.0,
           "positionen_anzahl": 66,
           "trades_gesamt": 2040
+        },
+        {
+          "datum": "2026-11-25",
+          "wert": 97729.57,
+          "cash": 0.0,
+          "positionen_anzahl": 66,
+          "trades_gesamt": 2040
         }
       ],
       "meta": {}
@@ -6765,6 +6832,13 @@
         },
         {
           "datum": "2026-11-24",
+          "wert": 87664.93,
+          "cash": 87664.93,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 260
+        },
+        {
+          "datum": "2026-11-25",
           "wert": 87664.93,
           "cash": 87664.93,
           "positionen_anzahl": 0,
@@ -7817,6 +7891,13 @@
         },
         {
           "datum": "2026-11-24",
+          "wert": 103919.37,
+          "cash": 103919.37,
+          "positionen_anzahl": 0,
+          "trades_gesamt": 6
+        },
+        {
+          "datum": "2026-11-25",
           "wert": 103919.37,
           "cash": 103919.37,
           "positionen_anzahl": 0,
